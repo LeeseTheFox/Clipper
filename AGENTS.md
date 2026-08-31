@@ -40,6 +40,19 @@ This file gives coding agents the minimum repo-specific instructions needed to w
 - This script runs pytest, Pyright, and Ruff, prints compact summaries, and shows any failures with their reasons. It is the preferred method for validating Python changes.
 - Run it without arguments so the complete test suite runs immediately. Optional pytest targets are available for focused iteration, but usually there's no point in using them if you intend to run the full suite afterward anyways.
 
+## Release Automation
+
+- Pushing a tag matching `v*` to GitHub starts `.github/workflows/release.yml`.
+- The workflow requires an annotated semantic-version tag, runs the complete
+  test/type/lint suite in the pinned GNOME SDK, checks every application-version
+  location with `tools/validate_release_version.py`, builds the Flatpak bundle,
+  and creates or updates the corresponding GitHub Release.
+- `tools/generate_release_notes.py` builds categorized release notes from
+  Conventional Commit subjects. Keep commit subjects accurate because they
+  become public changelog entries.
+- A successful release is titled `Clipper X.Y.Z` and includes a
+  `Clipper-X.Y.Z-x86_64.flatpak` asset.
+
 ## Startup Benchmark
 
 - Benchmark the installed Flatpak with `./tools/run_startup_benchmark.sh`.

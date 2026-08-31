@@ -114,26 +114,39 @@ Flatpak включает libobs и необходимые плагины зах�
 Для локальной сборки в процессе разработки:
 
 ```bash
+python3 -m venv --system-site-packages venv
+./venv/bin/python -m pip install --upgrade pip
+./venv/bin/python -m pip install -r ui/requirements.txt
 make -C engine/src
 ./clipper
 ```
 
-Понадобятся Python 3.10+, GTK4/libadwaita, GCC, make, локальное окружение
-`./venv` и установленный локально Flatpak OBS Studio с расширением
-OBSVkCapture. Самодостаточная Flatpak-версия Clipper включает собственный стек
+Понадобятся Python 3.10+, модуль Python venv, пакеты для разработки
+GTK4/libadwaita и PyGObject, GCC, make и установленный локально Flatpak OBS
+Studio с расширением OBSVkCapture. Параметр `--system-site-packages` позволяет
+виртуальному окружению использовать предоставленные дистрибутивом привязки
+PyGObject. Самодостаточная Flatpak-версия Clipper включает собственный стек
 записи.
 
 Запускайте тесты, проверку типов и линтер командой:
 
 ```bash
+./venv/bin/python -m pip install pytest "pyright[nodejs]" ruff
 ./tools/run_pytest_quiet.sh
 ```
 
-Соберите Flatpak:
+Для самодостаточного Flatpak установите Flatpak Builder и GNOME SDK 50, затем
+запустите скрипт сборки с ограничением ресурсов:
 
 ```bash
+flatpak install --user flathub org.gnome.Sdk//50 org.flatpak.Builder
 ./tools/run_flatpak_build_quiet.sh
 ```
+
+Скрипту также требуется `systemd-run`. Для первой сборки Flatpak нужны доступ к
+сети и значительный объём дискового пространства для закреплённого стека
+зависимостей OBS/libobs; последующие сборки используют локальный кэш Flatpak
+Builder.
 
 ## Подробнее
 

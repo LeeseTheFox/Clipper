@@ -116,25 +116,38 @@ Vulkan/OpenGL.
 Для локального збирання під час розробки:
 
 ```bash
+python3 -m venv --system-site-packages venv
+./venv/bin/python -m pip install --upgrade pip
+./venv/bin/python -m pip install -r ui/requirements.txt
 make -C engine/src
 ./clipper
 ```
 
-Потрібні Python 3.10+, GTK4/libadwaita, GCC, make, локальне середовище `./venv`
-та встановлений локально Flatpak OBS Studio з розширенням OBSVkCapture.
-Самодостатній Flatpak Clipper містить власний стек запису.
+Потрібні Python 3.10+, модуль Python venv, пакунки для розробки GTK4/libadwaita
+і PyGObject, GCC, make та встановлений локально Flatpak OBS Studio з розширенням
+OBSVkCapture. Параметр `--system-site-packages` дає віртуальному середовищу змогу
+використовувати надані дистрибутивом прив'язки PyGObject. Самодостатній Flatpak
+Clipper містить власний стек запису.
 
 Запустіть тести, перевірку типів і лінтер:
 
 ```bash
+./venv/bin/python -m pip install pytest "pyright[nodejs]" ruff
 ./tools/run_pytest_quiet.sh
 ```
 
-Зберіть Flatpak:
+Для самодостатнього Flatpak установіть Flatpak Builder і GNOME SDK 50, а потім
+запустіть обмежений за ресурсами скрипт збирання:
 
 ```bash
+flatpak install --user flathub org.gnome.Sdk//50 org.flatpak.Builder
 ./tools/run_flatpak_build_quiet.sh
 ```
+
+Скрипту також потрібен `systemd-run`. Для першого збирання Flatpak необхідні
+доступ до мережі та значний обсяг дискового простору для закріпленого стека
+залежностей OBS/libobs; наступні збирання використовують локальний кеш Flatpak
+Builder.
 
 ## Докладніше
 

@@ -108,25 +108,37 @@ PipeWire. Advanced game capture uses `obs-vkcapture` for Vulkan/OpenGL titles.
 For a native development build:
 
 ```bash
+python3 -m venv --system-site-packages venv
+./venv/bin/python -m pip install --upgrade pip
+./venv/bin/python -m pip install -r ui/requirements.txt
 make -C engine/src
 ./clipper
 ```
 
-That path needs Python 3.10+, GTK4/libadwaita, GCC, make, the local `./venv`,
-and a locally installed OBS Studio Flatpak with its OBSVkCapture extension. The
+That path needs Python 3.10+, the Python venv module, GTK4/libadwaita and
+PyGObject development packages, GCC, make, and a locally installed OBS Studio
+Flatpak with its OBSVkCapture extension. `--system-site-packages` lets the
+virtual environment use the distribution-provided PyGObject bindings. The
 standalone Clipper Flatpak bundles its own recording stack.
 
 Run tests, type checking, and linting with:
 
 ```bash
+./venv/bin/python -m pip install pytest "pyright[nodejs]" ruff
 ./tools/run_pytest_quiet.sh
 ```
 
-Build the Flatpak with:
+For the standalone Flatpak, install Flatpak Builder and the GNOME 50 SDK, then
+run the bounded build wrapper:
 
 ```bash
+flatpak install --user flathub org.gnome.Sdk//50 org.flatpak.Builder
 ./tools/run_flatpak_build_quiet.sh
 ```
+
+The wrapper also requires `systemd-run`. The first Flatpak build needs network
+access and substantial disk space for the pinned OBS/libobs dependency stack;
+later builds reuse the local Flatpak Builder cache.
 
 ## More detail
 
