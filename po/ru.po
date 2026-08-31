@@ -402,7 +402,7 @@ msgstr "Скопировать необходимый параметр запу�
 msgid "Copy launch option"
 msgstr "Скопировать параметр запуска"
 
-#: ui/dialogs.py:203 ui/whitelist_view.py:455
+#: ui/dialogs.py:203 ui/whitelist_view.py:457
 msgid "Add a non-Steam game"
 msgstr "Добавить игру не из Steam"
 
@@ -2340,46 +2340,46 @@ msgstr "Возможно, файл использует неподдержива
 msgid "Play a Clipper video"
 msgstr "Воспроизвести видео Clipper"
 
-#: ui/whitelist_view.py:99
+#: ui/whitelist_view.py:101
 msgid "This game"
 msgstr "Эта игра"
 
-#: ui/whitelist_view.py:433
+#: ui/whitelist_view.py:435
 msgid "Search games by name or path"
 msgstr "Поиск игр по названию или пути"
 
-#: ui/whitelist_view.py:451
+#: ui/whitelist_view.py:453
 msgid "Add a Steam game"
 msgstr "Добавить игру из Steam"
 
-#: ui/whitelist_view.py:460
+#: ui/whitelist_view.py:462
 msgid "Add new"
 msgstr "Добавить"
 
-#: ui/whitelist_view.py:573
+#: ui/whitelist_view.py:575
 #, python-format
 msgid "%(name)s is already in the whitelist."
 msgstr "%(name)s уже находится в списке разрешённых игр."
 
-#: ui/whitelist_view.py:617
+#: ui/whitelist_view.py:619
 msgid "Manual"
 msgstr "Вручную"
 
-#: ui/whitelist_view.py:617
+#: ui/whitelist_view.py:619
 msgid "Steam"
 msgstr "Steam"
 
-#: ui/whitelist_view.py:642
+#: ui/whitelist_view.py:644
 #, python-format
 msgid "Remove %(name)s"
 msgstr "Удалить %(name)s"
 
-#: ui/whitelist_view.py:689 ui/whitelist_view.py:746
+#: ui/whitelist_view.py:691 ui/whitelist_view.py:748
 #, python-format
 msgid "Added %(name)s"
 msgstr "Добавлено: %(name)s"
 
-#: ui/whitelist_view.py:716
+#: ui/whitelist_view.py:718
 msgid ""
 "Clipper could not verify whether Steam is running.\n"
 "\n"
@@ -2390,7 +2390,7 @@ msgstr ""
 "Полностью закрой Steam перед добавлением игр с методом «Захват игры», затем "
 "повтори попытку."
 
-#: ui/whitelist_view.py:734
+#: ui/whitelist_view.py:736
 #, python-format
 msgid ""
 "Added %(name)s to whitelist, but could not modify launch options.\n"
@@ -2408,7 +2408,7 @@ msgstr ""
 "Возможно, потребуется вручную добавить оболочку захвата в параметры запуска "
 "игры."
 
-#: ui/whitelist_view.py:782
+#: ui/whitelist_view.py:784
 msgid ""
 "Clipper could not verify whether Steam is running.\n"
 "\n"
@@ -2419,7 +2419,7 @@ msgstr ""
 "Полностью закрой Steam перед удалением игр с методом «Захват игры», затем "
 "повтори попытку."
 
-#: ui/whitelist_view.py:800
+#: ui/whitelist_view.py:802
 #, python-format
 msgid ""
 "Removed %(name)s from whitelist, but could not modify launch options.\n"
@@ -2437,12 +2437,12 @@ msgstr ""
 "Возможно, потребуется вручную удалить оболочку захвата из параметров запуска "
 "игры."
 
-#: ui/whitelist_view.py:820
+#: ui/whitelist_view.py:822
 #, python-format
 msgid "Removed %(name)s"
 msgstr "Удалено: %(name)s"
 
-#: ui/whitelist_view.py:844
+#: ui/whitelist_view.py:846
 #, python-format
 msgid ""
 "Clipper could not restart Steam and apply the Game capture change.\n"

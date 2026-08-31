@@ -25,6 +25,11 @@
     <binary>clipper</binary>
   </provides>
   <releases>
+    <release version="1.0.1" date="2026-08-31">
+      <description>
+        <p>Initial public release.</p>
+      </description>
+    </release>
     <release version="1.0" date="2026-07-06">
       <description>
         <p>Initial Flatpak packaging metadata scaffold.</p>

@@ -16,6 +16,9 @@ jobs:
   verify:
     name: Verify release source
     runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-50
+      options: --privileged
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
@@ -24,25 +27,49 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Allow the SDK sandbox to write test artifacts
+        run: chmod -R a+rwX "$GITHUB_WORKSPACE"
+
       - name: Install test dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install --yes python3-gi gir1.2-adw-1 gir1.2-gtk-4.0
-          python3 -m venv --system-site-packages venv
-          ./venv/bin/python -m pip install --upgrade pip
-          ./venv/bin/python -m pip install -r ui/requirements.txt pytest pyright ruff
+          flatpak run \
+            --share=network \
+            --filesystem="$GITHUB_WORKSPACE" \
+            --command=sh org.gnome.Sdk//50 -c "
+              set -e
+              cd \"$GITHUB_WORKSPACE\"
+              python3 -m venv --system-site-packages venv
+              ./venv/bin/python -m pip install --upgrade pip
+              ./venv/bin/python -m pip install \
+                -r ui/requirements.txt pytest \"pyright[nodejs]\" ruff
+            "
 
       - name: Run tests, type checks, and linting
-        run: ./tools/run_pytest_quiet.sh
+        run: |
+          /app/bin/Xvfb :99 -screen 0 1280x720x24 >/tmp/clipper-xvfb.log 2>&1 &
+          xvfb_pid=$!
+          trap 'kill "$xvfb_pid" 2>/dev/null || true' EXIT
+          DISPLAY=:99 flatpak run \
+            --socket=x11 \
+            --filesystem="$GITHUB_WORKSPACE" \
+            --env=DISPLAY=:99 \
+            --command=sh org.gnome.Sdk//50 -c "
+              set -e
+              cd \"$GITHUB_WORKSPACE\"
+              env -u FLATPAK_ID ./tools/run_pytest_quiet.sh
+            "
 
       - name: Verify tag and application versions agree
         id: version
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git fetch --force origin \
+            "refs/tags/$GITHUB_REF_NAME:refs/tags/$GITHUB_REF_NAME"
           if [ "$(git cat-file -t "$GITHUB_REF")" != "tag" ]; then
             echo "Release tags must be annotated." >&2
             exit 1
           fi
-          ./venv/bin/python tools/validate_release_version.py "$GITHUB_REF_NAME"
+          python3 tools/validate_release_version.py "$GITHUB_REF_NAME"
           echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
   publish:
@@ -62,6 +89,7 @@ jobs:
         env:
           TAG: ${{ github.ref_name }}
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           python3 tools/generate_release_notes.py "$TAG" \
             --repository "$GITHUB_REPOSITORY" \
             --output release-notes.md

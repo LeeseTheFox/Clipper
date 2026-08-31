@@ -2,6 +2,8 @@
 Whitelist view - manage games to capture
 """
 
+from __future__ import annotations
+
 from concurrent.futures import Future, ThreadPoolExecutor
 from hashlib import sha256
 from pathlib import Path

@@ -397,7 +397,7 @@ msgstr "Copy the required launch option"
 msgid "Copy launch option"
 msgstr "Copy launch option"
 
-#: ui/dialogs.py:203 ui/whitelist_view.py:455
+#: ui/dialogs.py:203 ui/whitelist_view.py:457
 msgid "Add a non-Steam game"
 msgstr "Add a non-Steam game"
 
@@ -2322,46 +2322,46 @@ msgstr "The file may use an unsupported video or audio format."
 msgid "Play a Clipper video"
 msgstr "Play a Clipper video"
 
-#: ui/whitelist_view.py:99
+#: ui/whitelist_view.py:101
 msgid "This game"
 msgstr "This game"
 
-#: ui/whitelist_view.py:433
+#: ui/whitelist_view.py:435
 msgid "Search games by name or path"
 msgstr "Search games by name or path"
 
-#: ui/whitelist_view.py:451
+#: ui/whitelist_view.py:453
 msgid "Add a Steam game"
 msgstr "Add a Steam game"
 
-#: ui/whitelist_view.py:460
+#: ui/whitelist_view.py:462
 msgid "Add new"
 msgstr "Add new"
 
-#: ui/whitelist_view.py:573
+#: ui/whitelist_view.py:575
 #, python-format
 msgid "%(name)s is already in the whitelist."
 msgstr "%(name)s is already in the whitelist."
 
-#: ui/whitelist_view.py:617
+#: ui/whitelist_view.py:619
 msgid "Manual"
 msgstr "Manual"
 
-#: ui/whitelist_view.py:617
+#: ui/whitelist_view.py:619
 msgid "Steam"
 msgstr "Steam"
 
-#: ui/whitelist_view.py:642
+#: ui/whitelist_view.py:644
 #, python-format
 msgid "Remove %(name)s"
 msgstr "Remove %(name)s"
 
-#: ui/whitelist_view.py:689 ui/whitelist_view.py:746
+#: ui/whitelist_view.py:691 ui/whitelist_view.py:748
 #, python-format
 msgid "Added %(name)s"
 msgstr "Added %(name)s"
 
-#: ui/whitelist_view.py:716
+#: ui/whitelist_view.py:718
 msgid ""
 "Clipper could not verify whether Steam is running.\n"
 "\n"
@@ -2371,7 +2371,7 @@ msgstr ""
 "\n"
 "Close Steam completely before adding games with Game capture, then try again."
 
-#: ui/whitelist_view.py:734
+#: ui/whitelist_view.py:736
 #, python-format
 msgid ""
 "Added %(name)s to whitelist, but could not modify launch options.\n"
@@ -2388,7 +2388,7 @@ msgstr ""
 "You may need to manually add the capture wrapper to the game's launch "
 "options."
 
-#: ui/whitelist_view.py:782
+#: ui/whitelist_view.py:784
 msgid ""
 "Clipper could not verify whether Steam is running.\n"
 "\n"
@@ -2398,7 +2398,7 @@ msgstr ""
 "\n"
 "Close Steam completely before removing Game capture games, then try again."
 
-#: ui/whitelist_view.py:800
+#: ui/whitelist_view.py:802
 #, python-format
 msgid ""
 "Removed %(name)s from whitelist, but could not modify launch options.\n"
@@ -2415,12 +2415,12 @@ msgstr ""
 "You may need to manually remove the capture wrapper from the game's launch "
 "options."
 
-#: ui/whitelist_view.py:820
+#: ui/whitelist_view.py:822
 #, python-format
 msgid "Removed %(name)s"
 msgstr "Removed %(name)s"
 
-#: ui/whitelist_view.py:844
+#: ui/whitelist_view.py:846
 #, python-format
 msgid ""
 "Clipper could not restart Steam and apply the Game capture change.\n"

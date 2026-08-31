@@ -1,5 +1,7 @@
 """Small GTK selection-widget helpers shared by UI views."""
 
+from __future__ import annotations
+
 import gi
 
 gi.require_version("Gtk", "4.0")
