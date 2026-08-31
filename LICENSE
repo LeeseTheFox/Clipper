@@ -1,0 +1,36 @@
+GNU GENERAL PUBLIC LICENSE
+
+Clipper is free software: you can redistribute it and/or modify it under the
+terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+The full text of the GNU General Public License version 3 can be found at:
+https://www.gnu.org/licenses/gpl-3.0.html
+
+A copy should also be available from the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+================================================================================
+
+THIRD-PARTY COMPONENTS
+
+Clipper includes or depends on the following third-party software:
+
+OBS Studio / libobs
+  License: GNU General Public License v2.0 or later
+  Source: https://obsproject.com/
+  Notes: Clipper's engine links to libobs for video recording functionality.
+         The Flatpak package bundles OBS/libobs and related capture plugins.
+
+vdf (Valve Data Format parser)
+  License: MIT License
+  Notes: Bundled in the Flatpak package for Steam library parsing.
+
+Additional bundled components in the Flatpak package include x264, mbedtls,
+obs-vkcapture, obs-pipewire-audio-capture, and other dependencies. Their
+respective license files are installed by Flatpak Builder.

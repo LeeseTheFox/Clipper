@@ -1,0 +1,5 @@
+# Compiled binary
+clipper-engine
+
+# obs-ffmpeg-mux symlink (created by make)
+obs-ffmpeg-mux

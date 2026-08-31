@@ -1,0 +1,4 @@
+CompileFlags:
+  Add:
+    - -I../vendor
+    - -std=c11

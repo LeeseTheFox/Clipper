@@ -1,0 +1,16 @@
+{
+  "include": ["ui", "tests"],
+  "typeCheckingMode": "standard",
+  "reportMissingImports": false,
+  "reportMissingTypeStubs": false,
+  "reportUnknownMemberType": false,
+  "reportUnknownParameterType": false,
+  "reportUnknownArgumentType": false,
+  "reportUnknownVariableType": false,
+  "reportUnknownLambdaType": false,
+  "reportAttributeAccessIssue": false,
+  "reportImplicitStringConcatenation": false,
+  "reportUnusedImport": true,
+  "reportUnusedVariable": true,
+  "pythonVersion": "3.10"
+}

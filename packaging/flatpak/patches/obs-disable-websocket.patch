@@ -1,0 +1,13 @@
+diff --git a/plugins/CMakeLists.txt b/plugins/CMakeLists.txt
+index d6d1395..55ba5bb 100644
+--- a/plugins/CMakeLists.txt
++++ b/plugins/CMakeLists.txt
+@@ -76,8 +76,6 @@ add_obs_plugin(
+ )
+ add_obs_plugin(obs-webrtc)
+ 
+-check_obs_websocket()
+-
+ add_obs_plugin(obs-x264)
+ add_obs_plugin(oss-audio PLATFORMS FREEBSD OPENBSD)
+ add_obs_plugin(rtmp-services)

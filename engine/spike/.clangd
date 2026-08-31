@@ -1,0 +1,4 @@
+CompileFlags:
+  Add:
+    - -I/var/lib/flatpak/app/com.obsproject.Studio/x86_64/stable/active/files/include
+    - -std=c11

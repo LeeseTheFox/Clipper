@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Clipper
+Comment=Record clips on Linux
+Exec=clipper
+Icon=io.github.leesethefox.Clipper
+Terminal=false
+Categories=AudioVideo;Recorder;GTK;
+StartupNotify=true

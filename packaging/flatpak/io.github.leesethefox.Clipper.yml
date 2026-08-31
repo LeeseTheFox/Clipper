@@ -1,0 +1,249 @@
+id: io.github.leesethefox.Clipper
+runtime: org.gnome.Platform
+runtime-version: '50'
+sdk: org.gnome.Sdk
+command: clipper
+separate-locales: false
+
+build-options:
+  env:
+    CMAKE_BUILD_PARALLEL_LEVEL: '2'
+    MAKEFLAGS: '-j2'
+
+finish-args:
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --share=ipc
+  # obs-vkcapture uses a host-visible abstract Unix socket, which is scoped to
+  # the network namespace even though no IP networking is involved.
+  - --share=network
+  - --device=dri
+  - --socket=pulseaudio
+  - --filesystem=xdg-videos:create
+  - --filesystem=xdg-data/Steam:rw
+  - --filesystem=/mnt:ro
+  - --filesystem=/run/media:ro
+  - --filesystem=xdg-run/pipewire-0
+  - --filesystem=xdg-run/clipper:create
+  - --talk-name=org.freedesktop.Flatpak
+  - --talk-name=org.kde.StatusNotifierWatcher
+  - --talk-name=org.freedesktop.Notifications
+
+cleanup:
+  - /include
+  - /lib/pkgconfig
+  - /share/man
+  - '*.a'
+  - '*.la'
+
+modules:
+  # The pinned OBS/libobs dependency closure completed a bounded local build.
+  # Keep these sources in sync with the packaged runtime validation notes.
+  - name: extra-cmake-modules
+    buildsystem: cmake-ninja
+    builddir: true
+    cleanup:
+      - '*'
+    sources:
+      - type: git
+        url: https://invent.kde.org/frameworks/extra-cmake-modules.git
+        tag: v6.27.0
+        commit: fa262097a48f0f84529498741afcc7040e93b271
+
+  - name: simde
+    buildsystem: meson
+    config-opts:
+      - -Dtests=false
+    sources:
+      - type: git
+        url: https://github.com/simd-everywhere/simde.git
+        tag: v0.8.2
+        commit: 71fd833d9666141edcd1d3c109a80e228303d8d7
+
+  - name: uthash
+    buildsystem: simple
+    build-commands:
+      - install -Dm644 src/uthash.h /app/include/uthash.h
+      - install -Dm644 src/utarray.h /app/include/utarray.h
+      - install -Dm644 src/utlist.h /app/include/utlist.h
+      - install -Dm644 src/utringbuffer.h /app/include/utringbuffer.h
+      - install -Dm644 src/utstack.h /app/include/utstack.h
+      - install -Dm644 src/utstring.h /app/include/utstring.h
+    sources:
+      - type: git
+        url: https://github.com/troydhanson/uthash.git
+        tag: v2.4.0
+        commit: a49bed0b4abb7dff16c73906dcdc8a9718d582d2
+
+  - name: jansson
+    buildsystem: cmake-ninja
+    builddir: true
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DJANSSON_BUILD_DOCS=OFF
+      - -DJANSSON_WITHOUT_TESTS=ON
+    sources:
+      - type: git
+        url: https://github.com/akheron/jansson.git
+        tag: v2.15.1
+        commit: dbb5fb3636e155fccfce4cd215de752779bd6971
+
+  - name: mbedtls
+    buildsystem: cmake-ninja
+    builddir: true
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DENABLE_TESTING=OFF
+      - -DENABLE_PROGRAMS=OFF
+      - -DUSE_SHARED_MBEDTLS_LIBRARY=ON
+      - -DUSE_STATIC_MBEDTLS_LIBRARY=OFF
+    sources:
+      - type: git
+        url: https://github.com/Mbed-TLS/mbedtls.git
+        tag: v3.6.6
+        commit: 0bebf8b8c7f07abe3571ded48a11aa907a1ffb20
+
+  - name: x264
+    buildsystem: simple
+    build-commands:
+      - ./configure --prefix=/app --enable-shared --disable-cli --disable-static
+      - make
+      - make install
+    sources:
+      - type: archive
+        url: https://code.videolan.org/videolan/x264/-/archive/b35605ace3ddf7c1a5d67a2eb553f034aef41d55/x264-b35605ace3ddf7c1a5d67a2eb553f034aef41d55.tar.gz
+        sha256: cd71a7515b0e9a012e1ac9b1f8415bebcaf6fc97d4db32286642ac4c0fbe24f9
+
+  - name: python3-vdf
+    buildsystem: simple
+    build-commands:
+      - python3 -m pip install --no-index --no-deps --prefix=/app vdf-3.4-py2.py3-none-any.whl
+      - python3 -c "import zipfile; open('vdf-LICENSE', 'wb').write(zipfile.ZipFile('vdf-3.4-py2.py3-none-any.whl').read('vdf-3.4.dist-info/LICENSE'))"
+      - install -Dm644 vdf-LICENSE /app/share/licenses/io.github.leesethefox.Clipper/vdf-LICENSE
+    sources:
+      - type: file
+        url: https://files.pythonhosted.org/packages/96/60/6456b687cf55cf60020dcd01f9bc51561c3cc84f05fd8e0feb71ce60f894/vdf-3.4-py2.py3-none-any.whl
+        sha256: 68c1a125cc49e343d535af2dd25074e9cb0908c6607f073947c4a04bbe234534
+
+  - name: obs-studio-libobs
+    buildsystem: cmake-ninja
+    builddir: true
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DENABLE_UI=OFF
+      - -DENABLE_FRONTEND=OFF
+      - -DENABLE_SCRIPTING=OFF
+      - -DENABLE_BROWSER=OFF
+      - -DENABLE_PLUGINS=ON
+      - -DENABLE_WAYLAND=ON
+      - -DENABLE_PIPEWIRE=ON
+      - -DENABLE_PULSEAUDIO=ON
+      - -DENABLE_ALSA=OFF
+      - -DENABLE_JACK=OFF
+      - -DENABLE_AJA=OFF
+      - -DENABLE_DECKLINK=OFF
+      - -DENABLE_VLC=OFF
+      - -DENABLE_VST=OFF
+      - -DENABLE_NEW_MPEGTS_OUTPUT=OFF
+      - -DENABLE_QSV11=OFF
+      - -DENABLE_WEBRTC=OFF
+      - -DOBS_VERSION_OVERRIDE=32.1.2
+    cleanup:
+      - /bin/obs
+      - /share/applications/com.obsproject.Studio.desktop
+      - /share/metainfo/com.obsproject.Studio.appdata.xml
+    sources:
+      - type: git
+        url: https://github.com/obsproject/obs-studio.git
+        tag: 32.1.2
+        commit: fb4d98bf88fae5fc85cb11fc57f7c5e309282194
+      - type: patch
+        path: patches/obs-disable-websocket.patch
+      - type: patch
+        path: patches/obs-low-resource-video.patch
+
+  - name: obs-vkcapture
+    buildsystem: cmake-ninja
+    builddir: true
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DBUILD_PLUGIN=ON
+    sources:
+      - type: git
+        url: https://github.com/nowrep/obs-vkcapture.git
+        # Keep the OBS receiver aligned with the native Steam hook package.
+        tag: v1.5.1
+        commit: 553fbb146a6902e58ac4fc1cd8e1d3e25dc98b0d
+      - type: patch
+        path: patches/obs-vkcapture-lazy-cursor.patch
+
+  - name: obs-pipewire-audio-capture
+    buildsystem: cmake-ninja
+    builddir: true
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+    sources:
+      - type: git
+        url: https://github.com/dimtpap/obs-pipewire-audio-capture.git
+        tag: 1.2.1
+        commit: 78935e15be876ea667df946c91145a6a6c2b4254
+
+  - name: icon-development-kit
+    buildsystem: simple
+    build-commands:
+      - sed -i 's#/org/gnome/design/IconLibrary/icons#/io/github/leesethefox/Clipper/icons#' data/icons.gresource.xml
+      - glib-compile-resources data/icons.gresource.xml --sourcedir=data --target=icon-development-kit.gresource
+      - install -Dm644 icon-development-kit.gresource /app/share/clipper/ui/icon-development-kit.gresource
+      - install -Dm644 LICENSE.md /app/share/licenses/io.github.leesethefox.Clipper/icon-library-LICENSE.md
+    sources:
+      - type: archive
+        url: https://gitlab.gnome.org/World/design/icon-library/-/releases/0.0.22/downloads/icon-library-0.0.22.tar.xz
+        sha256: d98879d131fe3071a95b595965727415b3fa5703d39ae7ac7e101935222dd1bc
+
+  - name: xapp-trash-icon
+    buildsystem: simple
+    build-commands:
+      - install -Dm644 icons/symbolic/xsi-user-trash-symbolic.svg /app/share/icons/hicolor/scalable/actions/xsi-user-trash-symbolic.svg
+      - install -Dm644 LICENSE /app/share/licenses/io.github.leesethefox.Clipper/xapp-symbolic-icons-LICENSE
+      - install -Dm644 debian/copyright /app/share/licenses/io.github.leesethefox.Clipper/xapp-symbolic-icons-COPYRIGHT
+    sources:
+      - type: archive
+        url: https://github.com/xapp-project/xapp-symbolic-icons/archive/2c91ca1f3fb398992fa12007b76c3b100e32690e/xapp-symbolic-icons-2c91ca1f3fb398992fa12007b76c3b100e32690e.tar.gz
+        sha256: bb4e06b5d4ca793c190842548cf8bdd03fdd6d647ad1a4c826f7b718e548ad9e
+
+  - name: clipper
+    buildsystem: simple
+    build-commands:
+      - python3 tools/build_translations.py --output-dir=/app/share/locale
+      - make -C engine/monitor
+      - make -C engine/src OBS_PREFIX=/app
+      - install -Dm755 clipper /app/bin/clipper
+      - make -C engine/src OBS_PREFIX=/app install
+      - install -Dm755 engine/monitor/clipper-monitor-host /app/libexec/clipper/clipper-monitor-host
+      - install -Dm644 packaging/flatpak/io.github.leesethefox.Clipper.desktop /app/share/applications/io.github.leesethefox.Clipper.desktop
+      - install -Dm644 packaging/flatpak/io.github.leesethefox.Clipper.metainfo.xml /app/share/metainfo/io.github.leesethefox.Clipper.metainfo.xml
+      - install -Dm644 LICENSE /app/share/licenses/io.github.leesethefox.Clipper/LICENSE
+      - install -Dm644 ui/icons/hicolor/scalable/apps/io.github.leesethefox.Clipper.svg /app/share/icons/hicolor/scalable/apps/io.github.leesethefox.Clipper.svg
+      - install -Dm644 ui/icons/hicolor/scalable/apps/io.github.leesethefox.Clipper-symbolic.svg /app/share/icons/hicolor/scalable/apps/io.github.leesethefox.Clipper-symbolic.svg
+      - install -Dm644 ui/icons/hicolor/128x128/apps/io.github.leesethefox.Clipper.png /app/share/icons/hicolor/128x128/apps/io.github.leesethefox.Clipper.png
+      - install -Dm644 ui/icons/hicolor/scalable/actions/steam-symbolic.svg /app/share/icons/hicolor/scalable/actions/steam-symbolic.svg
+      - install -d /app/share/clipper/ui
+      - find ui -maxdepth 1 -type f -name '*.py' ! -name 'test_*.py' -exec install -Dm644 '{}' '/app/share/clipper/{}' ';'
+      - install -Dm644 ui/sounds/clip-saved.wav /app/share/clipper/ui/sounds/clip-saved.wav
+    sources:
+      - type: dir
+        path: ../..
+        skip:
+          - .git
+          - .flatpak-builder
+          - .pytest_cache
+          - build-dir
+          - build-dir-bounded
+          - build-dir-download
+          - repo
+          - venv
+          - engine/monitor/clipper-monitor-host
+          - engine/src/clipper-engine
+          - engine/src/obs-ffmpeg-mux
+          - '**/__pycache__'
+          - '**/*.pyc'

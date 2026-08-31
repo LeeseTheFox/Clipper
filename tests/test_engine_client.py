@@ -1,0 +1,122 @@
+import pytest
+
+pytest.importorskip("gi")
+
+from engine_client import STATE_CONNECTED, STATE_DISCONNECTED, EngineClient
+
+
+def test_engine_client_allows_multiple_state_callbacks():
+    client = EngineClient("unused.sock")
+    seen = []
+
+    client.on_state_change(lambda state: seen.append(("first", state)))
+    client.on_state_change(lambda state: seen.append(("second", state)))
+
+    client._set_state(STATE_CONNECTED)
+
+    assert seen == [
+        ("first", STATE_CONNECTED),
+        ("second", STATE_CONNECTED),
+    ]
+
+
+def test_engine_client_state_callback_clear():
+    client = EngineClient("unused.sock")
+    seen = []
+
+    client.on_state_change(lambda state: seen.append(state))
+    client.on_state_change(None)
+
+    client._set_state(STATE_CONNECTED)
+    client._set_state(STATE_DISCONNECTED)
+
+    assert seen == []
+
+
+def test_update_audio_volumes_sends_audio_payload():
+    client = EngineClient("unused.sock")
+    calls = []
+    audio = {"tracks": [{"track": 1, "volume": 0.5}]}
+
+    def send_command(cmd, callback=None, **params):
+        calls.append((cmd, callback, params))
+        return True
+
+    client.send_command = send_command
+
+    assert client.update_audio_volumes(audio, None)
+    assert calls == [("update_audio_volumes", None, {"audio": audio})]
+
+
+def test_save_replay_buffer_sends_optional_game_name():
+    client = EngineClient("unused.sock")
+    calls = []
+
+    def send_command(cmd, callback=None, **params):
+        calls.append((cmd, callback, params))
+        return True
+
+    client.send_command = send_command
+
+    assert client.save_replay_buffer(None, game_name="Counter-Strike 2")
+    assert calls == [
+        ("save_replay_buffer", None, {"game_name": "Counter-Strike 2"})
+    ]
+
+
+def test_save_replay_buffer_omits_empty_game_name():
+    client = EngineClient("unused.sock")
+    calls = []
+
+    def send_command(cmd, callback=None, **params):
+        calls.append((cmd, callback, params))
+        return True
+
+    client.send_command = send_command
+
+    assert client.save_replay_buffer(None, game_name=None)
+    assert calls == [("save_replay_buffer", None, {})]
+
+
+def test_get_preview_frame_sends_size():
+    client = EngineClient("unused.sock")
+    calls = []
+
+    def send_command(cmd, callback=None, **params):
+        calls.append((cmd, callback, params))
+        return True
+
+    def callback(_response):
+        pass
+
+    client.send_command = send_command
+
+    assert client.get_preview_frame(callback, width=320, height=180)
+    assert calls == [
+        ("get_preview_frame", callback, {"width": 320, "height": 180})
+    ]
+
+
+def test_get_preview_frame_can_request_aspect_preserved_bounds():
+    client = EngineClient("unused.sock")
+    calls = []
+
+    def send_command(cmd, callback=None, **params):
+        calls.append((cmd, callback, params))
+        return True
+
+    def callback(_response):
+        pass
+
+    client.send_command = send_command
+
+    assert client.get_preview_frame(
+        callback, width=360, height=203, preserve_aspect=True
+    )
+    assert calls == [
+        (
+            "get_preview_frame",
+            callback,
+            {"width": 360, "height": 203, "preserve_aspect": True},
+        )
+    ]

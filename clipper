@@ -1,0 +1,72 @@
+#!/bin/bash
+# Clipper — Single entry point for the Clipper application
+#
+# The GTK app owns the engine lifecycle and starts clipper-engine on demand when
+# a whitelisted game is running. This launcher only prepares the runtime
+# environment and starts the UI.
+#
+# Usage: ./clipper
+
+set -e
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "$BASH_SOURCE")" && pwd)"
+if [ -n "${FLATPAK_ID:-}" ] || [ "$SCRIPT_DIR" = "/app/bin" ]; then
+    INSTALLED=1
+    ENGINE_DIR="/app/libexec/clipper"
+    UI_DIR="/app/share/clipper/ui"
+    PYTHON="python3"
+else
+    INSTALLED=0
+    ENGINE_DIR="$SCRIPT_DIR/engine/src"
+    SPIKE_DIR="$SCRIPT_DIR/engine/spike"
+    UI_DIR="$SCRIPT_DIR/ui"
+    PYTHON="python3"
+    if [ -x "$SCRIPT_DIR/venv/bin/python" ] && \
+       "$SCRIPT_DIR/venv/bin/python" -c "import gi" >/dev/null 2>&1; then
+        PYTHON="$SCRIPT_DIR/venv/bin/python"
+    fi
+fi
+
+# ── Cleanup function ─────────────────────────────────────────────────────────
+cleanup() {
+    echo "[clipper] Shutting down..."
+    echo "[clipper] Cleanup complete"
+}
+
+# Set up trap for cleanup on exit or interrupt
+trap cleanup EXIT INT TERM
+
+# ── Environment setup ────────────────────────────────────────────────────────
+
+if [ "$INSTALLED" -eq 0 ]; then
+    # Ensure lib_shim exists for the current development setup.
+    if [ ! -d "$SPIKE_DIR/lib_shim" ]; then
+        echo "[clipper] Setting up lib_shim..."
+        bash "$SPIKE_DIR/setup_lib_shim.sh"
+    fi
+
+    # Native development uses the locally installed OBS Flatpak. The standalone
+    # Clipper Flatpak bundles its own OBS/libobs stack.
+    OBS_LIB="/var/lib/flatpak/app/com.obsproject.Studio/x86_64/stable/active/files/lib"
+    OBS_SHARE="/var/lib/flatpak/app/com.obsproject.Studio/x86_64/stable/active/files/share/obs"
+    VKC_EXT="/var/lib/flatpak/runtime/com.obsproject.Studio.Plugin.OBSVkCapture/x86_64/stable/active/files"
+    SHIM="$SPIKE_DIR/lib_shim"
+    export CLIPPER_OBS_LIBDIR="$OBS_LIB"
+    export CLIPPER_OBS_DATADIR="$OBS_SHARE"
+    export CLIPPER_VKCAPTURE_PLUGIN="$VKC_EXT/lib/obs-plugins/linux-vkcapture.so"
+    export CLIPPER_VKCAPTURE_PLUGIN_DATA="$VKC_EXT/share/obs/obs-plugins/linux-vkcapture"
+    export LD_LIBRARY_PATH="$OBS_LIB:$SHIM:$SHIM/pulseaudio:${LD_LIBRARY_PATH:-}"
+fi
+
+echo "[clipper] Starting Clipper..."
+echo "[clipper] Engine: $ENGINE_DIR/clipper-engine (on demand)"
+echo "[clipper] UI: $UI_DIR"
+
+# ── Start UI (foreground) ────────────────────────────────────────────────────
+
+echo "[clipper] Starting UI..."
+cd "$UI_DIR"
+"$PYTHON" main.py "$@"
+
+# When UI exits, cleanup will be triggered by the EXIT trap
+echo "[clipper] UI exited"

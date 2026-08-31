@@ -1,0 +1,2483 @@
+# Russian translations for Clipper.
+# This file is distributed under the same license as the Clipper package.
+# Clipper contributors, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Clipper\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2026-08-29 00:00+0300\n"
+"Last-Translator: Clipper contributors\n"
+"Language-Team: Russian\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Clipper-Language-Name: Русский\n"
+"X-Clipper-Text-Direction: ltr\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#: ui/audio_tracks_view.py:24 ui/audio_tracks_view.py:144
+msgid "Separate tracks"
+msgstr "Раздельные дорожки"
+
+#: ui/audio_tracks_view.py:24
+msgid "Single mixed track"
+msgstr "Одна смешанная дорожка"
+
+#: ui/audio_tracks_view.py:71
+msgid "Engine restart required for audio changes"
+msgstr "Для применения настроек звука требуется перезапуск движка"
+
+#: ui/audio_tracks_view.py:72 ui/main_window.py:178 ui/settings_view.py:489
+msgid "Restart engine"
+msgstr "Перезапустить движок"
+
+#: ui/audio_tracks_view.py:106
+msgid "Capture"
+msgstr "Захват"
+
+#: ui/audio_tracks_view.py:107
+msgid "Choose the default audio behavior"
+msgstr "Выбери поведение звука по умолчанию"
+
+#: ui/audio_tracks_view.py:110
+msgid "Mode"
+msgstr "Режим"
+
+#: ui/audio_tracks_view.py:116
+msgid "Microphone device"
+msgstr "Устройство микрофона"
+
+#: ui/audio_tracks_view.py:124
+msgid "Microphone volume"
+msgstr "Громкость микрофона"
+
+#: ui/audio_tracks_view.py:174 ui/audio_tracks_view.py:466
+#, python-format
+msgid "Track %(number)d"
+msgstr "Дорожка %(number)d"
+
+#: ui/audio_tracks_view.py:204
+#, python-format
+msgid "Track %(number)d volume"
+msgstr "Громкость дорожки %(number)d"
+
+#: ui/audio_tracks_view.py:217
+#, python-format
+msgid "Remove track %(number)d"
+msgstr "Удалить дорожку %(number)d"
+
+#: ui/audio_tracks_view.py:244
+msgid "Add track"
+msgstr "Добавить дорожку"
+
+#: ui/audio_tracks_view.py:527
+msgid "Off"
+msgstr "Выкл."
+
+#: ui/audio_tracks_view.py:536
+msgid "System default"
+msgstr "По умолчанию"
+
+#: ui/audio_tracks_view.py:654
+msgid "None"
+msgstr "Нет"
+
+#: ui/audio_tracks_view.py:656
+msgid "System audio"
+msgstr "Системный звук"
+
+#: ui/audio_tracks_view.py:661
+msgid "Microphone"
+msgstr "Микрофон"
+
+#: ui/audio_tracks_view.py:669 ui/audio_tracks_view.py:990
+#: ui/audio_tracks_view.py:1099
+msgid "Whitelisted games"
+msgstr "Разрешённые игры"
+
+#: ui/audio_tracks_view.py:682 ui/audio_tracks_view.py:999
+#, python-format
+msgid "App: %(name)s"
+msgstr "Приложение: %(name)s"
+
+#: ui/audio_tracks_view.py:997
+#, python-format
+msgid "Game: %(name)s"
+msgstr "Игра: %(name)s"
+
+#: ui/autostart.py:79
+msgid "Desktop portal support requires PyGObject"
+msgstr "Для поддержки портала рабочего стола требуется PyGObject"
+
+#: ui/autostart.py:99
+#, python-format
+msgid "Could not connect to the desktop portal: %(error)s"
+msgstr "Не удалось подключиться к порталу рабочего стола: %(error)s"
+
+#: ui/autostart.py:132
+#, python-format
+msgid "Could not read the desktop portal response: %(error)s"
+msgstr "Не удалось прочитать ответ портала рабочего стола: %(error)s"
+
+#: ui/autostart.py:138
+msgid "The start-on-boot request was cancelled"
+msgstr "Запрос автозапуска был отменён"
+
+#: ui/autostart.py:141
+msgid "The desktop could not apply the start-on-boot setting"
+msgstr "Системе не удалось применить настройку автозапуска"
+
+#: ui/autostart.py:148
+msgid "The desktop portal did not report the autostart setting"
+msgstr "Портал рабочего стола не сообщил состояние настройки автозапуска"
+
+#: ui/autostart.py:154
+msgid "The desktop did not allow Clipper to start automatically"
+msgstr "Система не разрешила автоматический запуск Clipper"
+
+#: ui/autostart.py:156
+msgid "The desktop did not disable automatic startup"
+msgstr "Системе не удалось отключить автоматический запуск"
+
+#: ui/autostart.py:178
+msgid "Start Clipper after login so it is ready to save clips"
+msgstr ""
+"Запускать Clipper после входа в систему, чтобы он был готов сохранять клипы"
+
+#: ui/autostart.py:193 ui/autostart.py:216
+#, python-format
+msgid "Could not request the start-on-boot setting: %(error)s"
+msgstr "Не удалось запросить настройку автозапуска: %(error)s"
+
+#: ui/autostart.py:258
+#, python-format
+msgid "Could not update the autostart file: %(error)s"
+msgstr "Не удалось обновить файл автозапуска: %(error)s"
+
+#: ui/autostart.py:275
+msgid "Record clips on Linux"
+msgstr "Записывать клипы в Linux"
+
+#: ui/capture_modes.py:13 ui/capture_modes.py:21
+msgid "Display capture"
+msgstr "Захват экрана"
+
+#: ui/capture_modes.py:14
+msgid "Game capture (advanced)"
+msgstr "Захват игры (для опытных)"
+
+#: ui/capture_modes.py:20
+msgid "Game capture"
+msgstr "Захват игры"
+
+#: ui/clips_view.py:242
+msgid "Search clips by name"
+msgstr "Поиск клипов по имени"
+
+#: ui/clips_view.py:259
+msgid "Newest"
+msgstr "Сначала новые"
+
+#: ui/clips_view.py:260
+msgid "Oldest"
+msgstr "Сначала старые"
+
+#: ui/clips_view.py:261
+msgid "A-Z"
+msgstr "А–Я"
+
+#: ui/clips_view.py:264
+msgid "Sort clips"
+msgstr "Сортировать клипы"
+
+#: ui/clips_view.py:270
+msgid "Open clips folder"
+msgstr "Открыть папку с клипами"
+
+#: ui/clips_view.py:506
+msgid "Edit clip from scratch"
+msgstr "Редактировать клип с нуля"
+
+#: ui/clips_view.py:509
+msgid "Edit clip"
+msgstr "Редактировать клип"
+
+#: ui/clips_view.py:514
+msgid "Permanently delete the clip"
+msgstr "Удалить клип безвозвратно"
+
+#: ui/clips_view.py:517
+msgid "Move clip to trash"
+msgstr "Переместить клип в корзину"
+
+#: ui/clips_view.py:1086
+msgid "No clips yet"
+msgstr "Клипов пока нет"
+
+#: ui/clips_view.py:1088
+msgid ""
+"Recorded clips will appear here.\n"
+"Press your save hotkey to capture a clip."
+msgstr ""
+"Записанные клипы появятся здесь.\n"
+"Нажми горячую клавишу сохранения, чтобы записать клип."
+
+#: ui/clips_view.py:1096
+msgid "No matching clips"
+msgstr "Нет подходящих клипов"
+
+#: ui/clips_view.py:1097
+msgid "No clip names match the current search."
+msgstr "Названия клипов не соответствуют текущему запросу."
+
+#: ui/clips_view.py:1103
+msgid "Loading clips…"
+msgstr "Загрузка клипов…"
+
+#: ui/clips_view.py:1229
+msgid "Just now"
+msgstr "Только что"
+
+#: ui/clips_view.py:1233
+#, python-format
+msgid "%(count)d minute ago"
+msgid_plural "%(count)d minutes ago"
+msgstr[0] "%(count)d минуту назад"
+msgstr[1] "%(count)d минуты назад"
+msgstr[2] "%(count)d минут назад"
+
+#: ui/clips_view.py:1237
+#, python-format
+msgid "%(count)d hour ago"
+msgid_plural "%(count)d hours ago"
+msgstr[0] "%(count)d час назад"
+msgstr[1] "%(count)d часа назад"
+msgstr[2] "%(count)d часов назад"
+
+#: ui/clips_view.py:1241
+msgid "Yesterday"
+msgstr "Вчера"
+
+#: ui/clips_view.py:1244
+#, python-format
+msgid "%(count)d day ago"
+msgid_plural "%(count)d days ago"
+msgstr[0] "%(count)d день назад"
+msgstr[1] "%(count)d дня назад"
+msgstr[2] "%(count)d дней назад"
+
+#: ui/clips_view.py:1250
+msgid "B"
+msgstr "Б"
+
+#: ui/clips_view.py:1250
+msgid "GB"
+msgstr "ГБ"
+
+#: ui/clips_view.py:1250
+msgid "KB"
+msgstr "КБ"
+
+#: ui/clips_view.py:1250
+msgid "MB"
+msgstr "МБ"
+
+#: ui/clips_view.py:1252
+#, python-format
+msgid "%(size).1f %(unit)s"
+msgstr "%(size).1f %(unit)s"
+
+#: ui/clips_view.py:1254
+#, python-format
+msgid "%(size).1f TB"
+msgstr "%(size).1f ТБ"
+
+#: ui/clips_view.py:1367
+msgid "Play clip"
+msgstr "Воспроизвести клип"
+
+#: ui/clips_view.py:1454
+msgid "Reveal in file manager"
+msgstr "Показать в файловом менеджере"
+
+#: ui/clips_view.py:1530 ui/editor_window.py:3822
+msgid "Could not wipe saved edits"
+msgstr "Не удалось удалить сохранённые правки"
+
+#: ui/clips_view.py:1672
+msgid "Could not play clip"
+msgstr "Не удалось воспроизвести клип"
+
+#: ui/clips_view.py:1817
+msgid "Move clip to trash?"
+msgstr "Переместить клип в корзину?"
+
+#: ui/clips_view.py:1819
+#, python-format
+msgid ""
+"'%(name)s' will be moved to the trash.\n"
+"This can be reversed."
+msgstr ""
+"«%(name)s» будет перемещён в корзину.\n"
+"Это действие можно отменить."
+
+#: ui/clips_view.py:1822 ui/dialogs.py:842 ui/editor_export_dialog.py:345
+#: ui/editor_export_dialog.py:636 ui/editor_export_dialog.py:664
+#: ui/editor_export_dialog.py:772 ui/editor_window.py:3990 ui/editor_wipe.py:16
+msgid "Cancel"
+msgstr "Отмена"
+
+#: ui/clips_view.py:1823
+msgid "Move to trash"
+msgstr "В корзину"
+
+#: ui/clips_view.py:1878
+msgid "Clip deleted"
+msgstr "Клип удалён"
+
+#: ui/clips_view.py:1878
+msgid "Clip moved to trash"
+msgstr "Клип перемещён в корзину"
+
+#: ui/clips_view.py:1885
+msgid "Could not delete clip"
+msgstr "Не удалось удалить клип"
+
+#: ui/clips_view.py:1887
+msgid "Could not move clip to trash"
+msgstr "Не удалось переместить клип в корзину"
+
+#: ui/dialogs.py:32
+msgid ""
+"Screen capture starts capturing your whole selected screen when an added "
+"game is running.\n"
+"\n"
+"Game capture adds a special flag to the game's launch options so Clipper can "
+"hook into the game's direct Vulkan output and capture only the game window."
+msgstr ""
+"Захват экрана записывает весь выбранный дисплей, когда запущена добавленная "
+"игра.\n"
+"\n"
+"Захват игры добавляет специальный флаг в параметры запуска игры, чтобы "
+"Clipper мог подключиться к прямому выводу Vulkan и записывать только окно "
+"игры."
+
+#: ui/dialogs.py:39
+msgid ""
+"Display capture records your selected screen while this game is running.\n"
+"\n"
+"For non-Steam games, Game capture requires adding a launch option to your "
+"game's launcher. Select it to see and copy the required launch option. This "
+"lets Clipper hook into the game's direct Vulkan output and capture only the "
+"game window."
+msgstr ""
+"Захват экрана записывает выбранный дисплей, пока запущена эта игра.\n"
+"\n"
+"Для игр не из Steam режим «Захват игры» требует добавить параметр запуска в "
+"лаунчер игры. Выбери этот режим, чтобы увидеть и скопировать нужный "
+"параметр. Это позволит Clipper подключиться к прямому выводу Vulkan и "
+"записывать только окно игры."
+
+#: ui/dialogs.py:98
+msgid "Capture method"
+msgstr "Метод захвата"
+
+#: ui/dialogs.py:122
+msgid "Required launch option"
+msgstr "Необходимый параметр запуска"
+
+#: ui/dialogs.py:129
+msgid "Copy this into the game's launch options before starting it."
+msgstr "Скопируй это в параметры запуска игры перед её запуском."
+
+#: ui/dialogs.py:144
+msgid "Copy the required launch option"
+msgstr "Скопировать необходимый параметр запуска"
+
+#: ui/dialogs.py:148 ui/dialogs.py:467
+msgid "Copy launch option"
+msgstr "Скопировать параметр запуска"
+
+#: ui/dialogs.py:203 ui/whitelist_view.py:455
+msgid "Add a non-Steam game"
+msgstr "Добавить игру не из Steam"
+
+#: ui/dialogs.py:225
+msgid "Pick a process"
+msgstr "Выбрать процесс"
+
+#: ui/dialogs.py:235
+msgid "Search processes…"
+msgstr "Поиск процессов…"
+
+#: ui/dialogs.py:270
+msgid "Or pick an executable path"
+msgstr "Или укажи путь к исполняемому файлу"
+
+#: ui/dialogs.py:279
+msgid "/path/to/game.exe"
+msgstr "/путь/к/game.exe"
+
+#: ui/dialogs.py:285
+msgid "Choose executable"
+msgstr "Выбрать исполняемый файл"
+
+#: ui/dialogs.py:319 ui/dialogs.py:650
+msgid "Add selected"
+msgstr "Добавить выбранное"
+
+#: ui/dialogs.py:354
+msgid "Could not load host processes"
+msgstr "Не удалось загрузить процессы хоста"
+
+#: ui/dialogs.py:356
+msgid "No running processes found"
+msgstr "Запущенные процессы не найдены"
+
+#: ui/dialogs.py:454
+msgid "Copied"
+msgstr "Скопировано"
+
+#: ui/dialogs.py:513
+msgid "Choose game executable"
+msgstr "Выбери исполняемый файл игры"
+
+#: ui/dialogs.py:514
+msgid "Choose"
+msgstr "Выбрать"
+
+#: ui/dialogs.py:529
+msgid "Choose a local executable file."
+msgstr "Выбери локальный исполняемый файл."
+
+#: ui/dialogs.py:541
+msgid "Choose a valid executable file."
+msgstr "Выбери допустимый исполняемый файл."
+
+#: ui/dialogs.py:578
+msgid "Select Steam game"
+msgstr "Выбери игру в Steam"
+
+#: ui/dialogs.py:603
+msgid "Search games…"
+msgstr "Поиск игр…"
+
+#: ui/dialogs.py:673
+msgid "Scanning Steam libraries…"
+msgstr "Сканирование библиотек Steam…"
+
+#: ui/dialogs.py:725
+msgid "Steam not found"
+msgstr "Steam не найден"
+
+#: ui/dialogs.py:727
+msgid ""
+"Could not find Steam installation.\n"
+"Make sure Steam is installed at ~/.local/share/Steam"
+msgstr ""
+"Не удалось найти установку Steam.\n"
+"Убедись, что Steam установлен в ~/.local/share/Steam"
+
+#: ui/dialogs.py:731
+msgid "No games found"
+msgstr "Игры не найдены"
+
+#: ui/dialogs.py:733
+msgid ""
+"No Steam games are currently installed.\n"
+"Install games through Steam and try again."
+msgstr ""
+"Сейчас не установлено ни одной игры Steam.\n"
+"Установи игры через Steam и повтори попытку."
+
+#: ui/dialogs.py:826
+msgid "Warning"
+msgstr "Предупреждение"
+
+#: ui/dialogs.py:828
+msgid "OK"
+msgstr "ОК"
+
+#: ui/dialogs.py:836
+msgid "Game capture requires a Steam restart"
+msgstr "Для захвата игры требуется перезапуск Steam"
+
+#: ui/dialogs.py:837
+msgid ""
+"The <b>Game capture</b> method changes this game's Steam launch options. "
+"Steam must be closed while Clipper applies the change.\n"
+"\n"
+"Restart Steam now to continue, or cancel without changing the whitelist."
+msgstr ""
+"Метод <b>«Захват игры»</b> изменяет параметры запуска этой игры в Steam. "
+"Пока Clipper применяет изменения, Steam должен быть закрыт.\n"
+"\n"
+"Перезапусти Steam сейчас, чтобы продолжить, или отмени действие без "
+"изменения списка разрешённых игр."
+
+#: ui/dialogs.py:843
+msgid "Restart Steam"
+msgstr "Перезапустить Steam"
+
+#: ui/editor_export.py:29 ui/settings_view.py:59 ui/settings_view.py:808
+msgid "Matroska video (.mkv)"
+msgstr "Видео Matroska (.mkv)"
+
+#: ui/editor_export.py:30 ui/settings_view.py:60 ui/settings_view.py:809
+msgid "MPEG-4 (.mp4)"
+msgstr "MPEG-4 (.mp4)"
+
+#: ui/editor_export.py:31 ui/settings_view.py:61 ui/settings_view.py:810
+msgid "QuickTime (.mov)"
+msgstr "QuickTime (.mov)"
+
+#: ui/editor_export.py:32 ui/settings_view.py:62 ui/settings_view.py:811
+msgid "MPEG-TS (.ts)"
+msgstr "MPEG-TS (.ts)"
+
+#: ui/editor_export.py:99
+msgid "H.264"
+msgstr "H.264"
+
+#: ui/editor_export.py:100 ui/editor_export.py:139
+msgid "Best playback compatibility"
+msgstr "Наилучшая совместимость при воспроизведении"
+
+#: ui/editor_export.py:108
+msgid "H265"
+msgstr "H265"
+
+#: ui/editor_export.py:109
+msgid "Smaller files with slower encoding"
+msgstr "Меньший размер файлов при более медленном кодировании"
+
+#: ui/editor_export.py:117
+msgid "VP9"
+msgstr "VP9"
+
+#: ui/editor_export.py:118
+msgid "Open codec suited to web playback"
+msgstr "Открытый кодек, подходящий для воспроизведения в интернете"
+
+#: ui/editor_export.py:126
+msgid "AV1"
+msgstr "AV1"
+
+#: ui/editor_export.py:127
+msgid "Best compression with the slowest encoding"
+msgstr "Лучшее сжатие при самом медленном кодировании"
+
+#: ui/editor_export.py:138
+msgid "AAC"
+msgstr "AAC"
+
+#: ui/editor_export.py:147
+msgid "Opus"
+msgstr "Opus"
+
+#: ui/editor_export.py:148
+msgid "Efficient high-quality audio"
+msgstr "Высококачественный звук при эффективном сжатии"
+
+#: ui/editor_export.py:156
+msgid "FLAC"
+msgstr "FLAC"
+
+#: ui/editor_export.py:157
+msgid "Lossless audio with larger files"
+msgstr "Звук без потерь, но с файлами большего размера"
+
+#: ui/editor_export.py:165
+msgid "PCM 16-bit"
+msgstr "PCM, 16 бит"
+
+#: ui/editor_export.py:166
+msgid "Uncompressed audio"
+msgstr "Несжатое аудио"
+
+#: ui/editor_export.py:219 ui/editor_export.py:640
+msgid "Unsupported export format"
+msgstr "Неподдерживаемый формат экспорта"
+
+#: ui/editor_export.py:642
+msgid "Unsupported audio layout"
+msgstr "Неподдерживаемая конфигурация аудио"
+
+#: ui/editor_export.py:644
+msgid "Unsupported video codec"
+msgstr "Неподдерживаемый видеокодек"
+
+#: ui/editor_export.py:646
+msgid "Unsupported audio codec"
+msgstr "Неподдерживаемый аудиокодек"
+
+#: ui/editor_export.py:648
+msgid "The video codec is not supported by this format"
+msgstr "Этот формат не поддерживает выбранный видеокодек"
+
+#: ui/editor_export.py:650
+msgid "The audio codec is not supported by this format"
+msgstr "Этот формат не поддерживает выбранный аудиокодек"
+
+#: ui/editor_export.py:652
+msgid "Unsupported rate control method"
+msgstr "Неподдерживаемый метод управления битрейтом"
+
+#: ui/editor_export.py:654
+msgid "Unsupported video encoder"
+msgstr "Неподдерживаемый видеокодировщик"
+
+#: ui/editor_export.py:657
+msgid "Software encoding cannot use a hardware device"
+msgstr "Программное кодирование не может использовать аппаратное устройство"
+
+#: ui/editor_export.py:661
+msgid "The video codec cannot use VAAPI"
+msgstr "Этот видеокодек не может использовать VAAPI"
+
+#: ui/editor_export.py:665
+msgid "Choose a valid VAAPI device"
+msgstr "Выбери допустимое устройство VAAPI"
+
+#: ui/editor_export.py:668
+msgid "The video codec cannot use NVENC"
+msgstr "Этот видеокодек не может использовать NVENC"
+
+#: ui/editor_export.py:670
+msgid "Choose a valid NVENC device"
+msgstr "Выбери допустимое устройство NVENC"
+
+#: ui/editor_export.py:673
+#, python-format
+msgid "Quality must be between %(minimum)d and %(maximum)d"
+msgstr "Качество должно быть от %(minimum)d до %(maximum)d"
+
+#: ui/editor_export.py:677
+msgid "Video bitrate is outside the supported range"
+msgstr "Битрейт видео вне поддерживаемого диапазона"
+
+#: ui/editor_export.py:680
+msgid "Maximum video bitrate is outside the supported range"
+msgstr "Максимальный битрейт видео вне поддерживаемого диапазона"
+
+#: ui/editor_export.py:684
+msgid "Maximum bitrate cannot be lower than target bitrate"
+msgstr "Максимальный битрейт не может быть ниже целевого"
+
+#: ui/editor_export.py:688
+msgid "Choose both output dimensions"
+msgstr "Укажи оба размера выходного видео"
+
+#: ui/editor_export.py:694
+msgid "Output dimensions must be positive even numbers"
+msgstr "Размеры выходного видео должны быть положительными чётными числами"
+
+#: ui/editor_export.py:705
+msgid "The source resolution could not be determined"
+msgstr "Не удалось определить разрешение исходного видео"
+
+#: ui/editor_export.py:711
+msgid "The output resolution must preserve the source aspect ratio"
+msgstr ""
+"Выходное разрешение должно сохранять соотношение сторон исходного видео"
+
+#: ui/editor_export.py:718
+msgid "The output resolution must be lower than native"
+msgstr "Выходное разрешение должно быть ниже исходного"
+
+#: ui/editor_export.py:724
+msgid "Enter a valid filename without folders"
+msgstr "Введи допустимое имя файла без папок"
+
+#: ui/editor_export.py:729
+msgid "Enter a valid filename"
+msgstr "Введи допустимое имя файла"
+
+#: ui/editor_export.py:734
+msgid "The destination is outside the selected folder"
+msgstr "Путь назначения находится за пределами выбранной папки"
+
+#: ui/editor_export.py:736
+msgid "Export cannot overwrite the source clip"
+msgstr "Экспорт не может перезаписать исходный клип"
+
+#: ui/editor_export.py:738
+msgid "The selected folder is not writable"
+msgstr "Нет прав на запись в выбранную папку"
+
+#: ui/editor_export.py:829
+msgid "[amixed]"
+msgstr "[amixed]"
+
+#: ui/editor_export.py:997
+msgid "FFmpeg could not create the output file"
+msgstr "FFmpeg не удалось создать выходной файл"
+
+#: ui/editor_export.py:1003
+#, python-format
+msgid ""
+"%(detail)s. The hardware encoder may not support this clip; choose Software "
+"as the video encoder and try again"
+msgstr ""
+"%(detail)s. Возможно, аппаратный кодировщик не поддерживает этот клип; "
+"выбери программное кодирование видео и повтори попытку"
+
+#: ui/editor_export.py:1030
+msgid "Export was already started"
+msgstr "Экспорт уже запущен"
+
+#: ui/editor_export.py:1033 ui/editor_export.py:1087 ui/editor_export.py:1099
+#: ui/editor_export_dialog.py:751 ui/editor_window.py:3950
+msgid "Export cancelled"
+msgstr "Экспорт отменён"
+
+#: ui/editor_export.py:1047
+#, python-format
+msgid "Could not start FFmpeg: %(error)s"
+msgstr "Не удалось запустить FFmpeg: %(error)s"
+
+#: ui/editor_export.py:1064
+msgid "Export was not started"
+msgstr "Экспорт не был запущен"
+
+#: ui/editor_export.py:1144
+msgid "The exported file could not be validated"
+msgstr "Не удалось проверить экспортированный файл"
+
+#: ui/editor_export.py:1177
+msgid "The exported file did not match the selected options"
+msgstr "Экспортированный файл не соответствует выбранным параметрам"
+
+#: ui/editor_export_dialog.py:57
+msgid "Combine into one track"
+msgstr "Объединить в одну дорожку"
+
+#: ui/editor_export_dialog.py:57
+msgid "Keep separate tracks"
+msgstr "Сохранить отдельные дорожки"
+
+#: ui/editor_export_dialog.py:94 ui/editor_export_dialog.py:106
+#, python-format
+msgid "%(count)d second"
+msgid_plural "%(count)d seconds"
+msgstr[0] "%(count)d секунда"
+msgstr[1] "%(count)d секунды"
+msgstr[2] "%(count)d секунд"
+
+#: ui/editor_export_dialog.py:97 ui/editor_export_dialog.py:105
+#: ui/editor_export_dialog.py:113 ui/editor_export_dialog.py:120
+#: ui/editor_export_dialog.py:128
+#, python-format
+msgid "About %(duration)s remaining"
+msgstr "Осталось примерно %(duration)s"
+
+#: ui/editor_export_dialog.py:101 ui/editor_export_dialog.py:121
+#, python-format
+msgid "%(count)d minute"
+msgid_plural "%(count)d minutes"
+msgstr[0] "%(count)d минута"
+msgstr[1] "%(count)d минуты"
+msgstr[2] "%(count)d минут"
+
+#: ui/editor_export_dialog.py:109 ui/editor_export_dialog.py:124
+#, python-format
+msgid "%(first)s, %(second)s"
+msgstr "%(first)s, %(second)s"
+
+#: ui/editor_export_dialog.py:116
+#, python-format
+msgid "%(count)d hour"
+msgid_plural "%(count)d hours"
+msgstr[0] "%(count)d час"
+msgstr[1] "%(count)d часа"
+msgstr[2] "%(count)d часов"
+
+#: ui/editor_export_dialog.py:335 ui/editor_export_dialog.py:343
+msgid "Export edited clip"
+msgstr "Экспортировать отредактированный клип"
+
+#: ui/editor_export_dialog.py:349 ui/editor_export_dialog.py:353
+#: ui/editor_window.py:1282 ui/editor_window.py:3929 ui/editor_window.py:3965
+msgid "Export"
+msgstr "Экспорт"
+
+#: ui/editor_export_dialog.py:381
+msgid "Destination"
+msgstr "Назначение"
+
+#: ui/editor_export_dialog.py:385
+msgid "Filename"
+msgstr "Имя файла"
+
+#: ui/editor_export_dialog.py:399
+msgid "Folder"
+msgstr "Папка"
+
+#: ui/editor_export_dialog.py:400 ui/settings_view.py:1349
+msgid "Choose…"
+msgstr "Выбрать…"
+
+#: ui/editor_export_dialog.py:409
+msgid "File format"
+msgstr "Формат файла"
+
+#: ui/editor_export_dialog.py:410
+msgid "Container used for the exported file"
+msgstr "Контейнер экспортируемого файла"
+
+#: ui/editor_export_dialog.py:426
+msgid "Encoding"
+msgstr "Кодирование"
+
+#: ui/editor_export_dialog.py:430 ui/settings_view.py:1175
+#: ui/setup_window.py:362
+msgid "Resolution"
+msgstr "Разрешение"
+
+#: ui/editor_export_dialog.py:431
+msgid "Preserves the source aspect ratio"
+msgstr "Сохраняет соотношение сторон исходного видео"
+
+#: ui/editor_export_dialog.py:437
+#, python-format
+msgid "%(width)d × %(height)d (native)"
+msgstr "%(width)d × %(height)d (исходное)"
+
+#: ui/editor_export_dialog.py:440
+msgid "Native"
+msgstr "Исходное"
+
+#: ui/editor_export_dialog.py:456 ui/setup_window.py:389
+msgid "Video codec"
+msgstr "Видеокодек"
+
+#: ui/editor_export_dialog.py:457 ui/settings_view.py:1206
+msgid "Encoder implementation"
+msgstr "Реализация кодировщика"
+
+#: ui/editor_export_dialog.py:464
+msgid "Hardware acceleration"
+msgstr "Аппаратное ускорение"
+
+#: ui/editor_export_dialog.py:465
+msgid "libx264 — software encoding"
+msgstr "libx264 — программное кодирование"
+
+#: ui/editor_export_dialog.py:474 ui/settings_view.py:1237
+msgid "Rate control"
+msgstr "Управление битрейтом"
+
+#: ui/editor_export_dialog.py:491 ui/settings_view.py:1248
+msgid "Quality"
+msgstr "Качество"
+
+#: ui/editor_export_dialog.py:515 ui/settings_view.py:1260
+msgid "Low"
+msgstr "Низкое"
+
+#: ui/editor_export_dialog.py:516 ui/settings_view.py:1261
+msgid "Medium"
+msgstr "Среднее"
+
+#: ui/editor_export_dialog.py:517 ui/settings_view.py:1262
+msgid "High"
+msgstr "Высокое"
+
+#: ui/editor_export_dialog.py:558 ui/setup_window.py:398
+msgid "Audio codec"
+msgstr "Аудиокодек"
+
+#: ui/editor_export_dialog.py:559 ui/settings_view.py:1222
+msgid "Audio compression format"
+msgstr "Формат сжатия аудио"
+
+#: ui/editor_export_dialog.py:564
+msgid "Audio tracks"
+msgstr "Аудиодорожки"
+
+#: ui/editor_export_dialog.py:565
+msgid "Preserve tracks or mix them into one"
+msgstr "Сохранить дорожки раздельно или смешать в одну"
+
+#: ui/editor_export_dialog.py:581 ui/editor_export_dialog.py:582
+msgid "This clip has no audio tracks"
+msgstr "В этом клипе нет аудиодорожек"
+
+#: ui/editor_export_dialog.py:609 ui/editor_export_dialog.py:662
+msgid "Estimating time remaining…"
+msgstr "Оценка оставшегося времени…"
+
+#: ui/editor_export_dialog.py:622
+msgid "Export progress"
+msgstr "Ход экспорта"
+
+#: ui/editor_export_dialog.py:631
+msgid "Show in folder"
+msgstr "Показать в папке"
+
+#: ui/editor_export_dialog.py:659
+msgid "0% complete"
+msgstr "Готово 0%"
+
+#: ui/editor_export_dialog.py:660
+msgid "0%"
+msgstr "0%"
+
+#: ui/editor_export_dialog.py:682
+#, python-format
+msgid "%(percentage)d%% complete"
+msgstr "Готово %(percentage)d%%"
+
+#: ui/editor_export_dialog.py:684 ui/editor_window.py:1991
+#: ui/editor_window.py:2284 ui/editor_window.py:2294 ui/editor_window.py:2327
+#, python-format
+msgid "%(percentage)d%%"
+msgstr "%(percentage)d%%"
+
+#: ui/editor_export_dialog.py:704
+msgid "Finishing export…"
+msgstr "Завершение экспорта…"
+
+#: ui/editor_export_dialog.py:730
+#, python-format
+msgid "Exported %(name)s"
+msgstr "Экспортировано: %(name)s"
+
+#: ui/editor_export_dialog.py:734
+msgid "100% complete"
+msgstr "Готово 100%"
+
+#: ui/editor_export_dialog.py:735
+msgid "100%"
+msgstr "100%"
+
+#: ui/editor_export_dialog.py:737
+msgid "Finished"
+msgstr "Готово"
+
+#: ui/editor_export_dialog.py:739 ui/preferences_dialog.py:29
+msgid "Close"
+msgstr "Закрыть"
+
+#: ui/editor_export_dialog.py:756 ui/editor_window.py:4036
+msgid "Cancel the export before closing the editor"
+msgstr "Перед закрытием редактора отмени экспорт"
+
+#: ui/editor_export_dialog.py:787
+msgid "Cancelling…"
+msgstr "Отмена…"
+
+#: ui/editor_export_dialog.py:830
+msgid "Could not show exported file"
+msgstr "Не удалось показать экспортированный файл"
+
+#: ui/editor_export_dialog.py:846 ui/settings_view.py:1281
+#: ui/settings_view.py:1297
+msgid "Kbps"
+msgstr "Кбит/с"
+
+#: ui/editor_export_dialog.py:894
+msgid "No compatible codec available"
+msgstr "Совместимый кодек недоступен"
+
+#: ui/editor_export_dialog.py:928
+msgid "No compatible FFmpeg encoder is available"
+msgstr "Совместимый кодировщик FFmpeg недоступен"
+
+#: ui/editor_export_dialog.py:948
+#, python-format
+msgid "%(encoder)s — software encoding; hardware unavailable"
+msgstr "%(encoder)s — программное кодирование; аппаратное недоступно"
+
+#: ui/editor_export_dialog.py:951
+#, python-format
+msgid "%(encoder)s — software encoding; checking hardware"
+msgstr "%(encoder)s — программное кодирование; проверка аппаратного ускорения"
+
+#: ui/editor_export_dialog.py:955
+#, python-format
+msgid "%(encoder)s — software encoding"
+msgstr "%(encoder)s — программное кодирование"
+
+#: ui/editor_export_dialog.py:959
+msgid "Software encoding"
+msgstr "Программное кодирование"
+
+#: ui/editor_export_dialog.py:1112
+msgid "Choose export folder"
+msgstr "Выбери папку для экспорта"
+
+#: ui/editor_export_dialog.py:1125
+msgid "Choose a local export folder"
+msgstr "Выбери локальную папку для экспорта"
+
+#: ui/editor_export_dialog.py:1135
+msgid "No compatible codec is available"
+msgstr "Совместимый кодек недоступен"
+
+#: ui/editor_export_dialog.py:1200
+msgid "A folder already uses this filename"
+msgstr "По этому пути уже находится папка"
+
+#: ui/editor_export_dialog.py:1208
+#, python-format
+msgid "%(name)s already exists. Choose Replace to overwrite it"
+msgstr "%(name)s уже существует. Выбери «Заменить», чтобы перезаписать его"
+
+#: ui/editor_export_dialog.py:1211
+msgid "Replace"
+msgstr "Заменить"
+
+#: ui/editor_preview.py:48
+#, python-format
+msgid "The GStreamer element %(element)s is unavailable"
+msgstr "Элемент GStreamer %(element)s недоступен"
+
+#: ui/editor_preview.py:163 ui/editor_preview.py:1070 ui/editor_preview.py:1082
+msgid "The GStreamer video preview is unavailable"
+msgstr "Предпросмотр видео GStreamer недоступен"
+
+#: ui/editor_preview.py:172
+msgid "The timeline video preview could not be linked"
+msgstr "Не удалось связать предпросмотр видео с временной шкалой"
+
+#: ui/editor_preview.py:279
+msgid "The timeline audio preview could not be linked"
+msgstr "Не удалось связать предпросмотр аудио с временной шкалой"
+
+#: ui/editor_preview.py:293
+msgid "A timeline audio track could not be linked"
+msgstr "Не удалось связать аудиодорожку временной шкалы"
+
+#: ui/editor_preview.py:487
+msgid "A timeline video segment could not be linked"
+msgstr "Не удалось связать видеосегмент временной шкалы"
+
+#: ui/editor_preview.py:494
+msgid "A timeline audio segment could not be prepared"
+msgstr "Не удалось подготовить аудиосегмент временной шкалы"
+
+#: ui/editor_preview.py:727
+msgid "A timeline audio segment could not be linked"
+msgstr "Не удалось связать аудиосегмент временной шкалы"
+
+#: ui/editor_preview.py:733
+msgid "A timeline audio segment could not be concatenated"
+msgstr "Не удалось объединить аудиосегмент временной шкалы"
+
+#: ui/editor_preview.py:736
+msgid "A decoded timeline audio track could not be linked"
+msgstr "Не удалось связать декодированную аудиодорожку временной шкалы"
+
+#: ui/editor_preview.py:774
+msgid "A timeline segment could not be prepared"
+msgstr "Не удалось подготовить сегмент временной шкалы"
+
+#: ui/editor_preview.py:841
+msgid "The timeline could not be prepared"
+msgstr "Не удалось подготовить временную шкалу"
+
+#: ui/editor_preview.py:857
+msgid "The pre-rolled timeline could not start"
+msgstr "Не удалось запустить предварительно подготовленную временную шкалу"
+
+#: ui/editor_preview.py:1058
+msgid "Loading video"
+msgstr "Загрузка видео"
+
+#: ui/editor_preview.py:1090
+msgid "The GStreamer video preview could not be linked"
+msgstr "Не удалось связать предпросмотр видео GStreamer"
+
+#: ui/editor_preview.py:1223
+msgid "The GStreamer audio preview is unavailable"
+msgstr "Предпросмотр аудио GStreamer недоступен"
+
+#: ui/editor_preview.py:1232
+msgid "The GStreamer audio preview could not be linked"
+msgstr "Не удалось связать предпросмотр аудио GStreamer"
+
+#: ui/editor_window.py:90
+msgid "Mixed mute · click to mute all"
+msgstr "Звук отключён не у всех · нажми, чтобы отключить у всех"
+
+#: ui/editor_window.py:103
+msgid "Editing"
+msgstr "Редактирование"
+
+#: ui/editor_window.py:105
+msgid "Select all segments"
+msgstr "Выбрать все сегменты"
+
+#: ui/editor_window.py:106
+msgid "Split at playhead"
+msgstr "Разделить в позиции воспроизведения"
+
+#: ui/editor_window.py:108
+msgid "Delete selected segments"
+msgstr "Удалить выбранные сегменты"
+
+#: ui/editor_window.py:110
+msgid "Undo"
+msgstr "Отменить"
+
+#: ui/editor_window.py:111
+msgid "Redo"
+msgstr "Повторить"
+
+#: ui/editor_window.py:115 ui/video_player_window.py:67
+msgid "Playback"
+msgstr "Воспроизведение"
+
+#: ui/editor_window.py:117 ui/video_player_window.py:69
+msgid "Play or pause"
+msgstr "Воспроизвести или приостановить"
+
+#: ui/editor_window.py:118 ui/video_player_window.py:70
+msgid "Seek backward 5 seconds"
+msgstr "Перемотать назад на 5 секунд"
+
+#: ui/editor_window.py:119 ui/video_player_window.py:71
+msgid "Seek forward 5 seconds"
+msgstr "Перемотать вперёд на 5 секунд"
+
+#: ui/editor_window.py:120
+msgid "Seek backward one frame"
+msgstr "Назад на один кадр"
+
+#: ui/editor_window.py:121
+msgid "Seek forward one frame"
+msgstr "Вперёд на один кадр"
+
+#: ui/editor_window.py:122 ui/video_player_window.py:74
+msgid "Mute or unmute"
+msgstr "Выключить или включить звук"
+
+#: ui/editor_window.py:126
+msgid "View"
+msgstr "Вид"
+
+#: ui/editor_window.py:128 ui/video_player_window.py:80
+msgid "Toggle fullscreen"
+msgstr "Переключить полноэкранный режим"
+
+#: ui/editor_window.py:129 ui/editor_window.py:132 ui/editor_window.py:1608
+msgid "Zoom in"
+msgstr "Увеличить масштаб"
+
+#: ui/editor_window.py:130 ui/editor_window.py:136 ui/editor_window.py:1584
+msgid "Zoom out"
+msgstr "Уменьшить масштаб"
+
+#: ui/editor_window.py:139 ui/video_player_window.py:81
+msgid "Close or exit fullscreen"
+msgstr "Закрыть или выйти из полноэкранного режима"
+
+#: ui/editor_window.py:457
+#, python-format
+msgid "Gain %(decibels)+.1f dB"
+msgstr "Усиление %(decibels)+.1f дБ"
+
+#: ui/editor_window.py:459
+msgid "Gain 0.0 dB"
+msgstr "Усиление 0,0 дБ"
+
+#: ui/editor_window.py:506
+msgid "Source video"
+msgstr "Исходное видео"
+
+#: ui/editor_window.py:517
+#, python-format
+msgid "Segment %(number)d"
+msgstr "Сегмент %(number)d"
+
+#: ui/editor_window.py:562
+msgid "All segments selected"
+msgstr "Выбраны все сегменты"
+
+#: ui/editor_window.py:564
+#, python-format
+msgid "%(count)d segment selected"
+msgid_plural "%(count)d segments selected"
+msgstr[0] "Выбран %(count)d сегмент"
+msgstr[1] "Выбрано %(count)d сегмента"
+msgstr[2] "Выбрано %(count)d сегментов"
+
+#: ui/editor_window.py:1080
+msgid "Stereo peak level"
+msgstr "Пиковый уровень стерео"
+
+#: ui/editor_window.py:1084
+msgid "Stereo peak meter"
+msgstr "Индикатор пикового уровня стерео"
+
+#: ui/editor_window.py:1274
+msgid "Video editor"
+msgstr "Видеоредактор"
+
+#: ui/editor_window.py:1291
+msgid "Editor menu"
+msgstr "Меню редактора"
+
+#: ui/editor_window.py:1293
+msgid "Wipe all edits"
+msgstr "Удалить все правки"
+
+#: ui/editor_window.py:1378 ui/editor_window.py:3418
+#: ui/video_player_window.py:1374
+msgid "Play"
+msgstr "Воспроизвести"
+
+#: ui/editor_window.py:1412 ui/video_player_window.py:483
+msgid "Playback position"
+msgstr "Позиция воспроизведения"
+
+#: ui/editor_window.py:1453 ui/video_player_window.py:516
+msgid "Volume"
+msgstr "Громкость"
+
+#: ui/editor_window.py:1461 ui/editor_window.py:1825 ui/editor_window.py:2053
+#: ui/video_player_window.py:524 ui/video_player_window.py:1435
+msgid "Mute"
+msgstr "Выключить звук"
+
+#: ui/editor_window.py:1485 ui/editor_window.py:1852
+#: ui/video_player_window.py:548 ui/video_player_window.py:1448
+msgid "Fullscreen"
+msgstr "Полный экран"
+
+#: ui/editor_window.py:1529
+msgid "Timeline"
+msgstr "Временная шкала"
+
+#: ui/editor_window.py:1547
+msgid "Undo (Ctrl+Z)"
+msgstr "Отменить (Ctrl+Z)"
+
+#: ui/editor_window.py:1551
+msgid "Redo (Ctrl+Shift+Z)"
+msgstr "Повторить (Ctrl+Shift+Z)"
+
+#: ui/editor_window.py:1560
+msgid "Split"
+msgstr "Разделить"
+
+#: ui/editor_window.py:1561 ui/editor_window.py:2977
+msgid "Split at playhead (X)"
+msgstr "Разделить в позиции воспроизведения (X)"
+
+#: ui/editor_window.py:1567 ui/hotkeys.py:531
+msgid "Delete"
+msgstr "Удалить"
+
+#: ui/editor_window.py:1568
+msgid "Delete selected segments (Del)"
+msgstr "Удалить выбранные сегменты (Del)"
+
+#: ui/editor_window.py:1601
+msgid "Zoom 100%"
+msgstr "Масштаб 100%"
+
+#: ui/editor_window.py:1825 ui/editor_window.py:2053
+#: ui/video_player_window.py:1435
+msgid "Unmute"
+msgstr "Включить звук"
+
+#: ui/editor_window.py:1852 ui/video_player_window.py:1448
+msgid "Exit fullscreen"
+msgstr "Выйти из полноэкранного режима"
+
+#: ui/editor_window.py:1863 ui/editor_window.py:3992
+msgid "Save draft"
+msgstr "Сохранить черновик"
+
+#: ui/editor_window.py:1918
+msgid "Source clip changed or is unavailable"
+msgstr "Исходный клип изменён или недоступен"
+
+#: ui/editor_window.py:2012
+msgid "Video"
+msgstr "Видео"
+
+#: ui/editor_window.py:2025
+#, python-format
+msgid "segment %(number)d"
+msgstr "сегмент %(number)d"
+
+#: ui/editor_window.py:2028
+#, python-format
+msgid "%(count)d selected segment"
+msgid_plural "%(count)d selected segments"
+msgstr[0] "%(count)d выбранный сегмент"
+msgstr[1] "%(count)d выбранных сегмента"
+msgstr[2] "%(count)d выбранных сегментов"
+
+#: ui/editor_window.py:2054
+#, python-format
+msgid "%(action)s %(track)s for %(selection)s"
+msgstr "%(action)s %(track)s для %(selection)s"
+
+#: ui/editor_window.py:2059
+#, python-format
+msgid "%(action)s %(track)s"
+msgstr "%(action)s %(track)s"
+
+#: ui/editor_window.py:2074
+#, python-format
+msgid "Audio %(number)d"
+msgstr "Аудио %(number)d"
+
+#: ui/editor_window.py:2108 ui/main_window.py:222
+msgid "Audio"
+msgstr "Аудио"
+
+#: ui/editor_window.py:2109
+msgid "No audio tracks"
+msgstr "Нет аудиодорожек"
+
+#: ui/editor_window.py:2129
+#, python-format
+msgid "%(count)d segment"
+msgid_plural "%(count)d segments"
+msgstr[0] "%(count)d сегмент"
+msgstr[1] "%(count)d сегмента"
+msgstr[2] "%(count)d сегментов"
+
+#: ui/editor_window.py:2132
+#, python-format
+msgid "%(segments)s · %(duration)s"
+msgstr "%(segments)s · %(duration)s"
+
+#: ui/editor_window.py:2203
+msgid "Timeline ruler"
+msgstr "Линейка временной шкалы"
+
+#: ui/editor_window.py:2205
+#, python-format
+msgid "%(title)s track timeline"
+msgstr "Временная шкала дорожки «%(title)s»"
+
+#: ui/editor_window.py:2274
+#, python-format
+msgid "Zoom %(percentage)d%%"
+msgstr "Масштаб %(percentage)d%%"
+
+#: ui/editor_window.py:2794
+#, python-format
+msgid "%(gain)s for selected audio"
+msgstr "%(gain)s для выбранного аудио"
+
+#: ui/editor_window.py:2959
+msgid "Select a segment to delete"
+msgstr "Выбери сегмент для удаления"
+
+#: ui/editor_window.py:2961
+msgid "At least one segment must remain"
+msgstr "Должен остаться хотя бы один сегмент"
+
+#: ui/editor_window.py:2963
+msgid "Delete selected segment (Del)"
+msgstr "Удалить выбранный сегмент (Del)"
+
+#: ui/editor_window.py:2966
+#, python-format
+msgid "Delete %(count)d selected segment (Del)"
+msgid_plural "Delete %(count)d selected segments (Del)"
+msgstr[0] "Удалить %(count)d выбранный сегмент (Del)"
+msgstr[1] "Удалить %(count)d выбранных сегмента (Del)"
+msgstr[2] "Удалить %(count)d выбранных сегментов (Del)"
+
+#: ui/editor_window.py:2979
+msgid "Select one segment to split"
+msgstr "Выбери один сегмент для разделения"
+
+#: ui/editor_window.py:3418 ui/hotkeys.py:540 ui/video_player_window.py:462
+#: ui/video_player_window.py:1374
+msgid "Pause"
+msgstr "Пауза"
+
+#: ui/editor_window.py:3900
+msgid "Exporting…"
+msgstr "Экспорт…"
+
+#: ui/editor_window.py:3944
+#, python-format
+msgid "Exported to %(name)s"
+msgstr "Экспортировано в %(name)s"
+
+#: ui/editor_window.py:3952 ui/main.py:1940 ui/settings_view.py:1662
+msgid "Unknown error"
+msgstr "Неизвестная ошибка"
+
+#: ui/editor_window.py:3953
+#, python-format
+msgid "Export failed: %(error)s"
+msgstr "Ошибка экспорта: %(error)s"
+
+#: ui/editor_window.py:3989
+msgid "Save this edit?"
+msgstr "Сохранить эти изменения?"
+
+#: ui/editor_window.py:3989
+msgid "You have unsaved changes."
+msgstr "Есть несохранённые изменения."
+
+#: ui/editor_window.py:3991
+msgid "Discard"
+msgstr "Не сохранять"
+
+#: ui/editor_wipe.py:11
+msgid "Wipe all current edits?"
+msgstr "Удалить все текущие правки?"
+
+#: ui/editor_wipe.py:13
+#, python-format
+msgid "All cuts and audio changes for '%(name)s' will be permanently removed."
+msgstr ""
+"Все разрезы и изменения аудио для «%(name)s» будут безвозвратно удалены."
+
+#: ui/editor_wipe.py:17
+msgid "Wipe edits"
+msgstr "Удалить правки"
+
+#: ui/hotkeys.py:49 ui/settings_view.py:94
+msgid "Ctrl"
+msgstr "Ctrl"
+
+#: ui/hotkeys.py:50 ui/settings_view.py:95
+msgid "Alt"
+msgstr "Alt"
+
+#: ui/hotkeys.py:51 ui/settings_view.py:96
+msgid "Shift"
+msgstr "Shift"
+
+#: ui/hotkeys.py:52 ui/settings_view.py:97
+msgid "Super"
+msgstr "Super"
+
+#: ui/hotkeys.py:213
+#, python-format
+msgid "Use one main key for the shortcut: %(shortcut)s"
+msgstr "Используй одну основную клавишу для сочетания: %(shortcut)s"
+
+#: ui/hotkeys.py:219 ui/hotkeys.py:489
+msgid "Choose a key too"
+msgstr "Также выбери клавишу"
+
+#: ui/hotkeys.py:235 ui/hotkeys.py:252 ui/settings_view.py:1609
+#: ui/setup_window.py:623
+msgid "Not set"
+msgstr "Не задано"
+
+#: ui/hotkeys.py:343
+msgid "GTK key handling is unavailable"
+msgstr "Обработка клавиш GTK недоступна"
+
+#: ui/hotkeys.py:492
+msgid "Add Ctrl, Alt, or Super"
+msgstr "Добавь Ctrl, Alt или Super"
+
+#: ui/hotkeys.py:498
+msgid "Hotkey key cannot be empty"
+msgstr "Основная клавиша сочетания не может быть пустой"
+
+#: ui/hotkeys.py:519
+#, python-format
+msgid "Unknown key: %(key)s"
+msgstr "Неизвестная клавиша: %(key)s"
+
+#: ui/hotkeys.py:526
+msgid "Space"
+msgstr "Пробел"
+
+#: ui/hotkeys.py:527
+msgid "Tab"
+msgstr "Tab"
+
+#: ui/hotkeys.py:528
+msgid "Page Up"
+msgstr "Page Up"
+
+#: ui/hotkeys.py:529
+msgid "Page Down"
+msgstr "Page Down"
+
+#: ui/hotkeys.py:530
+msgid "Backspace"
+msgstr "Backspace"
+
+#: ui/hotkeys.py:532
+msgid "Insert"
+msgstr "Insert"
+
+#: ui/hotkeys.py:533
+msgid "Home"
+msgstr "Home"
+
+#: ui/hotkeys.py:534
+msgid "End"
+msgstr "End"
+
+#: ui/hotkeys.py:535
+msgid "Up"
+msgstr "Вверх"
+
+#: ui/hotkeys.py:536
+msgid "Down"
+msgstr "Вниз"
+
+#: ui/hotkeys.py:537
+msgid "Left"
+msgstr "Влево"
+
+#: ui/hotkeys.py:538
+msgid "Right"
+msgstr "Вправо"
+
+#: ui/hotkeys.py:539
+msgid "Print"
+msgstr "Print Screen"
+
+#: ui/hotkeys.py:541
+msgid "Escape"
+msgstr "Esc"
+
+#: ui/hotkeys.py:542
+msgid "Enter"
+msgstr "Enter"
+
+#: ui/hotkeys.py:634
+msgid "No global hotkey backend is available"
+msgstr "Нет доступного механизма глобальных горячих клавиш"
+
+#: ui/hotkeys.py:708
+msgid "Portal hotkeys require PyGObject"
+msgstr "Для горячих клавиш через портал требуется PyGObject"
+
+#: ui/hotkeys.py:725
+#, python-format
+msgid "Portal hotkeys unavailable: %(error)s"
+msgstr "Горячие клавиши через портал недоступны: %(error)s"
+
+#: ui/hotkeys.py:775
+msgid "Portal did not return a shortcut session"
+msgstr "Портал не вернул сеанс горячих клавиш"
+
+#: ui/hotkeys.py:791 ui/tray.py:505 ui/tray.py:626
+msgid "Save clip"
+msgstr "Сохранить клип"
+
+#: ui/hotkeys.py:920
+#, python-format
+msgid "Portal response parse failed: %(error)s"
+msgstr "Не удалось разобрать ответ портала: %(error)s"
+
+#: ui/hotkeys.py:932
+#, python-format
+msgid "Portal request was denied or cancelled (%(response)s)"
+msgstr "Запрос портала был отклонён или отменён (%(response)s)"
+
+#: ui/hotkeys.py:1026
+msgid "X11 hotkeys require PyGObject"
+msgstr "Для горячих клавиш X11 требуется PyGObject"
+
+#: ui/hotkeys.py:1033
+msgid "Could not open X11 display"
+msgstr "Не удалось открыть дисплей X11"
+
+#: ui/hotkeys.py:1040
+#, python-format
+msgid "Could not resolve key %(key)s"
+msgstr "Не удалось определить клавишу %(key)s"
+
+#: ui/hotkeys.py:1048
+#, python-format
+msgid "X11 has no keycode for %(shortcut)s"
+msgstr "В X11 нет кода клавиши для %(shortcut)s"
+
+#: ui/hotkeys.py:1065
+#, python-format
+msgid "X11 hotkey unavailable: %(error)s"
+msgstr "Горячая клавиша X11 недоступна: %(error)s"
+
+#: ui/hotkeys.py:1152
+#, python-format
+msgid "%(shortcut)s is already registered by another app"
+msgstr "%(shortcut)s уже зарегистрировано другим приложением"
+
+#: ui/language_row.py:19
+msgid "System language"
+msgstr "Язык системы"
+
+#: ui/language_row.py:24
+msgid "Language"
+msgstr "Язык"
+
+#: ui/language_row.py:25
+msgid "Language used by Clipper"
+msgstr "Язык интерфейса Clipper"
+
+#: ui/log_window.py:23
+msgid "Clipper logs"
+msgstr "Журналы Clipper"
+
+#: ui/log_window.py:32
+msgid "Copy logs"
+msgstr "Скопировать журналы"
+
+#: ui/main.py:85
+msgid "OBS Studio and Clipper are both running"
+msgstr "OBS Studio и Clipper запущены одновременно"
+
+#: ui/main.py:88
+msgid ""
+"Running both apps at the same time can overload the GPU or hardware encoder. "
+"This may also cause issues for games with \"Game capture\" method selected. "
+"It is advised to close OBS Studio or Clipper before recording."
+msgstr ""
+"Одновременная работа обоих приложений может перегрузить GPU или аппаратный "
+"кодировщик. Это также может вызвать проблемы в играх, для которых выбран "
+"метод «Захват игры». Перед записью рекомендуется закрыть OBS Studio или "
+"Clipper."
+
+#: ui/main.py:528
+msgid "Engine not running"
+msgstr "Движок не запущен"
+
+#: ui/main.py:534
+msgid "Could not send save command to Clipper engine"
+msgstr "Не удалось отправить команду сохранения движку Clipper"
+
+#: ui/main.py:562
+msgid "Restart Clipper?"
+msgstr "Перезапустить Clipper?"
+
+#: ui/main.py:563
+msgid "Clipper needs to be restarted for this change to take effect."
+msgstr "Чтобы это изменение вступило в силу, необходимо перезапустить Clipper."
+
+#: ui/main.py:565
+msgid "Restart later"
+msgstr "Перезапустить позже"
+
+#: ui/main.py:566
+msgid "Restart now"
+msgstr "Перезапустить сейчас"
+
+#: ui/main.py:589
+msgid "Save or discard the video edit before logging out"
+msgstr "Перед выходом сохрани или отмени изменения видео"
+
+#: ui/main.py:700
+#, python-format
+msgid "Could not register save hotkey: %(error)s"
+msgstr "Не удалось зарегистрировать горячую клавишу сохранения: %(error)s"
+
+#: ui/main.py:739
+#, python-format
+msgid "Global hotkey unavailable: %(message)s"
+msgstr "Глобальная горячая клавиша недоступна: %(message)s"
+
+#: ui/main.py:923
+msgid "Acknowledge"
+msgstr "Понятно"
+
+#: ui/main.py:964 ui/settings_view.py:1658
+msgid "Restarting engine…"
+msgstr "Перезапуск движка…"
+
+#: ui/main.py:974
+msgid "Could not send restart command to Clipper engine"
+msgstr "Не удалось отправить команду перезапуска движку Clipper"
+
+#: ui/main.py:979
+msgid "Engine will start when a whitelisted game is running"
+msgstr "Движок запустится, когда будет запущена разрешённая игра"
+
+#: ui/main.py:990
+#, python-format
+msgid "Engine restart failed: %(error)s"
+msgstr "Не удалось перезапустить движок: %(error)s"
+
+#: ui/main.py:1108
+msgid "X11 capture uses the primary X11 display without a system picker."
+msgstr ""
+"Захват X11 использует основной дисплей X11 без системного средства выбора."
+
+#: ui/main.py:1117
+msgid "The system display picker is already open."
+msgstr "Системное средство выбора экрана уже открыто."
+
+#: ui/main.py:1127
+msgid "Stop the active game capture before changing the target display."
+msgstr "Останови активный захват игры перед сменой целевого экрана."
+
+#: ui/main.py:1185
+msgid "Could not disable automatic startup"
+msgstr "Не удалось отключить автоматический запуск"
+
+#: ui/main.py:1192
+msgid "PipeWire restore token cleared"
+msgstr "Токен восстановления PipeWire очищен"
+
+#: ui/main.py:1248
+msgid "Clip captured"
+msgstr "Клип записан"
+
+#: ui/main.py:1249
+msgid "Your clip has been saved."
+msgstr "Клип сохранён."
+
+#: ui/main.py:1253
+#, python-format
+msgid "Failed to save clip: %(error)s"
+msgstr "Не удалось сохранить клип: %(error)s"
+
+#: ui/main.py:1284
+#, python-format
+msgid "Could not open clip editor: %(error)s"
+msgstr "Не удалось открыть редактор клипа: %(error)s"
+
+#: ui/main.py:1752
+#, python-format
+msgid "Could not start Clipper engine: %(error)s"
+msgstr "Не удалось запустить движок Clipper: %(error)s"
+
+#: ui/main.py:1811 ui/settings_view.py:1661
+#, python-format
+msgid "Engine shutdown failed: %(error)s"
+msgstr "Не удалось остановить движок: %(error)s"
+
+#: ui/main.py:1850 ui/main.py:1886
+msgid "Display selection was cancelled."
+msgstr "Выбор экрана отменён."
+
+#: ui/main.py:1855
+msgid "Capture display selected successfully."
+msgstr "Экран для захвата успешно выбран."
+
+#: ui/main.py:1859
+msgid "No display was selected before the picker timed out."
+msgstr "До истечения времени ожидания средство выбора не выбрало экран."
+
+#: ui/main.py:1939
+#, python-format
+msgid "Display capture sync failed: %(error)s"
+msgstr "Ошибка синхронизации захвата экрана: %(error)s"
+
+#: ui/main.py:1971
+msgid "🦊 Leese"
+msgstr "🦊 Leese"
+
+#: ui/main.py:1975
+msgid "© 2026 Leese"
+msgstr "© 2026 Leese"
+
+#: ui/main.py:1981
+msgid "GitHub"
+msgstr "GitHub"
+
+#: ui/main_window.py:38
+msgid "Ready"
+msgstr "Готов"
+
+#: ui/main_window.py:39 ui/settings_view.py:1107 ui/tray.py:144
+msgid "Recording"
+msgstr "Запись"
+
+#: ui/main_window.py:40
+msgid "Exited"
+msgstr "Завершён"
+
+#: ui/main_window.py:41
+msgid "Crashed"
+msgstr "Аварийно завершён"
+
+#: ui/main_window.py:75 ui/tray.py:375 ui/tray.py:392
+msgid "Clipper"
+msgstr "Clipper"
+
+#: ui/main_window.py:136 ui/main_window.py:422
+msgid "Engine status"
+msgstr "Состояние движка"
+
+#: ui/main_window.py:167
+msgid "Main menu"
+msgstr "Главное меню"
+
+#: ui/main_window.py:169 ui/preferences_dialog.py:19
+#: ui/preferences_dialog.py:27
+msgid "Preferences"
+msgstr "Настройки"
+
+#: ui/main_window.py:171
+msgid "Show logs"
+msgstr "Показать журналы"
+
+#: ui/main_window.py:174
+msgid "Clear PipeWire restore token"
+msgstr "Очистить токен восстановления PipeWire"
+
+#: ui/main_window.py:176
+msgid "Reset config"
+msgstr "Сбросить конфигурацию"
+
+#: ui/main_window.py:177
+msgid "Reset to factory settings"
+msgstr "Сбросить до заводских настроек"
+
+#: ui/main_window.py:179
+msgid "Debug menu"
+msgstr "Дебаг меню"
+
+#: ui/main_window.py:180
+msgid "About Clipper"
+msgstr "О Clipper"
+
+#: ui/main_window.py:181 ui/tray.py:528 ui/tray.py:633
+msgid "Quit"
+msgstr "Выйти"
+
+#: ui/main_window.py:202
+msgid "Clips"
+msgstr "Клипы"
+
+#: ui/main_window.py:217
+msgid "Games"
+msgstr "Игры"
+
+#: ui/main_window.py:463
+msgid "Waiting for frame"
+msgstr "Ожидание кадра"
+
+#: ui/main_window.py:556
+msgid "Preview unavailable"
+msgstr "Предпросмотр недоступен"
+
+#: ui/quality_controls.py:12 ui/quality_controls.py:19
+msgid "Constant bitrate"
+msgstr "Постоянный битрейт"
+
+#: ui/quality_controls.py:13
+msgid "Variable bitrate"
+msgstr "Переменный битрейт"
+
+#: ui/quality_controls.py:17
+msgid "Encoder bitrate and quality mode"
+msgstr "Режим битрейта и качества кодировщика"
+
+#: ui/quality_controls.py:18
+msgid "Lower number = better quality, larger file size"
+msgstr "Меньшее число = выше качество"
+
+#: ui/quality_controls.py:20
+msgid "Fixed video bitrate used for the entire recording"
+msgstr "Фиксированный битрейт видео для всей записи"
+
+#: ui/quality_controls.py:21
+msgid "Target bitrate"
+msgstr "Целевой битрейт"
+
+#: ui/quality_controls.py:22
+msgid "Target video bitrate the encoder will aim for"
+msgstr "Целевой битрейт видео, к которому будет стремиться кодировщик"
+
+#: ui/quality_controls.py:23
+msgid "Max bitrate"
+msgstr "Макс. битрейт"
+
+#: ui/quality_controls.py:24
+msgid "Maximum video bitrate cap"
+msgstr "Ограничение максимального битрейта видео"
+
+#: ui/settings_view.py:65
+msgid "x264"
+msgstr "x264"
+
+#: ui/settings_view.py:66
+msgid "FFmpeg VAAPI"
+msgstr "FFmpeg VAAPI"
+
+#: ui/settings_view.py:69
+msgid "FFmpeg AAC"
+msgstr "FFmpeg AAC"
+
+#: ui/settings_view.py:70
+msgid "FFmpeg Opus"
+msgstr "FFmpeg Opus"
+
+#: ui/settings_view.py:71
+msgid "FFmpeg FLAC"
+msgstr "FFmpeg FLAC"
+
+#: ui/settings_view.py:74 ui/settings_view.py:127
+msgid "Automatic"
+msgstr "Автоматически"
+
+#: ui/settings_view.py:82
+msgid "Detecting…"
+msgstr "Определение…"
+
+#: ui/settings_view.py:302 ui/settings_view.py:386 ui/settings_view.py:401
+msgid "Press shortcut"
+msgstr "Нажми сочетание клавиш"
+
+#: ui/settings_view.py:304
+msgid "Press a shortcut · Backspace clears · Esc cancels"
+msgstr "Нажми сочетание клавиш · Backspace очищает · Esc отменяет"
+
+#: ui/settings_view.py:488
+msgid "Engine restart required for changes to take effect"
+msgstr "Для применения изменений требуется перезапуск движка"
+
+#: ui/settings_view.py:1108
+msgid "Configure clip and encoding settings"
+msgstr "Настрой параметры клипов и кодирования"
+
+#: ui/settings_view.py:1112 ui/setup_window.py:274
+msgid "Clip length"
+msgstr "Длительность клипа"
+
+#: ui/settings_view.py:1113
+msgid "How many seconds to keep in memory"
+msgstr "Сколько секунд хранить в памяти"
+
+#: ui/settings_view.py:1126
+msgid "seconds"
+msgstr "секунд"
+
+#: ui/settings_view.py:1135 ui/setup_window.py:293
+msgid "File size limit"
+msgstr "Ограничение размера файла"
+
+#: ui/settings_view.py:1136 ui/setup_window.py:294
+msgid "Maximum size retained for each clip"
+msgstr "Максимальный размер каждого сохраняемого клипа"
+
+#: ui/settings_view.py:1154 ui/setup_window.py:317
+msgid "MiB"
+msgstr "МиБ"
+
+#: ui/settings_view.py:1163 ui/setup_window.py:371
+msgid "Frame rate"
+msgstr "Частота кадров"
+
+#: ui/settings_view.py:1164
+msgid "Frames per second"
+msgstr "Кадров в секунду"
+
+#: ui/settings_view.py:1165
+msgid "30 FPS"
+msgstr "30 FPS"
+
+#: ui/settings_view.py:1165
+msgid "60 FPS"
+msgstr "60 FPS"
+
+#: ui/settings_view.py:1176
+msgid "Output video resolution"
+msgstr "Разрешение выходного видео"
+
+#: ui/settings_view.py:1189
+msgid "Recording format"
+msgstr "Формат записи"
+
+#: ui/settings_view.py:1190
+msgid "Container format for output file"
+msgstr "Формат контейнера выходного файла"
+
+#: ui/settings_view.py:1205
+msgid "Video encoder"
+msgstr "Видеокодировщик"
+
+#: ui/settings_view.py:1221
+msgid "Audio encoder"
+msgstr "Аудиокодировщик"
+
+#: ui/settings_view.py:1306
+msgid "VAAPI device"
+msgstr "Устройство VAAPI"
+
+#: ui/settings_view.py:1307
+msgid "Hardware acceleration device"
+msgstr "Устройство аппаратного ускорения"
+
+#: ui/settings_view.py:1322
+msgid "Change capture target display"
+msgstr "Изменить целевой экран захвата"
+
+#: ui/settings_view.py:1323 ui/settings_view.py:1501 ui/setup_window.py:445
+msgid "Opens the system display picker"
+msgstr "Открывает системное средство выбора экрана"
+
+#: ui/settings_view.py:1324 ui/setup_window.py:446
+msgid "Pick display…"
+msgstr "Выбрать экран…"
+
+#: ui/settings_view.py:1336
+msgid "Saving"
+msgstr "Сохранение"
+
+#: ui/settings_view.py:1337
+msgid "Output location, shortcuts and feedback"
+msgstr "Место сохранения, горячие клавиши и уведомления"
+
+#: ui/settings_view.py:1341
+msgid "Output folder"
+msgstr "Папка сохранения"
+
+#: ui/settings_view.py:1358
+msgid "Hotkey"
+msgstr "Горячая клавиша"
+
+#: ui/settings_view.py:1360 ui/settings_view.py:1623 ui/setup_window.py:532
+msgid "Your desktop may ask you to approve or change this shortcut"
+msgstr "Система может попросить подтвердить или изменить это сочетание клавиш"
+
+#: ui/settings_view.py:1386
+msgid "Show notification when a clip is captured"
+msgstr "Показывать уведомление при записи клипа"
+
+#: ui/settings_view.py:1387
+msgid "Display a system notification after saving a clip"
+msgstr "Показывать системное уведомление после сохранения клипа"
+
+#: ui/settings_view.py:1402
+msgid "Play sound when a clip is captured"
+msgstr "Воспроизводить звук при записи клипа"
+
+#: ui/settings_view.py:1403
+msgid "Play audio feedback after saving a clip"
+msgstr "Воспроизводить звуковой сигнал после сохранения клипа"
+
+#: ui/settings_view.py:1421
+msgid "App"
+msgstr "Приложение"
+
+#: ui/settings_view.py:1422
+msgid "Startup and window behavior"
+msgstr "Запуск и поведение окна"
+
+#: ui/settings_view.py:1432
+msgid "Start on boot"
+msgstr "Запускать при входе"
+
+#: ui/settings_view.py:1433
+msgid "Launch Clipper automatically when you log in"
+msgstr "Автоматически запускать Clipper при входе в систему"
+
+#: ui/settings_view.py:1447
+msgid "Minimize to tray instead of close"
+msgstr "Сворачивать в трей вместо закрытия"
+
+#: ui/settings_view.py:1449
+msgid "Hide Clipper to the tray when the window close button is pressed"
+msgstr "Скрывать Clipper в системный трей при нажатии кнопки закрытия окна"
+
+#: ui/settings_view.py:1464
+msgid "Remember window sizes"
+msgstr "Запоминать размеры окон"
+
+#: ui/settings_view.py:1466
+msgid "Restore sizes for the main window, video editor and video player"
+msgstr "Восстанавливать размеры главного окна, видеоредактора и видеоплеера"
+
+#: ui/settings_view.py:1488
+msgid "The system display picker is unavailable"
+msgstr "Системное средство выбора экрана недоступно"
+
+#: ui/settings_view.py:1492 ui/setup_window.py:562
+msgid "Waiting for the system display picker…"
+msgstr "Ожидание системного средства выбора экрана…"
+
+#: ui/settings_view.py:1496
+msgid "Could not open the system display picker."
+msgstr "Не удалось открыть системное средство выбора экрана."
+
+#: ui/settings_view.py:1506
+#, python-format
+msgid "Capture display was not changed: %(message)s"
+msgstr "Экран захвата не изменён: %(message)s"
+
+#: ui/settings_view.py:1525
+msgid "Tray unavailable. Clipper will quit when closed."
+msgstr "Системный трей недоступен. При закрытии Clipper завершит работу."
+
+#: ui/settings_view.py:1559
+msgid "Could not update the start-on-boot setting"
+msgstr "Не удалось обновить настройку автозапуска"
+
+#: ui/settings_view.py:1566
+#, python-format
+msgid "Could not update the start-on-boot setting: %(error)s"
+msgstr "Не удалось обновить настройку автозапуска: %(error)s"
+
+#: ui/settings_view.py:1573
+msgid "Choose output folder"
+msgstr "Выбери папку сохранения"
+
+#: ui/settings_view.py:1622 ui/settings_view.py:1638 ui/setup_window.py:531
+#: ui/setup_window.py:540
+msgid "Managed by your desktop's global shortcut settings"
+msgstr "Управляется глобальными системными настройками сочетаний клавиш"
+
+#: ui/settings_view.py:1671
+msgid "Engine restarted successfully"
+msgstr "Движок успешно перезапущен"
+
+#: ui/settings_view.py:1680
+msgid "Failed to restart engine. Please restart manually."
+msgstr "Не удалось перезапустить движок. Перезапусти его вручную."
+
+#: ui/setup_window.py:43
+msgid "Unknown encoder"
+msgstr "Неизвестный кодировщик"
+
+#: ui/setup_window.py:67 ui/setup_window.py:109
+msgid "Set up Clipper"
+msgstr "Настройка Clipper"
+
+#: ui/setup_window.py:136 ui/setup_window.py:598
+#, python-format
+msgid "Step %(current)d of %(total)d"
+msgstr "Шаг %(current)d из %(total)d"
+
+#: ui/setup_window.py:154
+msgid "Skip setup"
+msgstr "Пропустить настройку"
+
+#: ui/setup_window.py:162
+msgid "Back"
+msgstr "Назад"
+
+#: ui/setup_window.py:167 ui/setup_window.py:609
+msgid "Next"
+msgstr "Далее"
+
+#: ui/setup_window.py:198
+msgid "Welcome to Clipper"
+msgstr "Добро пожаловать в Clipper"
+
+#: ui/setup_window.py:205
+msgid ""
+"Set up clip length, quality, codecs, your save shortcut, and the display "
+"used for capture. Every choice can be changed later."
+msgstr ""
+"Настрой длительность клипа, качество, кодеки, горячую клавишу сохранения и "
+"экран для захвата. Все параметры можно изменить позже."
+
+#: ui/setup_window.py:210
+msgid ""
+"Set up clip length, quality, codecs, and your save shortcut. Every choice "
+"can be changed later."
+msgstr ""
+"Настрой длительность клипа, качество, кодеки и горячую клавишу сохранения. "
+"Все параметры можно изменить позже."
+
+#: ui/setup_window.py:268
+msgid "Clips and shortcut"
+msgstr "Клипы и горячая клавиша"
+
+#: ui/setup_window.py:269
+msgid "Choose the clip length and how to save it."
+msgstr "Выбери длительность клипа и способ его сохранения."
+
+#: ui/setup_window.py:275
+msgid "Clip length in seconds"
+msgstr "Длительность клипа в секундах"
+
+#: ui/setup_window.py:325
+msgid "Save shortcut"
+msgstr "Сочетание клавиш для сохранения"
+
+#: ui/setup_window.py:355
+msgid "Video and audio"
+msgstr "Видео и аудио"
+
+#: ui/setup_window.py:356
+msgid ""
+"Set the output size, frame rate, container, and encoders used for clips."
+msgstr ""
+"Задай размер выходного видео, частоту кадров, контейнер и кодировщики для "
+"клипов."
+
+#: ui/setup_window.py:363
+msgid "Output dimensions"
+msgstr "Размеры выходного видео"
+
+#: ui/setup_window.py:372
+msgid "Frames recorded each second"
+msgstr "Кадров, записываемых каждую секунду"
+
+#: ui/setup_window.py:373
+#, python-format
+msgid "%(fps)d FPS"
+msgstr "%(fps)d FPS"
+
+#: ui/setup_window.py:380
+msgid "Container"
+msgstr "Контейнер"
+
+#: ui/setup_window.py:381
+msgid "File format used when a clip is saved"
+msgstr "Формат файла при сохранении клипа"
+
+#: ui/setup_window.py:390
+msgid "Encoder used for the picture"
+msgstr "Кодировщик изображения"
+
+#: ui/setup_window.py:399
+msgid "Encoder used for sound"
+msgstr "Кодировщик звука"
+
+#: ui/setup_window.py:436
+msgid "Capture display"
+msgstr "Экран захвата"
+
+#: ui/setup_window.py:438
+msgid ""
+"Choose the primary display, or the display where your games will appear. The "
+"system picker controls this permission."
+msgstr ""
+"Выбери основной экран или экран, на котором будут отображаться игры. Доступ "
+"к нему управляется системным средством выбора."
+
+#: ui/setup_window.py:444
+msgid "Target capture display"
+msgstr "Целевой экран захвата"
+
+#: ui/setup_window.py:479
+msgid "All set!"
+msgstr "Всё готово!"
+
+#: ui/setup_window.py:486
+msgid ""
+"Clipper is ready to save your recent gameplay. You can change these settings "
+"at any time."
+msgstr ""
+"Clipper готов сохранять последние моменты игры. Эти настройки можно изменить "
+"в любое время."
+
+#: ui/setup_window.py:609
+msgid "Start using Clipper"
+msgstr "Начать работу с Clipper"
+
+#: ui/shortcut_dialog.py:36
+msgid "Shortcuts"
+msgstr "Горячие клавиши"
+
+#: ui/shortcut_dialog.py:46
+msgid "Keyboard shortcuts"
+msgstr "Сочетания клавиш"
+
+#: ui/tray.py:143
+msgid "Idle"
+msgstr "Ожидание"
+
+#: ui/tray.py:403
+msgid "Hide Clipper"
+msgstr "Скрыть Clipper"
+
+#: ui/tray.py:404
+msgid "Show Clipper"
+msgstr "Показать Clipper"
+
+#: ui/video_player_window.py:72
+msgid "Raise volume"
+msgstr "Увеличить громкость"
+
+#: ui/video_player_window.py:73
+msgid "Lower volume"
+msgstr "Уменьшить громкость"
+
+#: ui/video_player_window.py:78
+msgid "Window"
+msgstr "Окно"
+
+#: ui/video_player_window.py:339 ui/video_player_window.py:412
+msgid "Clip player"
+msgstr "Проигрыватель клипов"
+
+#: ui/video_player_window.py:416
+msgid "Player menu"
+msgstr "Меню проигрывателя"
+
+#: ui/video_player_window.py:439
+msgid "Loading clip…"
+msgstr "Загрузка клипа…"
+
+#: ui/video_player_window.py:622
+#, python-format
+msgid "%(title)s — Clipper"
+msgstr "%(title)s — Clipper"
+
+#: ui/video_player_window.py:624
+msgid "Clip playback"
+msgstr "Воспроизведение клипа"
+
+#: ui/video_player_window.py:729
+msgid "Clip unavailable"
+msgstr "Клип недоступен"
+
+#: ui/video_player_window.py:729
+msgid "The video file could not be found."
+msgstr "Не удалось найти видеофайл."
+
+#: ui/video_player_window.py:1453
+msgid "Couldn’t play this clip"
+msgstr "Не удалось воспроизвести этот клип"
+
+#: ui/video_player_window.py:1454
+msgid "The file may use an unsupported video or audio format."
+msgstr "Возможно, файл использует неподдерживаемый формат видео или аудио."
+
+#: ui/video_player_window.py:1673
+msgid "Play a Clipper video"
+msgstr "Воспроизвести видео Clipper"
+
+#: ui/whitelist_view.py:99
+msgid "This game"
+msgstr "Эта игра"
+
+#: ui/whitelist_view.py:433
+msgid "Search games by name or path"
+msgstr "Поиск игр по названию или пути"
+
+#: ui/whitelist_view.py:451
+msgid "Add a Steam game"
+msgstr "Добавить игру из Steam"
+
+#: ui/whitelist_view.py:460
+msgid "Add new"
+msgstr "Добавить"
+
+#: ui/whitelist_view.py:573
+#, python-format
+msgid "%(name)s is already in the whitelist."
+msgstr "%(name)s уже находится в списке разрешённых игр."
+
+#: ui/whitelist_view.py:617
+msgid "Manual"
+msgstr "Вручную"
+
+#: ui/whitelist_view.py:617
+msgid "Steam"
+msgstr "Steam"
+
+#: ui/whitelist_view.py:642
+#, python-format
+msgid "Remove %(name)s"
+msgstr "Удалить %(name)s"
+
+#: ui/whitelist_view.py:689 ui/whitelist_view.py:746
+#, python-format
+msgid "Added %(name)s"
+msgstr "Добавлено: %(name)s"
+
+#: ui/whitelist_view.py:716
+msgid ""
+"Clipper could not verify whether Steam is running.\n"
+"\n"
+"Close Steam completely before adding games with Game capture, then try again."
+msgstr ""
+"Clipper не удалось проверить, запущен ли Steam.\n"
+"\n"
+"Полностью закрой Steam перед добавлением игр с методом «Захват игры», затем "
+"повтори попытку."
+
+#: ui/whitelist_view.py:734
+#, python-format
+msgid ""
+"Added %(name)s to whitelist, but could not modify launch options.\n"
+"\n"
+"Error: %(error)s\n"
+"\n"
+"You may need to manually add the capture wrapper to the game's launch "
+"options."
+msgstr ""
+"Игра %(name)s добавлена в список разрешённых игр, но изменить параметры "
+"запуска не удалось.\n"
+"\n"
+"Ошибка: %(error)s\n"
+"\n"
+"Возможно, потребуется вручную добавить оболочку захвата в параметры запуска "
+"игры."
+
+#: ui/whitelist_view.py:782
+msgid ""
+"Clipper could not verify whether Steam is running.\n"
+"\n"
+"Close Steam completely before removing Game capture games, then try again."
+msgstr ""
+"Clipper не удалось проверить, запущен ли Steam.\n"
+"\n"
+"Полностью закрой Steam перед удалением игр с методом «Захват игры», затем "
+"повтори попытку."
+
+#: ui/whitelist_view.py:800
+#, python-format
+msgid ""
+"Removed %(name)s from whitelist, but could not modify launch options.\n"
+"\n"
+"Error: %(error)s\n"
+"\n"
+"You may need to manually remove the capture wrapper from the game's launch "
+"options."
+msgstr ""
+"Игра %(name)s удалена из списка разрешённых игр, но изменить параметры "
+"запуска не удалось.\n"
+"\n"
+"Ошибка: %(error)s\n"
+"\n"
+"Возможно, потребуется вручную удалить оболочку захвата из параметров запуска "
+"игры."
+
+#: ui/whitelist_view.py:820
+#, python-format
+msgid "Removed %(name)s"
+msgstr "Удалено: %(name)s"
+
+#: ui/whitelist_view.py:844
+#, python-format
+msgid ""
+"Clipper could not restart Steam and apply the Game capture change.\n"
+"\n"
+"Error: %(error)s"
+msgstr ""
+"Clipper не удалось перезапустить Steam и применить изменение режима «Захват "
+"игры».\n"
+"\n"
+"Ошибка: %(error)s"
+
+#~ msgid "Keypad Delete also works"
+#~ msgstr "Также работает Delete на цифровой клавиатуре"
+
+#~ msgid "Keypad Left also works"
+#~ msgstr "Также работает стрелка влево на цифровой клавиатуре"
+
+#~ msgid "Keypad Right also works"
+#~ msgstr "Также работает стрелка вправо на цифровой клавиатуре"
+
+#~ msgid "Raises volume in fullscreen; keypad Up also works"
+#~ msgstr ""
+#~ "Повышает громкость в полноэкранном режиме; также работает стрелка вверх "
+#~ "на цифровой клавиатуре"
+
+#~ msgid "Lowers volume in fullscreen; keypad Down also works"
+#~ msgstr ""
+#~ "Понижает громкость в полноэкранном режиме; также работает стрелка вниз на "
+#~ "цифровой клавиатуре"
+
+#~ msgid "Closes an open dialog first"
+#~ msgstr "Сначала закрывает открытое диалоговое окно"
+
+#~ msgid "Keypad Up also works"
+#~ msgstr "Также работает стрелка вверх на цифровой клавиатуре"
+
+#~ msgid "Keypad Down also works"
+#~ msgstr "Также работает стрелка вниз на цифровой клавиатуре"

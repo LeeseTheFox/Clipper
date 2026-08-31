@@ -1,0 +1,43 @@
+diff --git a/src/vkcapture.c b/src/vkcapture.c
+index d8947c0..4d554a4 100644
+--- a/src/vkcapture.c
++++ b/src/vkcapture.c
+@@ -196,6 +196,7 @@ static void cursor_destroy(vkcapture_source_t *ctx)
+         obs_enter_graphics();
+         xcb_xcursor_destroy(ctx->xcursor);
+         obs_leave_graphics();
++        ctx->xcursor = NULL;
+     }
+     if (!source_instances) {
+         if (xcb) {
+@@ -322,6 +323,8 @@ static void vkcapture_source_update(void *data, obs_data_t *settings)
+ {
+     vkcapture_source_t *ctx = data;
+ 
++    bool was_show_cursor = ctx->show_cursor;
++
+     ctx->show_cursor = obs_data_get_bool(settings, "show_cursor");
+     ctx->allow_transparency = obs_data_get_bool(settings, "allow_transparency");
+     ctx->force_hdr = obs_data_get_bool(settings, "force_hdr");
+@@ -338,6 +341,12 @@ static void vkcapture_source_update(void *data, obs_data_t *settings)
+     if (!strlen(ctx->window)) {
+         ctx->window = NULL;
+     }
++
++    if (!was_show_cursor && ctx->show_cursor) {
++        cursor_create(ctx);
++    } else if (was_show_cursor && !ctx->show_cursor) {
++        cursor_destroy(ctx);
++    }
+ }
+ 
+ static void *vkcapture_source_create(obs_data_t *settings, obs_source_t *source)
+@@ -349,8 +358,6 @@ static void *vkcapture_source_create(obs_data_t *settings, obs_source_t *source)
+ 
+     vkcapture_source_update(ctx, settings);
+ 
+-    cursor_create(ctx);
+-
+     UNUSED_PARAMETER(settings);
+     return ctx;
+ }

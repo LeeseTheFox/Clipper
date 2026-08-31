@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.leesethefox.Clipper</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>Clipper</name>
+  <summary>Record clips on Linux</summary>
+  <developer id="io.github.leesethefox">
+    <name>Leese</name>
+  </developer>
+  <url type="homepage">https://github.com/LeeseTheFox/Clipper</url>
+  <description>
+    <p>
+      Clipper is a GTK application for saving clips from recent gameplay through
+      an OBS/libobs recording engine.
+    </p>
+    <p>
+      The packaged Flatpak is intended to bundle libobs and required capture
+      plugins, use display capture by default, and provide optional automatic
+      process detection through a user-scoped host monitor.
+    </p>
+  </description>
+  <launchable type="desktop-id">io.github.leesethefox.Clipper.desktop</launchable>
+  <provides>
+    <binary>clipper</binary>
+  </provides>
+  <releases>
+    <release version="1.0" date="2026-07-06">
+      <description>
+        <p>Initial Flatpak packaging metadata scaffold.</p>
+      </description>
+    </release>
+  </releases>
+  <content_rating type="oars-1.1" />
+</component>

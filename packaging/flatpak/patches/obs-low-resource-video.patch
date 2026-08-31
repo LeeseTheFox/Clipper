@@ -1,0 +1,172 @@
+diff --git a/libobs/obs-internal.h b/libobs/obs-internal.h
+index d88093e..7d4d81b 100644
+--- a/libobs/obs-internal.h
++++ b/libobs/obs-internal.h
+@@ -49,7 +49,8 @@
+ #define NUM_TEXTURES 2
+ #define NUM_CHANNELS 3
+ #define MICROSECOND_DEN 1000000
+-#define NUM_ENCODE_TEXTURES 10
++#define NUM_ENCODE_TEXTURES_MIN 4
++#define NUM_ENCODE_TEXTURES_MAX 10
+ #define NUM_ENCODE_TEXTURE_FRAMES_TO_WAIT 1
+ 
+ static inline int64_t packet_dts_usec(struct encoder_packet *packet)
+@@ -359,6 +360,7 @@ struct obs_core_video_mix {
+ 	pthread_mutex_t gpu_encoder_mutex;
+ 	struct deque gpu_encoder_queue;
+ 	struct deque gpu_encoder_avail_queue;
++	size_t gpu_encoder_texture_count;
+ 	DARRAY(obs_encoder_t *) gpu_encoders;
+ 	os_sem_t *gpu_encode_semaphore;
+ 	os_event_t *gpu_encode_inactive;
+@@ -383,6 +385,13 @@ struct obs_core_video_mix {
+ 	bool mix_audio;
+ };
+ 
++static inline bool video_output_matches_base_resolution(const struct obs_core_video_mix *video)
++{
++	const struct video_output_info *info = video_output_get_info(video->video);
++	return info->width == video->ovi.base_width && info->height == video->ovi.base_height;
++}
++
++extern bool grow_gpu_encoding_texture_pool(struct obs_core_video_mix *video);
+ extern struct obs_core_video_mix *obs_create_video_mix(struct obs_video_info *ovi);
+ extern void obs_free_video_mix(struct obs_core_video_mix *video);
+ 
+diff --git a/libobs/obs-video-gpu-encode.c b/libobs/obs-video-gpu-encode.c
+index 9775621..f79a703 100644
+--- a/libobs/obs-video-gpu-encode.c
++++ b/libobs/obs-video-gpu-encode.c
+@@ -224,37 +224,51 @@ static void *gpu_encode_thread(void *data)
+ 	return NULL;
+ }
+ 
+-bool init_gpu_encoding(struct obs_core_video_mix *video)
++bool grow_gpu_encoding_texture_pool(struct obs_core_video_mix *video)
+ {
+ 	const struct video_output_info *info = video_output_get_info(video->video);
++	if (video->gpu_encoder_texture_count >= NUM_ENCODE_TEXTURES_MAX)
++		return false;
+ 
+-	video->gpu_encode_stop = false;
+-
+-	deque_reserve(&video->gpu_encoder_avail_queue, NUM_ENCODE_TEXTURES);
+-	for (size_t i = 0; i < NUM_ENCODE_TEXTURES; i++) {
+-		gs_texture_t *tex;
+-		gs_texture_t *tex_uv;
+-
+-		if (info->format == VIDEO_FORMAT_P010) {
+-			gs_texture_create_p010(&tex, &tex_uv, info->width, info->height,
+-					       GS_RENDER_TARGET | GS_SHARED_KM_TEX);
+-		} else {
+-			gs_texture_create_nv12(&tex, &tex_uv, info->width, info->height,
+-					       GS_RENDER_TARGET | GS_SHARED_KM_TEX);
+-		}
+-		if (!tex) {
+-			return false;
+-		}
++	gs_texture_t *tex = NULL;
++	gs_texture_t *tex_uv = NULL;
++	bool created;
++	if (info->format == VIDEO_FORMAT_P010) {
++		created = gs_texture_create_p010(&tex, &tex_uv, info->width, info->height,
++					 GS_RENDER_TARGET | GS_SHARED_KM_TEX);
++	} else {
++		created = gs_texture_create_nv12(&tex, &tex_uv, info->width, info->height,
++					 GS_RENDER_TARGET | GS_SHARED_KM_TEX);
++	}
++	if (!created || !tex || !tex_uv) {
++		gs_texture_destroy(tex);
++		gs_texture_destroy(tex_uv);
++		return false;
++	}
+ 
+ #ifdef _WIN32
+-		uint32_t handle = gs_texture_get_shared_handle(tex);
++	uint32_t handle = gs_texture_get_shared_handle(tex);
+ #else
+-		uint32_t handle = (uint32_t)-1;
++	uint32_t handle = (uint32_t)-1;
+ #endif
+ 
+-		struct obs_tex_frame frame = {.tex = tex, .tex_uv = tex_uv, .handle = handle};
++	struct obs_tex_frame frame = {.tex = tex, .tex_uv = tex_uv, .handle = handle};
++	deque_push_back(&video->gpu_encoder_avail_queue, &frame, sizeof(frame));
++	video->gpu_encoder_texture_count++;
++	return true;
++}
++
++bool init_gpu_encoding(struct obs_core_video_mix *video)
++{
+ 
+-		deque_push_back(&video->gpu_encoder_avail_queue, &frame, sizeof(frame));
++	video->gpu_encode_stop = false;
++
++	video->gpu_encoder_texture_count = 0;
++	deque_reserve(&video->gpu_encoder_avail_queue,
++		      NUM_ENCODE_TEXTURES_MAX * sizeof(struct obs_tex_frame));
++	for (size_t i = 0; i < NUM_ENCODE_TEXTURES_MIN; i++) {
++		if (!grow_gpu_encoding_texture_pool(video))
++			return false;
+ 	}
+ 
+ 	if (os_sem_init(&video->gpu_encode_semaphore, 0) != 0)
+@@ -304,5 +318,6 @@ void free_gpu_encoding(struct obs_core_video_mix *video)
+ 
+ 	free_deque(video->gpu_encoder_queue);
+ 	free_deque(video->gpu_encoder_avail_queue);
++	video->gpu_encoder_texture_count = 0;
+ #undef free_deque
+ }
+diff --git a/libobs/obs-video.c b/libobs/obs-video.c
+index 55a63ef..38c79a8 100644
+--- a/libobs/obs-video.c
++++ b/libobs/obs-video.c
+@@ -269,13 +269,13 @@ static inline gs_effect_t *get_scale_effect(struct obs_core_video_mix *mix, uint
+ static const char *render_output_texture_name = "render_output_texture";
+ static inline gs_texture_t *render_output_texture(struct obs_core_video_mix *mix)
+ {
+-	struct obs_video_info *const ovi = &mix->ovi;
+ 	gs_texture_t *texture = mix->render_texture;
++	if (video_output_matches_base_resolution(mix))
++		return texture;
++
+ 	gs_texture_t *target = mix->output_texture;
+ 	const uint32_t width = gs_texture_get_width(target);
+ 	const uint32_t height = gs_texture_get_height(target);
+-	if ((width == ovi->base_width) && (height == ovi->base_height))
+-		return texture;
+ 
+ 	profile_start(render_output_texture_name);
+ 
+@@ -441,6 +441,9 @@ static inline void stage_output_texture(struct obs_core_video_mix *video, int cu
+ 
+ static inline bool queue_frame(struct obs_core_video_mix *video, bool raw_active, struct obs_vframe_info *vframe_info)
+ {
++	if (!video->gpu_encoder_avail_queue.size)
++		grow_gpu_encoding_texture_pool(video);
++
+ 	bool duplicate = !video->gpu_encoder_avail_queue.size ||
+ 			 (video->gpu_encoder_queue.size && vframe_info->count > 1);
+ 
+diff --git a/libobs/obs.c b/libobs/obs.c
+index e4688e6..2e5ea64 100644
+--- a/libobs/obs.c
++++ b/libobs/obs.c
+@@ -427,9 +427,12 @@ static bool obs_init_textures(struct obs_core_video_mix *video)
+ 	if (!video->render_texture)
+ 		success = false;
+ 
+-	video->output_texture = gs_texture_create(info->width, info->height, format, 1, NULL, GS_RENDER_TARGET);
+-	if (!video->output_texture)
+-		success = false;
++	video->output_texture = NULL;
++	if (!video_output_matches_base_resolution(video)) {
++		video->output_texture = gs_texture_create(info->width, info->height, format, 1, NULL, GS_RENDER_TARGET);
++		if (!video->output_texture)
++			success = false;
++	}
+ 
+ 	if (success) {
+ 		video->render_space = space;
