@@ -43,6 +43,7 @@ typedef struct {
     char executable_path[FIELD_MAX];
     char executable_name[FIELD_MAX];
     char install_path[FIELD_MAX];
+    char steam_installation[FIELD_MAX];
     char appid[64];
     char capture_mode[64];
 } monitor_rule_t;
@@ -75,6 +76,12 @@ typedef struct {
     int pid;
     char name[FIELD_MAX];
 } rule_state_t;
+
+typedef enum {
+    STEAM_VARIANT_NATIVE,
+    STEAM_VARIANT_FLATPAK,
+    STEAM_VARIANT_SNAP,
+} steam_variant_t;
 
 static const char *string_or_empty(const cJSON *item)
 {
@@ -423,6 +430,15 @@ static bool contains_steam_appid(const char *value, const char *appid)
 
 static bool rule_matches_process(const monitor_rule_t *rule, const process_info_t *proc)
 {
+    if (rule->steam_installation[0]) {
+        bool flatpak = text_mentions_name_casefold(proc->environ,
+                                                  "FLATPAK_ID=com.valvesoftware.Steam");
+        bool snap = text_mentions_name_casefold(proc->environ, "SNAP_NAME=steam");
+        bool wants_flatpak = strncmp(rule->steam_installation, "flatpak_steam_", 14) == 0;
+        bool wants_snap = strncmp(rule->steam_installation, "steam_snap:", 11) == 0;
+        if (flatpak != wants_flatpak || snap != wants_snap)
+            return false;
+    }
     if (path_or_text_mentions(proc, rule->install_path))
         return true;
 
@@ -613,6 +629,8 @@ static bool load_config(monitor_config_t *config)
                     string_or_empty(cJSON_GetObjectItemCaseSensitive(entry, "install_path")));
         copy_string(rule->appid, sizeof(rule->appid),
                     string_or_empty(cJSON_GetObjectItemCaseSensitive(entry, "appid")));
+        copy_string(rule->steam_installation, sizeof(rule->steam_installation),
+                    string_or_empty(cJSON_GetObjectItemCaseSensitive(entry, "steam_installation")));
         copy_string(rule->capture_mode, sizeof(rule->capture_mode),
                     string_or_empty(cJSON_GetObjectItemCaseSensitive(entry, "capture_mode")));
         if (!rule->capture_mode[0])
@@ -620,7 +638,11 @@ static bool load_config(monitor_config_t *config)
         if (rule->appid[0]) {
             char appid[sizeof(rule->appid)];
             copy_string(appid, sizeof(appid), rule->appid);
-            snprintf(rule->id, sizeof(rule->id), "steam-%s", appid);
+            if (rule->steam_installation[0])
+                snprintf(rule->id, sizeof(rule->id), "steam-%016llx-%s",
+                         stable_rule_hash(rule->steam_installation), appid);
+            else
+                snprintf(rule->id, sizeof(rule->id), "steam-%s", appid);
         } else if (rule->executable_path[0]) {
             snprintf(rule->id, sizeof(rule->id), "path-%016llx",
                      stable_rule_hash(rule->executable_path));
@@ -720,29 +742,45 @@ static size_t read_processes(process_info_t *processes, size_t max_processes)
     return count;
 }
 
-static bool steam_is_running(void)
+static bool steam_process_matches_variant(const process_info_t *proc,
+                                          steam_variant_t variant)
 {
-    const char *root = proc_root();
-    DIR *dir = opendir(root);
+    bool flatpak = text_mentions_name_casefold(
+        proc->environ, "FLATPAK_ID=com.valvesoftware.Steam");
+    bool snap = text_mentions_name_casefold(proc->environ, "SNAP_NAME=steam") ||
+                text_mentions_name_casefold(proc->environ,
+                                            "SNAP_INSTANCE_NAME=steam");
+
+    if (variant == STEAM_VARIANT_FLATPAK)
+        return flatpak;
+    if (variant == STEAM_VARIANT_SNAP)
+        return snap;
+    return !flatpak && !snap;
+}
+
+static bool steam_is_running(steam_variant_t variant)
+{
+    DIR *directory = opendir(proc_root());
     struct dirent *entry;
-
-    if (!dir)
+    if (!directory)
         return false;
-
-    while ((entry = readdir(dir)) != NULL) {
+    while ((entry = readdir(directory))) {
         char path[PATH_MAX];
-        char comm[FIELD_MAX];
+        process_info_t process = {0};
         if (!isdigit((unsigned char)entry->d_name[0]))
             continue;
-        snprintf(path, sizeof(path), "%s/%s/comm", root, entry->d_name);
-        read_text_field(comm, sizeof(comm), path);
-        if (strcmp(comm, "steam") == 0 || strcmp(comm, "steamwebhelper") == 0) {
-            closedir(dir);
+        snprintf(path, sizeof(path), "%s/%s/comm", proc_root(), entry->d_name);
+        read_text_field(process.comm, sizeof(process.comm), path);
+        if (strcmp(process.comm, "steam") != 0 && strcmp(process.comm, "steamwebhelper") != 0)
+            continue;
+        snprintf(path, sizeof(path), "%s/%s/environ", proc_root(), entry->d_name);
+        read_text_field(process.environ, sizeof(process.environ), path);
+        if (steam_process_matches_variant(&process, variant)) {
+            closedir(directory);
             return true;
         }
     }
-
-    closedir(dir);
+    closedir(directory);
     return false;
 }
 
@@ -766,12 +804,50 @@ static void restore_host_session_bus(void)
         return;
     snprintf(address, sizeof(address), "unix:path=%s/bus", runtime_dir);
     setenv("DBUS_SESSION_BUS_ADDRESS", address, 1);
+    /* Flatpak's app-specific XDG directories must not become Steam's home. */
+    unsetenv("XDG_DATA_HOME");
+    unsetenv("XDG_CONFIG_HOME");
+    unsetenv("XDG_CACHE_HOME");
+    unsetenv("FLATPAK_ID");
 }
 
-static int run_steam_command(bool shutdown)
+static void exec_steam_direct(steam_variant_t variant, bool shutdown)
 {
-    pid_t pid = fork();
+    const char *argument = shutdown ? "-shutdown" : "steam://open/main";
+    if (variant == STEAM_VARIANT_FLATPAK)
+        execlp("flatpak", "flatpak", "run",
+               "com.valvesoftware.Steam", argument, (char *)NULL);
+    else if (variant == STEAM_VARIANT_SNAP)
+        execlp("snap", "snap", "run", "steam", argument, (char *)NULL);
+    else
+        execlp("steam", "steam", argument, (char *)NULL);
+}
+
+static void exec_steam_systemd(steam_variant_t variant)
+{
+    if (variant == STEAM_VARIANT_FLATPAK)
+        execlp("systemd-run", "systemd-run", "--user", "--collect", "--quiet",
+               "--", "flatpak", "run", "com.valvesoftware.Steam",
+               "steam://open/main", (char *)NULL);
+    else if (variant == STEAM_VARIANT_SNAP)
+        execlp("systemd-run", "systemd-run", "--user", "--collect", "--quiet",
+               "--", "snap", "run", "steam", "steam://open/main", (char *)NULL);
+    else
+        execlp("systemd-run", "systemd-run", "--user", "--collect", "--quiet",
+               "--", "steam", "steam://open/main", (char *)NULL);
+}
+
+static int run_steam_command(steam_variant_t variant, bool shutdown)
+{
+    pid_t pid;
     int status = 0;
+
+    /* A fixed stop request for an absent variant must not invoke another
+     * Steam package's shared desktop/IPC handling by accident. */
+    if (shutdown && !steam_is_running(variant))
+        return 0;
+
+    pid = fork();
 
     if (pid < 0) {
         fprintf(stderr, "[clipper-monitor] could not fork Steam command: %s\n",
@@ -781,12 +857,10 @@ static int run_steam_command(bool shutdown)
     if (pid == 0) {
         redirect_stdio_to_devnull();
         restore_host_session_bus();
-        if (shutdown) {
-            execlp("steam", "steam", "-shutdown", (char *)NULL);
-        } else {
-            execlp("systemd-run", "systemd-run", "--user", "--collect", "--quiet",
-                   "--", "steam", "steam://open/main", (char *)NULL);
-        }
+        if (shutdown)
+            exec_steam_direct(variant, true);
+        else
+            exec_steam_systemd(variant);
         _exit(127);
     }
 
@@ -794,7 +868,7 @@ static int run_steam_command(bool shutdown)
         if (waitpid(pid, &status, 0) < 0)
             return 2;
         for (int attempt = 0; attempt < 300; attempt++) {
-            if (!steam_is_running())
+            if (!steam_is_running(variant))
                 return 0;
             usleep(100000);
         }
@@ -808,7 +882,7 @@ static int run_steam_command(bool shutdown)
             fprintf(stderr, "[clipper-monitor] could not start Steam\n");
             return 2;
         }
-        if (steam_is_running()) {
+        if (steam_is_running(variant)) {
             return 0;
         }
         usleep(100000);
@@ -1143,7 +1217,9 @@ static void usage(const char *argv0)
 {
     fprintf(stderr,
             "Usage: %s --probe|--once|--service|--list-processes|"
-            "--stop-steam|--start-steam\n",
+            "--stop-steam-{native,flatpak,snap}|"
+            "--start-steam-{native,flatpak,snap}|"
+            "--steam-running-{native,flatpak,snap}\n",
             argv0);
 }
 
@@ -1161,10 +1237,24 @@ int main(int argc, char **argv)
         return run_service();
     if (strcmp(argv[1], "--list-processes") == 0)
         return list_processes();
-    if (strcmp(argv[1], "--stop-steam") == 0)
-        return run_steam_command(true);
-    if (strcmp(argv[1], "--start-steam") == 0)
-        return run_steam_command(false);
+    if (strcmp(argv[1], "--stop-steam-native") == 0)
+        return run_steam_command(STEAM_VARIANT_NATIVE, true);
+    if (strcmp(argv[1], "--start-steam-native") == 0)
+        return run_steam_command(STEAM_VARIANT_NATIVE, false);
+    if (strcmp(argv[1], "--stop-steam-flatpak") == 0)
+        return run_steam_command(STEAM_VARIANT_FLATPAK, true);
+    if (strcmp(argv[1], "--start-steam-flatpak") == 0)
+        return run_steam_command(STEAM_VARIANT_FLATPAK, false);
+    if (strcmp(argv[1], "--stop-steam-snap") == 0)
+        return run_steam_command(STEAM_VARIANT_SNAP, true);
+    if (strcmp(argv[1], "--start-steam-snap") == 0)
+        return run_steam_command(STEAM_VARIANT_SNAP, false);
+    if (strcmp(argv[1], "--steam-running-native") == 0)
+        return steam_is_running(STEAM_VARIANT_NATIVE) ? 0 : 1;
+    if (strcmp(argv[1], "--steam-running-flatpak") == 0)
+        return steam_is_running(STEAM_VARIANT_FLATPAK) ? 0 : 1;
+    if (strcmp(argv[1], "--steam-running-snap") == 0)
+        return steam_is_running(STEAM_VARIANT_SNAP) ? 0 : 1;
     usage(argv[0]);
     return 64;
 }

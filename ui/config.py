@@ -14,7 +14,138 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
-from capture_modes import CAPTURE_MODES, DEFAULT_CAPTURE_MODE
+from capture_modes import CAPTURE_MODE_GAME, CAPTURE_MODES, DEFAULT_CAPTURE_MODE
+
+_INTEGRATION_ENVIRONMENTS = {
+    "native_steam",
+    "flatpak_steam_user",
+    "flatpak_steam_system",
+    "native_launcher",
+    "unsupported_sandbox",
+}
+_INTEGRATION_PROVIDERS = {
+    "external_obs_gamecapture",
+    "clipper_native_payload",
+    "freedesktop_vulkan_layer",
+    "manual",
+}
+_JOURNAL_PHASES = {"prepared", "launch_options_applied", "entry_persisted"}
+
+
+def normalize_game_capture_integration(value: object) -> dict[str, Any] | None:
+    if not isinstance(value, dict) or value.get("schema") != 1:
+        return None
+    environment = _clean_string(value.get("environment"))
+    provider = _clean_string(value.get("provider"))
+    if environment not in _INTEGRATION_ENVIRONMENTS:
+        return None
+    if provider not in _INTEGRATION_PROVIDERS:
+        return None
+    managed = bool(value.get("managed_launch_options", False))
+    original = value.get("original_launch_options")
+    applied = value.get("applied_launch_options")
+    wrapper_id = value.get("wrapper_id")
+    wrapper_prefix = value.get("wrapper_prefix")
+    payload_version = value.get("payload_version")
+    if managed and (
+        not isinstance(original, str)
+        or not isinstance(applied, str)
+        or not applied
+        or not isinstance(wrapper_id, str)
+        or not wrapper_id
+        or not isinstance(wrapper_prefix, str)
+        or not wrapper_prefix
+    ):
+        return None
+    return {
+        "schema": 1,
+        "environment": environment,
+        "provider": provider,
+        "managed_launch_options": managed,
+        "original_launch_options": _clean_string(original),
+        "applied_launch_options": _clean_string(applied),
+        "wrapper_id": _clean_string(wrapper_id),
+        "wrapper_prefix": _clean_string(wrapper_prefix),
+        "payload_version": _clean_string(payload_version),
+    }
+
+
+def normalize_whitelist(value: object) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+    normalized: list[dict[str, Any]] = []
+    for raw_entry in value:
+        if not isinstance(raw_entry, dict):
+            continue
+        entry = deepcopy(raw_entry)
+        integration = normalize_game_capture_integration(entry.get("game_capture_integration"))
+        if integration is not None:
+            entry["game_capture_integration"] = integration
+        elif (
+            entry.get("capture_mode") == CAPTURE_MODE_GAME and str(entry.get("appid") or "").strip()
+        ):
+            # Legacy literal wrappers have no ownership proof.  Preserve them
+            # as external/unmanaged so removal cannot edit Steam implicitly.
+            legacy_environment = _clean_string(entry.get("steam_environment"), "native_steam")
+            if legacy_environment not in _INTEGRATION_ENVIRONMENTS:
+                legacy_environment = "unsupported_sandbox"
+            entry["game_capture_integration"] = {
+                "schema": 1,
+                "environment": legacy_environment,
+                "provider": "external_obs_gamecapture",
+                "managed_launch_options": False,
+                "original_launch_options": "",
+                "applied_launch_options": "",
+                "wrapper_id": "legacy-external-unmanaged",
+                "wrapper_prefix": "",
+                "payload_version": "",
+            }
+        else:
+            entry.pop("game_capture_integration", None)
+        normalized.append(entry)
+    return normalized
+
+
+def normalize_pending_game_capture_change(value: object) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    if not isinstance(value, dict) or value.get("schema") != 1:
+        return None
+    operation = _clean_string(value.get("operation"))
+    phase = _clean_string(value.get("phase"))
+    appid = _clean_string(value.get("steam_appid"))
+    installation = _clean_string(value.get("steam_installation"))
+    account_id = _clean_string(value.get("steam_account_id"))
+    original = value.get("original_launch_options")
+    intended = value.get("intended_launch_options")
+    snapshot = value.get("entry_snapshot")
+    if (
+        operation not in {"add", "remove", "replace", "disable"}
+        or phase not in _JOURNAL_PHASES
+        or not appid.isdigit()
+        or not installation
+        or not isinstance(original, str)
+        or not isinstance(intended, str)
+        or not isinstance(snapshot, dict)
+    ):
+        return None
+    normalized = {
+        "schema": 1,
+        "operation": operation,
+        "steam_installation": installation,
+        "steam_account_id": account_id,
+        "steam_appid": appid,
+        "original_launch_options": original,
+        "intended_launch_options": intended,
+        "entry_snapshot": deepcopy(snapshot),
+        "phase": phase,
+    }
+    previous_snapshot = value.get("previous_entry_snapshot")
+    if operation in {"replace", "disable"}:
+        if not isinstance(previous_snapshot, dict):
+            return None
+        normalized["previous_entry_snapshot"] = deepcopy(previous_snapshot)
+    return normalized
 
 
 def default_config_dir(env: dict[str, str] | None = None) -> Path:
@@ -262,6 +393,7 @@ DEFAULTS: dict[str, Any] = {
     "minimize_to_tray_on_close": False,
     "remember_window_sizes": True,
     "whitelist": [],
+    "pending_game_capture_change": None,
     "clip_game_metadata": {"clips": {}},
     "audio": default_audio_config(),
     "audio_assignments": [],
@@ -281,9 +413,7 @@ class ClipperConfig:
     """
 
     def __init__(self, config_path: Path | None = None) -> None:
-        self._path: Path = (
-            Path(config_path) if config_path is not None else default_config_file()
-        )
+        self._path: Path = Path(config_path) if config_path is not None else default_config_file()
         self._data: dict = {}
         self._load_status = "defaults_missing"
         self._saved_key_count = 0
@@ -344,6 +474,10 @@ class ClipperConfig:
                 )
                 self._data["format"] = DEFAULTS["format"]
             self._data["audio"] = normalize_audio_config(self._data.get("audio"))
+            self._data["whitelist"] = normalize_whitelist(self._data.get("whitelist"))
+            self._data["pending_game_capture_change"] = normalize_pending_game_capture_change(
+                self._data.get("pending_game_capture_change")
+            )
         except Exception as exc:  # noqa: BLE001
             print(
                 f"clipper: warning: could not read config ({exc}); using defaults",
@@ -381,9 +515,17 @@ class ClipperConfig:
             suffix=".tmp",
         ) as tmp:
             json.dump(data_to_save, tmp, indent=2)
+            tmp.flush()
+            os.fsync(tmp.fileno())
             tmp_name = tmp.name
 
         os.replace(tmp_name, self._path)
+        os.chmod(self._path, 0o600)
+        directory_fd = os.open(self._path.parent, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            os.fsync(directory_fd)
+        finally:
+            os.close(directory_fd)
         self._data = data_to_save
 
     def get(self, key: str, default=None):
@@ -395,15 +537,39 @@ class ClipperConfig:
         if key == "capture_mode" and value not in CAPTURE_MODES:
             raise ValueError(f"capture_mode must be one of: {', '.join(CAPTURE_MODES)}")
         if key == "rate_control" and value not in VIDEO_RATE_CONTROLS:
-            raise ValueError(
-                f"rate_control must be one of: {', '.join(VIDEO_RATE_CONTROLS)}"
-            )
+            raise ValueError(f"rate_control must be one of: {', '.join(VIDEO_RATE_CONTROLS)}")
         if key == "format" and value not in OUTPUT_FORMATS:
             raise ValueError(f"format must be one of: {', '.join(OUTPUT_FORMATS)}")
         if key == "audio":
             value = normalize_audio_config(value)
+        if key == "whitelist":
+            value = normalize_whitelist(value)
+        if key == "pending_game_capture_change":
+            value = normalize_pending_game_capture_change(value)
+        previous = self._data.copy()
         self._data[key] = value
-        self.save()
+        try:
+            self.save()
+        except OSError:
+            self._data = previous
+            raise
+
+    def begin_game_capture_change(self, journal: dict[str, Any]) -> None:
+        normalized = normalize_pending_game_capture_change(journal)
+        if normalized is None:
+            raise ValueError("Invalid game-capture recovery journal")
+        self.set("pending_game_capture_change", normalized)
+
+    def update_game_capture_change_phase(self, phase: str) -> None:
+        journal = self._data.get("pending_game_capture_change")
+        if not isinstance(journal, dict) or phase not in _JOURNAL_PHASES:
+            raise ValueError("No valid pending game-capture change")
+        journal = dict(journal)
+        journal["phase"] = phase
+        self.set("pending_game_capture_change", journal)
+
+    def clear_game_capture_change(self) -> None:
+        self.set("pending_game_capture_change", None)
 
     def reset_to_defaults(self) -> None:
         """Reset all settings to built-in defaults and save."""

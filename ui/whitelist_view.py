@@ -15,6 +15,7 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Gdk", "4.0")
 gi.require_version("Adw", "1")
 
+import game_capture
 import steam
 from capture_modes import (
     CAPTURE_MODE_GAME,
@@ -142,9 +143,7 @@ def _placeholder_color_class(game_data: dict) -> str:
         if value:
             identity = f"{key}:{value}"
             break
-    color_index = sha256(identity.encode("utf-8")).digest()[0] % len(
-        _GAME_PLACEHOLDER_COLORS
-    )
+    color_index = sha256(identity.encode("utf-8")).digest()[0] % len(_GAME_PLACEHOLDER_COLORS)
     return f"clipper-placeholder-{_GAME_PLACEHOLDER_COLORS[color_index]}"
 
 
@@ -262,6 +261,8 @@ class WhitelistView(Gtk.Box):
         self._style_manager.connect("notify::dark", self._on_dark_style_changed)
         self._sync_dark_style_class()
         self.setup_ui()
+        if self._config is not None and game_capture.BUNDLED_PAYLOAD.is_dir():
+            GLib.idle_add(self._initialize_game_capture)
 
     def _on_dark_style_changed(self, _style_manager, _property) -> None:
         self._sync_dark_style_class()
@@ -353,9 +354,7 @@ class WhitelistView(Gtk.Box):
             return steam.get_game_header_path(str(game_data.get("appid") or ""))
         return cached_icon_path_for_game(game_data)
 
-    def _new_action_icon(
-        self, icon_name: str, size: int = _GAME_METADATA_ICON_SIZE
-    ) -> Gtk.Image:
+    def _new_action_icon(self, icon_name: str, size: int = _GAME_METADATA_ICON_SIZE) -> Gtk.Image:
         icon = Gtk.Image.new_from_icon_name(icon_name)
         icon.set_pixel_size(size)
         icon.add_css_class("dim-label")
@@ -453,9 +452,7 @@ class WhitelistView(Gtk.Box):
         steam_item = Gio.MenuItem.new(_("Add a Steam game"), "games.add-steam")
         steam_item.set_icon(Gio.ThemedIcon.new(STEAM))
         add_menu.append_item(steam_item)
-        manual_item = Gio.MenuItem.new(
-            _("Add a non-Steam game"), "games.add-manually"
-        )
+        manual_item = Gio.MenuItem.new(_("Add a non-Steam game"), "games.add-manually")
         manual_item.set_icon(Gio.ThemedIcon.new(PROCESS))
         add_menu.append_item(manual_item)
 
@@ -686,170 +683,191 @@ class WhitelistView(Gtk.Box):
             self._show_duplicate_entry_warning(game_data, duplicate)
             return
 
-        self._add_entry(game_data)
-        self._save_whitelist()
-        self._show_toast(_("Added %(name)s") % {"name": _entry_display_name(game_data)})
+        if capture_mode == CAPTURE_MODE_GAME:
+            future = _STEAM_RESTART_EXECUTOR.submit(game_capture.prepare)
+            future.add_done_callback(
+                lambda result: GLib.idle_add(self._finish_manual_capture, result, game_data)
+            )
+        else:
+            self._finish_add_game(game_data)
+
+    def _finish_manual_capture(self, future: Future, game_data: dict) -> bool:
+        try:
+            future.result()
+        except Exception as exc:
+            self._change_failed(exc)
+            return False
+        self._finish_add_game(game_data)
+        return False
 
     def on_steam_game_selected(self, dialog, game_data):
-        """Handle game selection from Steam picker"""
+        """Add the selected installation/account, preparing hooks in the background."""
         game_data = with_capture_mode(game_data, game_data.get("capture_mode"))
-        capture_mode = capture_mode_for_entry(game_data)
-
         duplicate = self._duplicate_entry_for(game_data)
         if duplicate is not None:
             self._show_duplicate_entry_warning(game_data, duplicate)
             return
-
-        if capture_mode == CAPTURE_MODE_GAME:
-            # Try to inject capture wrapper into Steam launch options
-            try:
-                appid = game_data["appid"]
-                was_injected = steam.inject_capture_wrapper(appid)
-                if was_injected:
-                    print(f"Injected capture wrapper for {game_data['name']} (appid: {appid})")
-                else:
-                    print(
-                        f"Capture wrapper already present for {game_data['name']} (appid: {appid})"
-                    )
-            except steam.SteamProcessCheckError:
-                show_warning_dialog(
-                    self.get_root(),
-                    _(
-                        "Clipper could not verify whether Steam is running.\n\n"
-                        "Close Steam completely before adding games with Game capture, "
-                        "then try again."
-                    ),
-                )
-                return
-            except RuntimeError:
-                show_steam_restart_dialog(
-                    self.get_root(),
-                    lambda: self._restart_steam_for_add(game_data),
-                )
-                return
-            except Exception as e:
-                # Other error - show but still add to whitelist
-                print(f"Warning: Could not inject capture wrapper: {e}")
-                show_warning_dialog(
-                    self.get_root(),
-                    _(
-                        "Added %(name)s to whitelist, but could not modify launch "
-                        "options.\n\nError: %(error)s\n\nYou may need to manually add the "
-                        "capture wrapper to the game's launch options."
-                    )
-                    % {"name": game_data["name"], "error": e},
-                )
-
-        self._finish_add_game(game_data)
+        if capture_mode_for_entry(game_data) != CAPTURE_MODE_GAME:
+            self._finish_add_game(game_data)
+            return
+        self._change_steam_game(game_data, remove=False)
 
     def _finish_add_game(self, game_data: dict) -> None:
         self._add_entry(game_data)
         self._save_whitelist()
-        self._show_toast(_("Added %(name)s") % {"name": game_data["name"]})
-
-    def _restart_steam_for_add(self, game_data: dict) -> None:
-        appid = game_data["appid"]
-        self._run_steam_restart(
-            lambda: steam.inject_capture_wrapper(appid),
-            lambda: self._finish_add_game(game_data),
-        )
+        self._show_toast(_("Added %(name)s") % {"name": _entry_display_name(game_data)})
 
     def on_remove_game(self, button, row):
-        """Remove a game from the whitelist."""
-        if row:
-            index = row.get_index()
-            if 0 <= index < len(self._whitelist):
-                game_data = self._whitelist[index]
-
-                # Try to remove capture wrapper from Steam launch options.
-                if "appid" in game_data and capture_mode_for_entry(game_data) == CAPTURE_MODE_GAME:
-                    try:
-                        appid = game_data["appid"]
-                        was_removed = steam.remove_capture_wrapper(appid)
-                        if was_removed:
-                            print(
-                                "Removed capture wrapper for "
-                                f"{_entry_display_name(game_data)} (appid: {appid})"
-                            )
-                        else:
-                            print(
-                                "Capture wrapper was not present for "
-                                f"{_entry_display_name(game_data)} "
-                                f"(appid: {appid})"
-                            )
-                    except steam.SteamProcessCheckError:
-                        show_warning_dialog(
-                            self.get_root(),
-                            _(
-                                "Clipper could not verify whether Steam is running.\n\n"
-                                "Close Steam completely before removing Game capture "
-                                "games, then try again."
-                            ),
-                        )
-                        return
-                    except RuntimeError:
-                        show_steam_restart_dialog(
-                            self.get_root(),
-                            lambda: self._restart_steam_for_remove(game_data, row),
-                        )
-                        return
-                    except Exception as e:
-                        # Other error - show warning but still remove from whitelist
-                        print(f"Warning: Could not remove capture wrapper: {e}")
-                        show_warning_dialog(
-                            self.get_root(),
-                            _(
-                                "Removed %(name)s from whitelist, but could not modify "
-                                "launch options.\n\nError: %(error)s\n\nYou may need to manually "
-                                "remove the capture wrapper from the game's launch options."
-                            )
-                            % {"name": _entry_display_name(game_data), "error": e},
-                        )
-
-                self._finish_remove_game(game_data, row)
+        if row is None or getattr(self, "_steam_change_pending", False):
+            return
+        game_data = row._clipper_game_data
+        if "appid" in game_data and capture_mode_for_entry(game_data) == CAPTURE_MODE_GAME:
+            self._change_steam_game(game_data, remove=True)
+        else:
+            self._finish_remove_game(game_data, row)
 
     def _finish_remove_game(self, game_data: dict, row) -> None:
-        try:
-            index = next(
-                idx for idx, entry in enumerate(self._whitelist) if entry is game_data
-            )
-        except StopIteration:
-            return
         self.games_list.remove(row)
-        del self._whitelist[index]
+        self._whitelist.remove(game_data)
         self._save_whitelist()
         self._update_content_state()
         self._show_toast(_("Removed %(name)s") % {"name": _entry_display_name(game_data)})
 
-    def _restart_steam_for_remove(self, game_data: dict, row) -> None:
-        appid = game_data["appid"]
-        self._run_steam_restart(
-            lambda: steam.remove_capture_wrapper(appid),
-            lambda: self._finish_remove_game(game_data, row),
-        )
+    def _change_steam_game(self, game_data: dict, *, remove: bool) -> None:
+        if getattr(self, "_steam_change_pending", False):
+            return
+        self._steam_change_pending = True
+        self.set_sensitive(False)
 
-    def _run_steam_restart(self, action, on_success) -> None:
-        future = _STEAM_RESTART_EXECUTOR.submit(steam.restart_steam_around, action)
-        future.add_done_callback(
-            lambda completed: GLib.idle_add(
-                self._finish_steam_restart, completed, on_success
+        def prepare():
+            installation = steam.installation_for_entry(game_data)
+            entry = dict(game_data)
+            entry["steam_installation"] = installation.stable_id
+            entry["steam_environment"] = installation.environment.value
+            entry["steam_account_id"] = steam.select_steam_account(
+                installation.data_root, entry.get("steam_account_id")
+            ).account_id
+            if not remove:
+                game_capture.prepare(installation.environment)
+            running = steam._is_steam_running(environment=installation.environment)
+            return installation, entry, running
+
+        def prepared(future):
+            try:
+                installation, entry, running = future.result()
+            except Exception as exc:
+                self._change_failed(exc)
+                return False
+
+            def apply():
+                self.set_sensitive(False)
+
+                def commit():
+                    steam.recover_capture_change(self._config)
+                    if remove:
+                        steam.remove_game_capture_entry(
+                            self._config, game_data, entry, installation
+                        )
+                    else:
+                        steam.apply_game_capture_add_transaction(
+                            self._config,
+                            entry,
+                            str(game_capture.wrapper_path()),
+                            installation.data_root,
+                        )
+
+                def work():
+                    if running:
+                        steam.restart_steam_around(commit, installation.environment)
+                    else:
+                        commit()
+
+                completed = _STEAM_RESTART_EXECUTOR.submit(work)
+                completed.add_done_callback(
+                    lambda result: GLib.idle_add(self._finish_steam_change, result, entry, remove)
+                )
+
+            if running:
+                self.set_sensitive(True)
+                show_steam_restart_dialog(
+                    self.get_root(), apply, on_cancel=self._cancel_steam_change
+                )
+            else:
+                apply()
+            return False
+
+        future = _STEAM_RESTART_EXECUTOR.submit(prepare)
+        future.add_done_callback(lambda result: GLib.idle_add(prepared, result))
+
+    def _cancel_steam_change(self):
+        self._steam_change_pending = False
+        self.set_sensitive(True)
+
+    def _initialize_game_capture(self) -> bool:
+        """Refresh exported hooks and upgrade existing games after an app update."""
+        if self._config is None:
+            return False
+        if not self._config.get("pending_game_capture_change") and not any(
+            capture_mode_for_entry(entry) == CAPTURE_MODE_GAME for entry in self._whitelist
+        ):
+            return False
+        self._steam_change_pending = True
+        self.set_sensitive(False)
+        future = _STEAM_RESTART_EXECUTOR.submit(steam.capture_updates, self._config)
+        future.add_done_callback(lambda result: GLib.idle_add(self._apply_capture_updates, result))
+        return False
+
+    def _apply_capture_updates(self, future: Future) -> bool:
+        try:
+            updates = future.result()
+        except Exception as exc:
+            self._change_failed(exc)
+            return False
+        if not updates:
+            self._cancel_steam_change()
+            return False
+
+        def apply():
+            self.set_sensitive(False)
+            completed = _STEAM_RESTART_EXECUTOR.submit(
+                steam.apply_capture_updates, self._config, updates
             )
+            completed.add_done_callback(lambda result: GLib.idle_add(finished, result))
+
+        def finished(result):
+            self._cancel_steam_change()
+            self.reload_from_config()
+            try:
+                result.result()
+            except Exception as exc:
+                self._change_failed(exc)
+            return False
+
+        if any(running for _entry, _installation, running in updates):
+            self.set_sensitive(True)
+            show_steam_restart_dialog(self.get_root(), apply, on_cancel=self._cancel_steam_change)
+        else:
+            apply()
+        return False
+
+    def _change_failed(self, error):
+        self._cancel_steam_change()
+        show_warning_dialog(
+            self.get_root(),
+            _("Could not finish the Game capture change.\n\n%(error)s") % {"error": error},
         )
 
-    def _finish_steam_restart(self, future: Future, on_success) -> bool:
+    def _finish_steam_change(self, future: Future, entry: dict, remove: bool) -> bool:
+        self._cancel_steam_change()
         try:
             future.result()
-        except Exception as exc:  # noqa: BLE001
-            show_warning_dialog(
-                self.get_root(),
-                _(
-                    "Clipper could not restart Steam and apply the Game capture "
-                    "change.\n\nError: %(error)s"
-                )
-                % {"error": exc},
-            )
+        except Exception as exc:
+            self.reload_from_config()
+            self._change_failed(exc)
             return False
-        on_success()
+        self.reload_from_config()
+        message = _("Removed %(name)s") if remove else _("Added %(name)s")
+        self._show_toast(message % {"name": _entry_display_name(entry)})
         return False
 
     def _show_toast(self, message):

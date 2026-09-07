@@ -303,9 +303,7 @@ class ProcessPickerDialog(Gtk.Window):
             "clicked", self._on_copy_game_capture_launch_option
         )
         self._copy_feedback_timeout_id = None
-        self.capture_mode_dropdown.connect(
-            "notify::selected", self._on_capture_mode_changed
-        )
+        self.capture_mode_dropdown.connect("notify::selected", self._on_capture_mode_changed)
         main_box.append(self.game_capture_launch_option_box)
         self._update_game_capture_launch_option_visibility()
 
@@ -395,9 +393,7 @@ class ProcessPickerDialog(Gtk.Window):
             detail_label = Gtk.Label(label=" - ".join(detail_parts))
             detail_label.set_halign(Gtk.Align.START)
             detail_label.set_xalign(0)
-            configure_single_line_ellipsis(
-                detail_label, mode=Pango.EllipsizeMode.MIDDLE
-            )
+            configure_single_line_ellipsis(detail_label, mode=Pango.EllipsizeMode.MIDDLE)
             detail_label.add_css_class("dim-label")
             detail_label.add_css_class("caption")
             row_box.append(detail_label)
@@ -438,18 +434,14 @@ class ProcessPickerDialog(Gtk.Window):
         self.update_process_select_button_state()
 
     def _selected_capture_mode(self) -> str:
-        capture_mode = dropdown_active_id(
-            self.capture_mode_dropdown, DEFAULT_CAPTURE_MODE
-        )
+        capture_mode = dropdown_active_id(self.capture_mode_dropdown, DEFAULT_CAPTURE_MODE)
         return capture_mode if isinstance(capture_mode, str) else DEFAULT_CAPTURE_MODE
 
     def _on_capture_mode_changed(self, dropdown, _property) -> None:
         self._update_game_capture_launch_option_visibility()
 
     def _on_copy_game_capture_launch_option(self, _button) -> None:
-        self.get_display().get_clipboard().set(
-            self.game_capture_launch_option_entry.get_text()
-        )
+        self.get_display().get_clipboard().set(self.game_capture_launch_option_entry.get_text())
         self.game_capture_launch_option_copy_button.set_icon_name(CHECKMARK)
         self.game_capture_launch_option_copy_button.set_tooltip_text(_("Copied"))
         self.game_capture_launch_option_copy_button.add_css_class("suggested-action")
@@ -463,12 +455,8 @@ class ProcessPickerDialog(Gtk.Window):
     def _reset_copy_game_capture_feedback(self) -> bool:
         self._copy_feedback_timeout_id = None
         self.game_capture_launch_option_copy_button.set_icon_name(COPY)
-        self.game_capture_launch_option_copy_button.set_tooltip_text(
-            _("Copy launch option")
-        )
-        self.game_capture_launch_option_copy_button.remove_css_class(
-            "suggested-action"
-        )
+        self.game_capture_launch_option_copy_button.set_tooltip_text(_("Copy launch option"))
+        self.game_capture_launch_option_copy_button.remove_css_class("suggested-action")
         return GLib.SOURCE_REMOVE
 
     def _update_game_capture_launch_option_visibility(self) -> None:
@@ -477,10 +465,8 @@ class ProcessPickerDialog(Gtk.Window):
 
         launch_option_height = 0
         if game_capture_selected:
-            _, launch_option_height, _, _ = (
-                self.game_capture_launch_option_box.measure(
-                    Gtk.Orientation.VERTICAL, _PROCESS_PICKER_WIDTH
-                )
+            _, launch_option_height, _, _ = self.game_capture_launch_option_box.measure(
+                Gtk.Orientation.VERTICAL, _PROCESS_PICKER_WIDTH
             )
         self.set_default_size(
             _PROCESS_PICKER_WIDTH,
@@ -690,7 +676,16 @@ class SteamGamePickerDialog(Gtk.Window):
     def populate_games(self):
         """Populate with real Steam games"""
         # Try to get installed Steam games
-        games = steam.get_installed_games()
+        games = []
+        for installation in steam.discover_steam_installations():
+            try:
+                accounts = [steam.select_steam_account(installation.data_root)]
+            except steam.AmbiguousSteamAccountError as exc:
+                accounts = exc.accounts
+            except FileNotFoundError:
+                accounts = []
+            for account in accounts:
+                games.extend(steam.get_installed_games(installation, account_id=account.account_id))
 
         if not games:
             # Show empty state
@@ -704,6 +699,9 @@ class SteamGamePickerDialog(Gtk.Window):
                 "appid": game.appid,
                 "install_path": game.install_path,
                 "icon_path": game.icon_path,
+                "steam_installation": game.steam_installation,
+                "steam_environment": game.steam_environment,
+                "steam_account_id": game.steam_account_id,
             }
             self.game_data_list.append(game_data)
             row = self.create_game_row(game_data)
@@ -723,16 +721,17 @@ class SteamGamePickerDialog(Gtk.Window):
         steam_root = steam.find_steam_root()
         if steam_root is None:
             status_page.set_title(_("Steam not found"))
-            status_page.set_description(_(
-                "Could not find Steam installation.\n"
-                "Make sure Steam is installed at ~/.local/share/Steam"
-            ))
+            status_page.set_description(
+                _("Could not find Steam. Start Steam once, then try again.")
+            )
         else:
             status_page.set_title(_("No games found"))
-            status_page.set_description(_(
-                "No Steam games are currently installed.\n"
-                "Install games through Steam and try again."
-            ))
+            status_page.set_description(
+                _(
+                    "No Steam games are currently installed.\n"
+                    "Install games through Steam and try again."
+                )
+            )
 
         # Replace the scrolled window with status page
         parent = self.scrolled
@@ -763,6 +762,19 @@ class SteamGamePickerDialog(Gtk.Window):
         configure_single_line_ellipsis(name_label, mode=Pango.EllipsizeMode.END)
         name_label.add_css_class("heading")
         info_box.append(name_label)
+
+        environment = game_data.get("steam_environment", "native_steam")
+        source = _("Native Steam") if environment == "native_steam" else _("Flatpak Steam")
+        if environment == "steam_snap":
+            source = _("Steam Snap")
+        account = game_data.get("steam_account_id", "")
+        detail = Gtk.Label(
+            label=_("%(source)s · account %(account)s") % {"source": source, "account": account}
+        )
+        detail.set_xalign(0)
+        detail.add_css_class("caption")
+        detail.add_css_class("dim-label")
+        info_box.append(detail)
 
         row_box.append(info_box)
 
@@ -830,13 +842,15 @@ def show_warning_dialog(parent, message):
     dialog.present()
 
 
-def show_steam_restart_dialog(parent, on_restart):
+def show_steam_restart_dialog(parent, on_restart, *, on_cancel=None):
     """Offer to restart Steam for a pending Game Capture configuration change."""
     dialog = Adw.AlertDialog.new(
         _("Game capture requires a Steam restart"),
-        _("The <b>Game capture</b> method changes this game's Steam launch "
-        "options. Steam must be closed while Clipper applies the change.\n\n"
-        "Restart Steam now to continue, or cancel without changing the whitelist."),
+        _(
+            "The <b>Game capture</b> method changes this game's Steam launch "
+            "options. Steam must be closed while Clipper applies the change.\n\n"
+            "Restart Steam now to continue, or cancel without changing the whitelist."
+        ),
     )
     dialog.set_body_use_markup(True)
     dialog.add_response("cancel", _("Cancel"))
@@ -848,5 +862,7 @@ def show_steam_restart_dialog(parent, on_restart):
     def on_chosen(alert, result):
         if alert.choose_finish(result) == "restart":
             on_restart()
+        elif on_cancel is not None:
+            on_cancel()
 
     dialog.choose(parent, None, on_chosen)

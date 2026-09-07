@@ -172,6 +172,7 @@ def test_remove_game_toast_uses_executable_basename_for_empty_legacy_name():
         }
     ]
 
+    row._clipper_game_data = view._whitelist[0]
     view.on_remove_game(None, row)
 
     assert view.games_list.removed == [row]

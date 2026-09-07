@@ -41,8 +41,22 @@ class HostMonitorManager:
         "probe": "--probe",
         "once": "--once",
         "service": "--service",
-        "start-steam": "--start-steam",
-        "stop-steam": "--stop-steam",
+        "start-steam-native": "--start-steam-native",
+        "stop-steam-native": "--stop-steam-native",
+        "start-steam-flatpak": "--start-steam-flatpak",
+        "stop-steam-flatpak": "--stop-steam-flatpak",
+        "start-steam-snap": "--start-steam-snap",
+        "stop-steam-snap": "--stop-steam-snap",
+        "steam-running-native": "--steam-running-native",
+        "steam-running-flatpak": "--steam-running-flatpak",
+        "steam-running-snap": "--steam-running-snap",
+    }
+
+    _STEAM_VARIANTS = {
+        "native_steam": "native",
+        "flatpak_steam_user": "flatpak",
+        "flatpak_steam_system": "flatpak",
+        "steam_snap": "snap",
     }
 
     def __init__(
@@ -125,13 +139,36 @@ class HostMonitorManager:
             )
         return processes
 
-    def stop_steam(self) -> MonitorCommandResult:
-        """Ask the fixed host helper to close Steam and wait for it to exit."""
-        return self._run_operation("stop-steam")
+    @classmethod
+    def _steam_variant(cls, environment: object) -> str | None:
+        value = getattr(environment, "value", environment)
+        return cls._STEAM_VARIANTS.get(str(value))
 
-    def start_steam(self) -> MonitorCommandResult:
-        """Ask the fixed host helper to relaunch Steam."""
-        return self._run_operation("start-steam")
+    def steam_running(self, environment: object = "native_steam") -> bool | None:
+        """Return whether one exact Steam packaging variant is running."""
+        variant = self._steam_variant(environment)
+        if variant is None:
+            return None
+        result = self._run_operation(f"steam-running-{variant}")
+        if result.returncode == 0:
+            return True
+        if result.returncode == 1:
+            return False
+        return None
+
+    def stop_steam(self, environment: object = "native_steam") -> MonitorCommandResult:
+        """Ask the fixed host helper to close one exact Steam variant."""
+        variant = self._steam_variant(environment)
+        if variant is None:
+            return MonitorCommandResult(False, 64, "", "Unsupported Steam environment")
+        return self._run_operation(f"stop-steam-{variant}")
+
+    def start_steam(self, environment: object = "native_steam") -> MonitorCommandResult:
+        """Ask the fixed host helper to relaunch one exact Steam variant."""
+        variant = self._steam_variant(environment)
+        if variant is None:
+            return MonitorCommandResult(False, 64, "", "Unsupported Steam environment")
+        return self._run_operation(f"start-steam-{variant}")
 
     def start(self) -> bool:
         """Start automatic detection for the lifetime of this app process."""
@@ -197,7 +234,7 @@ class HostMonitorManager:
             self._log_result(operation, 127)
             return MonitorCommandResult(False, 127, "", str(exc))
         self._log_operation(operation, command)
-        timeout = 35 if operation in {"start-steam", "stop-steam"} else 10
+        timeout = 35 if operation.startswith(("start-steam-", "stop-steam-")) else 10
         try:
             completed = self._runner(
                 command,

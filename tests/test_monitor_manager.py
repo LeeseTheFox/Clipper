@@ -221,8 +221,8 @@ def test_steam_lifecycle_uses_only_fixed_helper_operations(tmp_path):
     assert manager.stop_steam().ok
     assert manager.start_steam().ok
     assert [command[-1] for command, _kwargs in calls] == [
-        "--stop-steam",
-        "--start-steam",
+        "--stop-steam-native",
+        "--start-steam-native",
     ]
     assert [kwargs["timeout"] for _command, kwargs in calls] == [35, 35]
 

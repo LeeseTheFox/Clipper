@@ -102,6 +102,12 @@ separate OBS Studio installation to use the released app.
 
 On Wayland, display capture uses the system screen-capture portal and
 PipeWire. Advanced game capture uses `obs-vkcapture` for Vulkan/OpenGL titles.
+Clipper's Flatpak bundles both 32-bit and 64-bit game hooks. Native Steam
+(including SteamOS) and Flatpak Steam need no extra packages or extensions.
+Choose Game capture when adding a game; Clipper handles its launch options.
+For other native launchers, copy the launch option shown in the process picker.
+Game compatibility still depends on the graphics API, driver, and whether the
+game permits capture hooks; use display capture where injection is unavailable.
 
 ## Build from source
 

@@ -23,7 +23,7 @@ Editor times are integer microseconds. Drafts live outside the main configuratio
 Each game rule uses one of these modes:
 
 - **Display capture** is the default. It records a selected display through the desktop portal and PipeWire. A host process monitor decides when Clipper should start and stop recording.
-- **Game capture (advanced)** adds the `obs-gamecapture` Steam launch wrapper for supported Steam games. The engine watches for the vkcapture hook before it starts recording.
+- **Game capture (advanced)** uses Clipper's bundled Vulkan/OpenGL hooks. Native and Flatpak Steam launch options are configured automatically, with one restart confirmation if needed. The engine waits for game frames before recording.
 
 Display capture works with more games, but records the selected display rather than a single window. Game capture has launch-time and compatibility limits. Do not use capture hooks with a game whose anti-cheat policy forbids them.
 

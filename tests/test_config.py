@@ -8,6 +8,7 @@ Usage:
 import json
 from pathlib import Path
 
+import pytest
 from config import (
     AUDIO_MAX_TRACKS,
     DEFAULTS,
@@ -16,6 +17,9 @@ from config import (
     ClipperConfig,
     default_config_file,
     normalize_audio_config,
+    normalize_game_capture_integration,
+    normalize_pending_game_capture_change,
+    normalize_whitelist,
 )
 
 # ---------------------------------------------------------------------------
@@ -26,6 +30,20 @@ from config import (
 def make_config(tmp_path: Path, filename: str = "config.json") -> ClipperConfig:
     """Return a ClipperConfig pointed at a temp directory."""
     return ClipperConfig(config_path=tmp_path / filename)
+
+
+def test_failed_save_does_not_leave_a_phantom_whitelist_entry(tmp_path, monkeypatch):
+    config = make_config(tmp_path)
+    config.set("whitelist", [])
+
+    def fail_save():
+        raise OSError("disk full")
+
+    monkeypatch.setattr(config, "save", fail_save)
+    with pytest.raises(OSError, match="disk full"):
+        config.set("whitelist", [{"appid": "730", "capture_mode": "game_capture"}])
+    assert config.get("whitelist") == []
+    assert make_config(tmp_path).get("whitelist") == []
 
 
 # ---------------------------------------------------------------------------
@@ -463,9 +481,7 @@ def test_audio_default_schema(tmp_path):
     assert audio["microphone"]["device_id"] == "default"
     assert audio["microphone"]["volume"] == 1.0
     assert len(audio["tracks"]) == AUDIO_MAX_TRACKS
-    assert [track["track"] for track in audio["tracks"]] == list(
-        range(1, AUDIO_MAX_TRACKS + 1)
-    )
+    assert [track["track"] for track in audio["tracks"]] == list(range(1, AUDIO_MAX_TRACKS + 1))
 
 
 def test_audio_config_round_trip_and_validation(tmp_path):
@@ -700,6 +716,69 @@ def test_audio_config_normalizes_bad_data(tmp_path):
 
 def test_normalize_audio_config_rejects_non_object():
     assert normalize_audio_config(None) == DEFAULTS["audio"]
+
+
+def test_legacy_game_capture_migration_never_persists_unknown_environment():
+    entries = normalize_whitelist(
+        [
+            {
+                "name": "Legacy game",
+                "appid": "730",
+                "capture_mode": "game_capture",
+                "steam_environment": "attacker_controlled",
+            }
+        ]
+    )
+
+    integration = entries[0]["game_capture_integration"]
+    assert integration["environment"] == "unsupported_sandbox"
+    assert integration["provider"] == "external_obs_gamecapture"
+    assert integration["managed_launch_options"] is False
+
+
+def test_game_capture_integration_rejects_unknown_schema_values():
+    base = {
+        "schema": 1,
+        "environment": "native_steam",
+        "provider": "external_obs_gamecapture",
+    }
+
+    assert normalize_game_capture_integration({**base, "schema": 2}) is None
+    assert normalize_game_capture_integration({**base, "environment": "unknown"}) is None
+    assert normalize_game_capture_integration({**base, "provider": "unknown"}) is None
+
+
+def test_game_capture_integration_rejects_incomplete_managed_ownership():
+    assert (
+        normalize_game_capture_integration(
+            {
+                "schema": 1,
+                "environment": "native_steam",
+                "provider": "external_obs_gamecapture",
+                "managed_launch_options": True,
+                "original_launch_options": "",
+                "applied_launch_options": '"/wrapper" %command%',
+                "wrapper_id": "obs-gamecapture-external-v1",
+                "wrapper_prefix": "",
+            }
+        )
+        is None
+    )
+
+
+def test_pending_game_capture_journal_rejects_incomplete_identity():
+    journal = {
+        "schema": 1,
+        "operation": "add",
+        "steam_installation": "",
+        "steam_appid": "730",
+        "original_launch_options": "",
+        "intended_launch_options": '"/wrapper" %command%',
+        "entry_snapshot": {},
+        "phase": "prepared",
+    }
+
+    assert normalize_pending_game_capture_change(journal) is None
 
 
 def test_string_type_preserved(tmp_path):

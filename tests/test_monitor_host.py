@@ -75,6 +75,27 @@ def _list_processes(monitor_binary: Path, proc_root: Path) -> list[dict]:
     return json.loads(completed.stdout)
 
 
+def test_flatpak_game_matches_appid_in_its_own_steam_environment(tmp_path, monitor_binary):
+    proc_root = tmp_path / "proc"
+    proc_root.mkdir()
+    config = tmp_path / "config.json"
+    _write_config(
+        config,
+        [
+            {
+                "appid": "730",
+                "name": "Game",
+                "steam_installation": "flatpak_steam_user:test",
+                "install_path": "/host/path/not-visible-inside-game",
+            }
+        ],
+    )
+    _add_proc(proc_root, "12", comm="game", environ="SteamAppId=730")
+    assert _probe(monitor_binary, config, proc_root)["matches"] == 0
+    (proc_root / "12/environ").write_bytes(b"SteamAppId=730\0FLATPAK_ID=com.valvesoftware.Steam\0")
+    assert _probe(monitor_binary, config, proc_root)["matches"] == 1
+
+
 def test_monitor_host_lists_picker_process_metadata(tmp_path, monitor_binary):
     proc_root = tmp_path / "proc"
     proc_root.mkdir()
@@ -145,17 +166,58 @@ def test_monitor_host_lists_matching_rule_ids_without_exporting_environment(
     assert "SECRET" not in completed.stdout
 
 
-@pytest.mark.parametrize("operation", ["--stop-steam", "--start-steam"])
+def test_monitor_host_uses_same_installation_scoped_steam_rule_id(tmp_path, monitor_binary):
+    proc_root = tmp_path / "proc"
+    proc_root.mkdir()
+    config_path = tmp_path / "config.json"
+    _write_config(
+        config_path,
+        [
+            {
+                "name": "Counter-Strike 2",
+                "appid": "730",
+                "steam_installation": "native:/steam",
+                "install_path": "/steam/common/cs2",
+            }
+        ],
+    )
+    _add_proc(
+        proc_root,
+        "730",
+        comm="cs2",
+        cmdline="/steam/common/cs2/cs2",
+        exe="/steam/common/cs2/cs2",
+        cwd="/steam/common/cs2",
+    )
+
+    completed = subprocess.run(
+        [str(monitor_binary), "--list-processes"],
+        check=True,
+        env={
+            "CLIPPER_CONFIG_FILE": str(config_path),
+            "CLIPPER_PROC_ROOT": str(proc_root),
+        },
+        capture_output=True,
+        text=True,
+    )
+    result = json.loads(completed.stdout)
+    assert result[0]["rule_ids"] == ["steam-74c90759ee5879db-730"]
+
+
+@pytest.mark.parametrize("operation", ["--stop-steam-native", "--start-steam-native"])
 def test_monitor_host_steam_lifecycle_uses_fixed_steam_command(tmp_path, monitor_binary, operation):
     proc_root = tmp_path / "proc"
     proc_root.mkdir()
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     steam_command = bin_dir / "steam"
-    steam_command.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    steam_command.write_text(
+        '#!/bin/sh\nprintf "%s" "$*" > "$CLIPPER_TEST_LOG"\n',
+        encoding="utf-8",
+    )
     steam_command.chmod(0o755)
     command_log = tmp_path / "steam-command.log"
-    if operation == "--start-steam":
+    if operation == "--start-steam-native":
         systemd_run = bin_dir / "systemd-run"
         systemd_run.write_text(
             '#!/bin/sh\nprintf "%s\\n%s\\n" "$DBUS_SESSION_BUS_ADDRESS" "$*" '
@@ -182,7 +244,7 @@ def test_monitor_host_steam_lifecycle_uses_fixed_steam_command(tmp_path, monitor
     )
 
     assert completed.returncode == 0
-    if operation == "--start-steam":
+    if operation == "--start-steam-native":
         for _attempt in range(100):
             if command_log.exists():
                 break
@@ -191,6 +253,101 @@ def test_monitor_host_steam_lifecycle_uses_fixed_steam_command(tmp_path, monitor
             "unix:path=/run/user/1234/bus",
             "--user --collect --quiet -- steam steam://open/main",
         ]
+    else:
+        assert not command_log.exists()
+
+
+@pytest.mark.parametrize(
+    ("operation", "process_environment", "expected_status"),
+    [
+        ("--steam-running-native", "", 0),
+        (
+            "--steam-running-flatpak",
+            "FLATPAK_ID=com.valvesoftware.Steam",
+            0,
+        ),
+        ("--steam-running-snap", "SNAP_NAME=steam", 0),
+        ("--steam-running-native", "SNAP_NAME=steam", 1),
+        (
+            "--steam-running-snap",
+            "FLATPAK_ID=com.valvesoftware.Steam",
+            1,
+        ),
+    ],
+)
+def test_monitor_host_distinguishes_steam_packaging_variants(
+    tmp_path, monitor_binary, operation, process_environment, expected_status
+):
+    proc_root = tmp_path / "proc"
+    proc_root.mkdir()
+    _add_proc(
+        proc_root,
+        "123",
+        comm="steam",
+        environ=process_environment,
+    )
+
+    completed = subprocess.run(
+        [str(monitor_binary), operation],
+        check=False,
+        env={"CLIPPER_PROC_ROOT": str(proc_root)},
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == expected_status
+
+
+@pytest.mark.parametrize(
+    ("operation", "process_environment", "expected_command"),
+    [
+        (
+            "--start-steam-flatpak",
+            "FLATPAK_ID=com.valvesoftware.Steam",
+            "--user --collect --quiet -- flatpak run com.valvesoftware.Steam steam://open/main",
+        ),
+        (
+            "--start-steam-snap",
+            "SNAP_NAME=steam",
+            "--user --collect --quiet -- snap run steam steam://open/main",
+        ),
+    ],
+)
+def test_monitor_host_starts_only_the_fixed_requested_variant(
+    tmp_path, monitor_binary, operation, process_environment, expected_command
+):
+    proc_root = tmp_path / "proc"
+    proc_root.mkdir()
+    _add_proc(proc_root, "123", comm="steam", environ=process_environment)
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    command_log = tmp_path / "steam-command.log"
+    systemd_run = bin_dir / "systemd-run"
+    systemd_run.write_text(
+        '#!/bin/sh\nprintf "%s" "$*" > "$CLIPPER_TEST_LOG"\n',
+        encoding="utf-8",
+    )
+    systemd_run.chmod(0o755)
+
+    completed = subprocess.run(
+        [str(monitor_binary), operation],
+        check=False,
+        env={
+            "CLIPPER_PROC_ROOT": str(proc_root),
+            "CLIPPER_TEST_LOG": str(command_log),
+            "PATH": str(bin_dir),
+            "XDG_RUNTIME_DIR": "/run/user/1234",
+        },
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 0
+    for _attempt in range(100):
+        if command_log.exists():
+            break
+        time.sleep(0.01)
+    assert command_log.read_text(encoding="utf-8") == expected_command
 
 
 def _stable_path_rule_id(path: str) -> str:

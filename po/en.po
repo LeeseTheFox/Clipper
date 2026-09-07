@@ -321,7 +321,7 @@ msgstr ""
 "'%(name)s' will be moved to the trash.\n"
 "This can be reversed."
 
-#: ui/clips_view.py:1822 ui/dialogs.py:842 ui/editor_export_dialog.py:345
+#: ui/clips_view.py:1822 ui/dialogs.py:856 ui/editor_export_dialog.py:345
 #: ui/editor_export_dialog.py:636 ui/editor_export_dialog.py:664
 #: ui/editor_export_dialog.py:772 ui/editor_window.py:3990 ui/editor_wipe.py:16
 msgid "Cancel"
@@ -393,11 +393,11 @@ msgstr "Copy this into the game's launch options before starting it."
 msgid "Copy the required launch option"
 msgstr "Copy the required launch option"
 
-#: ui/dialogs.py:148 ui/dialogs.py:467
+#: ui/dialogs.py:148 ui/dialogs.py:458
 msgid "Copy launch option"
 msgstr "Copy launch option"
 
-#: ui/dialogs.py:203 ui/whitelist_view.py:457
+#: ui/dialogs.py:203 ui/whitelist_view.py:455
 msgid "Add a non-Steam game"
 msgstr "Add a non-Steam game"
 
@@ -421,67 +421,63 @@ msgstr "/path/to/game.exe"
 msgid "Choose executable"
 msgstr "Choose executable"
 
-#: ui/dialogs.py:319 ui/dialogs.py:650
+#: ui/dialogs.py:317 ui/dialogs.py:636
 msgid "Add selected"
 msgstr "Add selected"
 
-#: ui/dialogs.py:354
+#: ui/dialogs.py:352
 msgid "Could not load host processes"
 msgstr "Could not load host processes"
 
-#: ui/dialogs.py:356
+#: ui/dialogs.py:354
 msgid "No running processes found"
 msgstr "No running processes found"
 
-#: ui/dialogs.py:454
+#: ui/dialogs.py:446
 msgid "Copied"
 msgstr "Copied"
 
-#: ui/dialogs.py:513
+#: ui/dialogs.py:499
 msgid "Choose game executable"
 msgstr "Choose game executable"
 
-#: ui/dialogs.py:514
+#: ui/dialogs.py:500
 msgid "Choose"
 msgstr "Choose"
 
-#: ui/dialogs.py:529
+#: ui/dialogs.py:515
 msgid "Choose a local executable file."
 msgstr "Choose a local executable file."
 
-#: ui/dialogs.py:541
+#: ui/dialogs.py:527
 msgid "Choose a valid executable file."
 msgstr "Choose a valid executable file."
 
-#: ui/dialogs.py:578
+#: ui/dialogs.py:564
 msgid "Select Steam game"
 msgstr "Select Steam game"
 
-#: ui/dialogs.py:603
+#: ui/dialogs.py:589
 msgid "Search games…"
 msgstr "Search games…"
 
-#: ui/dialogs.py:673
+#: ui/dialogs.py:659
 msgid "Scanning Steam libraries…"
 msgstr "Scanning Steam libraries…"
 
-#: ui/dialogs.py:725
+#: ui/dialogs.py:723
 msgid "Steam not found"
 msgstr "Steam not found"
 
-#: ui/dialogs.py:727
-msgid ""
-"Could not find Steam installation.\n"
-"Make sure Steam is installed at ~/.local/share/Steam"
-msgstr ""
-"Could not find Steam installation.\n"
-"Make sure Steam is installed at ~/.local/share/Steam"
+#: ui/dialogs.py:725
+msgid "Could not find Steam. Start Steam once, then try again."
+msgstr "Could not find Steam. Start Steam once, then try again."
 
-#: ui/dialogs.py:731
+#: ui/dialogs.py:728
 msgid "No games found"
 msgstr "No games found"
 
-#: ui/dialogs.py:733
+#: ui/dialogs.py:731
 msgid ""
 "No Steam games are currently installed.\n"
 "Install games through Steam and try again."
@@ -489,19 +485,36 @@ msgstr ""
 "No Steam games are currently installed.\n"
 "Install games through Steam and try again."
 
-#: ui/dialogs.py:826
+#: ui/dialogs.py:767
+msgid "Flatpak Steam"
+msgstr "Flatpak Steam"
+
+#: ui/dialogs.py:767
+msgid "Native Steam"
+msgstr "Native Steam"
+
+#: ui/dialogs.py:769
+msgid "Steam Snap"
+msgstr "Steam Snap"
+
+#: ui/dialogs.py:772
+#, python-format
+msgid "%(source)s · account %(account)s"
+msgstr "%(source)s · account %(account)s"
+
+#: ui/dialogs.py:838
 msgid "Warning"
 msgstr "Warning"
 
-#: ui/dialogs.py:828
+#: ui/dialogs.py:840
 msgid "OK"
 msgstr "OK"
 
-#: ui/dialogs.py:836
+#: ui/dialogs.py:848
 msgid "Game capture requires a Steam restart"
 msgstr "Game capture requires a Steam restart"
 
-#: ui/dialogs.py:837
+#: ui/dialogs.py:850
 msgid ""
 "The <b>Game capture</b> method changes this game's Steam launch options. "
 "Steam must be closed while Clipper applies the change.\n"
@@ -513,7 +526,7 @@ msgstr ""
 "\n"
 "Restart Steam now to continue, or cancel without changing the whitelist."
 
-#: ui/dialogs.py:843
+#: ui/dialogs.py:857
 msgid "Restart Steam"
 msgstr "Restart Steam"
 
@@ -2322,111 +2335,57 @@ msgstr "The file may use an unsupported video or audio format."
 msgid "Play a Clipper video"
 msgstr "Play a Clipper video"
 
-#: ui/whitelist_view.py:101
+#: ui/whitelist_view.py:102
 msgid "This game"
 msgstr "This game"
 
-#: ui/whitelist_view.py:435
+#: ui/whitelist_view.py:434
 msgid "Search games by name or path"
 msgstr "Search games by name or path"
 
-#: ui/whitelist_view.py:453
+#: ui/whitelist_view.py:452
 msgid "Add a Steam game"
 msgstr "Add a Steam game"
 
-#: ui/whitelist_view.py:462
+#: ui/whitelist_view.py:459
 msgid "Add new"
 msgstr "Add new"
 
-#: ui/whitelist_view.py:575
+#: ui/whitelist_view.py:572
 #, python-format
 msgid "%(name)s is already in the whitelist."
 msgstr "%(name)s is already in the whitelist."
 
-#: ui/whitelist_view.py:619
+#: ui/whitelist_view.py:616
 msgid "Manual"
 msgstr "Manual"
 
-#: ui/whitelist_view.py:619
+#: ui/whitelist_view.py:616
 msgid "Steam"
 msgstr "Steam"
 
-#: ui/whitelist_view.py:644
+#: ui/whitelist_view.py:641
 #, python-format
 msgid "Remove %(name)s"
 msgstr "Remove %(name)s"
 
-#: ui/whitelist_view.py:691 ui/whitelist_view.py:748
+#: ui/whitelist_view.py:718 ui/whitelist_view.py:869
 #, python-format
 msgid "Added %(name)s"
 msgstr "Added %(name)s"
 
-#: ui/whitelist_view.py:718
-msgid ""
-"Clipper could not verify whether Steam is running.\n"
-"\n"
-"Close Steam completely before adding games with Game capture, then try again."
-msgstr ""
-"Clipper could not verify whether Steam is running.\n"
-"\n"
-"Close Steam completely before adding games with Game capture, then try again."
-
-#: ui/whitelist_view.py:736
-#, python-format
-msgid ""
-"Added %(name)s to whitelist, but could not modify launch options.\n"
-"\n"
-"Error: %(error)s\n"
-"\n"
-"You may need to manually add the capture wrapper to the game's launch "
-"options."
-msgstr ""
-"Added %(name)s to whitelist, but could not modify launch options.\n"
-"\n"
-"Error: %(error)s\n"
-"\n"
-"You may need to manually add the capture wrapper to the game's launch "
-"options."
-
-#: ui/whitelist_view.py:784
-msgid ""
-"Clipper could not verify whether Steam is running.\n"
-"\n"
-"Close Steam completely before removing Game capture games, then try again."
-msgstr ""
-"Clipper could not verify whether Steam is running.\n"
-"\n"
-"Close Steam completely before removing Game capture games, then try again."
-
-#: ui/whitelist_view.py:802
-#, python-format
-msgid ""
-"Removed %(name)s from whitelist, but could not modify launch options.\n"
-"\n"
-"Error: %(error)s\n"
-"\n"
-"You may need to manually remove the capture wrapper from the game's launch "
-"options."
-msgstr ""
-"Removed %(name)s from whitelist, but could not modify launch options.\n"
-"\n"
-"Error: %(error)s\n"
-"\n"
-"You may need to manually remove the capture wrapper from the game's launch "
-"options."
-
-#: ui/whitelist_view.py:822
+#: ui/whitelist_view.py:734 ui/whitelist_view.py:869
 #, python-format
 msgid "Removed %(name)s"
 msgstr "Removed %(name)s"
 
-#: ui/whitelist_view.py:846
+#: ui/whitelist_view.py:857
 #, python-format
 msgid ""
-"Clipper could not restart Steam and apply the Game capture change.\n"
+"Could not finish the Game capture change.\n"
 "\n"
-"Error: %(error)s"
+"%(error)s"
 msgstr ""
-"Clipper could not restart Steam and apply the Game capture change.\n"
+"Could not finish the Game capture change.\n"
 "\n"
-"Error: %(error)s"
+"%(error)s"

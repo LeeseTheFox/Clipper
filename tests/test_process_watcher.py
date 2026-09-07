@@ -13,6 +13,18 @@ from process_watcher import (
 )
 
 
+def test_flatpak_game_matches_appid_only_in_its_steam_environment():
+    entry = {
+        "appid": "730",
+        "steam_installation": "flatpak_steam_user:test",
+        "install_path": "/host/path/not-visible-inside-game",
+    }
+    process = {"comm": "game", "environ": "SteamAppId=730"}
+    assert not entry_matches_process(entry, process)
+    process["environ"] += " FLATPAK_ID=com.valvesoftware.Steam"
+    assert entry_matches_process(entry, process)
+
+
 def _add_proc(
     proc_root: Path,
     pid: str,
@@ -238,6 +250,15 @@ def test_monitor_rule_id_for_executable_path_is_stable_across_indexes():
 
     assert monitor_rule_id(entry, 0) == monitor_rule_id(entry, 3)
     assert monitor_rule_id(entry, 0) == "path-c5a72f500eeddda3"
+
+
+def test_monitor_rule_id_scopes_same_appid_to_steam_installation():
+    native = {"appid": "730", "steam_installation": "native:/steam"}
+    flatpak = {"appid": "730", "steam_installation": "flatpak:user"}
+
+    assert monitor_rule_id(native, 0) == "steam-74c90759ee5879db-730"
+    assert monitor_rule_id(flatpak, 0) == "steam-84ecec948babd13b-730"
+    assert monitor_rule_id({"appid": "730"}, 0) == "steam-730"
 
 
 def test_entry_matches_steam_install_path():
@@ -527,11 +548,7 @@ def test_find_running_whitelist_entry_respects_capture_mode(tmp_path):
     }
 
     assert (
-        find_running_whitelist_entry([display_entry], proc_root, "display_capture")
-        == display_entry
+        find_running_whitelist_entry([display_entry], proc_root, "display_capture") == display_entry
     )
     assert find_running_whitelist_entry([display_entry], proc_root, "game_capture") is None
-    assert (
-        find_running_whitelist_entry([game_entry], proc_root, "game_capture")
-        == game_entry
-    )
+    assert find_running_whitelist_entry([game_entry], proc_root, "game_capture") == game_entry

@@ -170,12 +170,8 @@ def _process_references_executable_name(
     return (
         executable_name == comm
         or executable_name == exe_name
-        or _executable_name_is_mentioned(
-            str(process.get("cmdline") or ""), executable_name
-        )
-        or _executable_name_is_mentioned(
-            str(process.get("environ") or ""), executable_name
-        )
+        or _executable_name_is_mentioned(str(process.get("cmdline") or ""), executable_name)
+        or _executable_name_is_mentioned(str(process.get("environ") or ""), executable_name)
     )
 
 
@@ -213,7 +209,11 @@ def entries_share_executable_identity(first: dict, second: dict) -> bool:
     first_appid = str(first.get("appid") or "").strip()
     second_appid = str(second.get("appid") or "").strip()
     if first_appid and first_appid == second_appid:
-        return True
+        first_installation = str(first.get("steam_installation") or "").strip()
+        second_installation = str(second.get("steam_installation") or "").strip()
+        if not first_installation or not second_installation:
+            return True
+        return first_installation == second_installation
 
     first_paths = _entry_executable_paths(first)
     second_paths = _entry_executable_paths(second)
@@ -246,6 +246,9 @@ def monitor_rule_id(entry: dict, index: int) -> str:
     """Return the host-monitor rule id for a whitelist entry."""
     appid = str(entry.get("appid") or "").strip()
     if appid:
+        installation = str(entry.get("steam_installation") or "").strip()
+        if installation:
+            return f"steam-{_stable_rule_hash(installation)}-{appid}"
         return f"steam-{appid}"
 
     executable_path = str(entry.get("executable_path") or "").strip()
@@ -298,9 +301,7 @@ def iter_processes(proc_root: Path = Path("/proc")) -> list[dict[str, str]]:
     except OSError:
         return processes
 
-    for proc_dir in sorted(
-        entries, key=lambda path: int(path.name) if path.name.isdigit() else -1
-    ):
+    for proc_dir in sorted(entries, key=lambda path: int(path.name) if path.name.isdigit() else -1):
         if not proc_dir.name.isdigit():
             continue
 
@@ -336,10 +337,7 @@ def is_obs_studio_process(process: dict[str, str]) -> bool:
     """
     comm = _norm(process.get("comm"))
     exe_name = _basename(str(process.get("exe") or ""))
-    return (
-        comm in _OBS_STUDIO_EXECUTABLE_NAMES
-        or exe_name in _OBS_STUDIO_EXECUTABLE_NAMES
-    )
+    return comm in _OBS_STUDIO_EXECUTABLE_NAMES or exe_name in _OBS_STUDIO_EXECUTABLE_NAMES
 
 
 def find_running_obs_studio(
@@ -425,6 +423,15 @@ def entry_matches_process(entry: dict, process: dict[str, str]) -> bool:
     cwd_norm = _norm(cwd)
     exe_name = _basename(exe)
 
+    installation = str(entry.get("steam_installation") or "")
+    if installation:
+        flatpak = "flatpak_id=com.valvesoftware.steam" in environ_norm.split()
+        snap = "snap_name=steam" in environ_norm.split()
+        if flatpak != installation.startswith("flatpak_steam_") or snap != installation.startswith(
+            "steam_snap:"
+        ):
+            return False
+
     install_path = str(entry.get("install_path") or "").strip()
     if install_path:
         if (
@@ -502,9 +509,7 @@ def find_running_whitelist_entry(
     """Return the first whitelist entry that matches a running process."""
     entries = [entry for entry in whitelist if isinstance(entry, dict)]
     if capture_mode is not None:
-        entries = [
-            entry for entry in entries if capture_mode_for_entry(entry) == capture_mode
-        ]
+        entries = [entry for entry in entries if capture_mode_for_entry(entry) == capture_mode]
     if not entries:
         return None
 

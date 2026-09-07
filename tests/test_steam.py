@@ -9,17 +9,26 @@ from pathlib import Path
 
 import pytest
 import steam as steam_mod
+from config import ClipperConfig
+from game_capture import EnvironmentKind
 from steam import (
     CLIPPER_WRAPPER,
+    AmbiguousSteamAccountError,
+    CaptureProviderUnverifiedError,
     SteamGame,
+    SteamInstallation,
     SteamProcessCheckError,
     SteamRestartError,
     _is_steam_running,
+    compose_capture_options,
+    discover_steam_installations,
     get_game_header_path,
     get_game_icon_path,
     get_installed_games,
     get_launch_options,
     inject_capture_wrapper,
+    prepare_capture_injection,
+    reconcile_pending_game_capture_change,
     remove_capture_wrapper,
     restart_steam_around,
     set_launch_options,
@@ -66,6 +75,7 @@ def _make_fake_steam(
 
     app_lines: list[str] = []
     for appid, opts in (launch_options or {}).items():
+        opts = opts.replace("\\", "\\\\").replace('"', '\\"')
         app_lines += [
             f'\t\t\t\t\t"{appid}"',
             "\t\t\t\t\t{",
@@ -97,7 +107,7 @@ def _make_fake_steam(
 @pytest.fixture()
 def steam_not_running(monkeypatch):
     """Patch ``_is_steam_running`` to return False so writes succeed in tests."""
-    monkeypatch.setattr(steam_mod, "_is_steam_running", lambda: False)
+    monkeypatch.setattr(steam_mod, "_is_steam_running", lambda *args, **kwargs: False)
 
 
 # ---------------------------------------------------------------------------
@@ -322,14 +332,7 @@ def test_get_game_icon_path_falls_back_to_header(tmp_path):
 
 def test_get_game_icon_path_finds_nested_library_cache_artwork(tmp_path):
     steam_root = tmp_path / "steam"
-    artwork = (
-        steam_root
-        / "appcache"
-        / "librarycache"
-        / "730"
-        / "abcdef"
-        / "library_600x900.jpg"
-    )
+    artwork = steam_root / "appcache" / "librarycache" / "730" / "abcdef" / "library_600x900.jpg"
     artwork.parent.mkdir(parents=True)
     artwork.write_bytes(b"jpg")
 
@@ -353,12 +356,7 @@ def test_get_game_header_path_prefers_horizontal_header(tmp_path):
 def test_get_game_header_path_finds_nested_steam_cache_layout(tmp_path):
     steam_root = tmp_path / "steam"
     header = (
-        steam_root
-        / "appcache"
-        / "librarycache"
-        / "730"
-        / "content-hash"
-        / "library_header.jpg"
+        steam_root / "appcache" / "librarycache" / "730" / "content-hash" / "library_header.jpg"
     )
     header.parent.mkdir(parents=True)
     header.write_bytes(b"header")
@@ -421,6 +419,24 @@ def test_get_installed_games_skips_corrupt_acf(tmp_path):
     assert any(g.name == "Good Game" for g in games)
 
 
+def test_discover_native_and_flatpak_installations_and_deduplicate_symlink(tmp_path):
+    native = tmp_path / ".local/share/Steam"
+    native.mkdir(parents=True)
+    alias = tmp_path / ".steam/steam"
+    alias.parent.mkdir(parents=True)
+    alias.symlink_to(native, target_is_directory=True)
+    flatpak = tmp_path / ".var/app/com.valvesoftware.Steam/.local/share/Steam"
+    flatpak.mkdir(parents=True)
+
+    installations = discover_steam_installations(tmp_path)
+
+    assert [item.environment for item in installations] == [
+        EnvironmentKind.NATIVE_STEAM,
+        EnvironmentKind.FLATPAK_STEAM_USER,
+    ]
+    assert len({item.stable_id for item in installations}) == 2
+
+
 # ---------------------------------------------------------------------------
 # 4. get_launch_options
 # ---------------------------------------------------------------------------
@@ -448,8 +464,7 @@ def test_get_launch_options_raises_when_no_localconfig(tmp_path):
         get_launch_options("730", steam_root)
 
 
-def test_get_launch_options_prefers_lowest_user_id(tmp_path):
-    """When multiple user directories exist, the lowest numeric ID wins."""
+def test_get_launch_options_requires_choice_when_accounts_are_ambiguous(tmp_path):
     steam_root = tmp_path / "steam"
     (steam_root / "steamapps").mkdir(parents=True)
 
@@ -480,7 +495,31 @@ def test_get_launch_options_prefers_lowest_user_id(tmp_path):
         d.mkdir(parents=True)
         (d / "localconfig.vdf").write_text(lc_text.replace("{marker}", marker), encoding="utf-8")
 
-    assert get_launch_options("730", steam_root) == "from-12345"
+    with pytest.raises(AmbiguousSteamAccountError):
+        get_launch_options("730", steam_root)
+    assert get_launch_options("730", steam_root, account_id="12345") == "from-12345"
+
+
+def test_loginusers_steamid64_selects_matching_userdata_account(tmp_path):
+    steam_root = _make_fake_steam(tmp_path, launch_options={"730": "recent"})
+    other = steam_root / "userdata" / "99999" / "config"
+    other.mkdir(parents=True)
+    source = steam_root / "userdata" / "12345678" / "config" / "localconfig.vdf"
+    other.joinpath("localconfig.vdf").write_text(
+        source.read_text(encoding="utf-8").replace("recent", "other"),
+        encoding="utf-8",
+    )
+    loginusers = steam_root / "config" / "loginusers.vdf"
+    loginusers.parent.mkdir(parents=True)
+    steam_id64 = 76561197960265728 + 12345678
+    loginusers.write_text(
+        f'"users"\n{{\n\t"{steam_id64}"\n\t{{\n'
+        '\t\t"AccountName"\t\t"recent-user"\n'
+        '\t\t"MostRecent"\t\t"1"\n\t}\n}\n',
+        encoding="utf-8",
+    )
+
+    assert get_launch_options("730", steam_root) == "recent"
 
 
 # ---------------------------------------------------------------------------
@@ -532,7 +571,7 @@ def test_set_launch_options_overwrites_existing(tmp_path, steam_not_running):
 
 
 def test_set_launch_options_raises_if_steam_running(tmp_path, monkeypatch):
-    monkeypatch.setattr(steam_mod, "_is_steam_running", lambda: True)
+    monkeypatch.setattr(steam_mod, "_is_steam_running", lambda *args, **kwargs: True)
     steam_root = _make_fake_steam(tmp_path, launch_options={})
     with pytest.raises(RuntimeError, match="[Ss]team"):
         set_launch_options("730", "test", steam_root)
@@ -545,37 +584,88 @@ def test_set_launch_options_raises_if_steam_running(tmp_path, monkeypatch):
 
 def test_inject_adds_wrapper(tmp_path, steam_not_running):
     steam_root = _make_fake_steam(tmp_path, launch_options={"730": ""})
-    added = inject_capture_wrapper("730", steam_root)
+    added = inject_capture_wrapper("730", steam_root, wrapper_path="/usr/bin/obs-gamecapture")
     assert added is True
-    assert get_launch_options("730", steam_root) == CLIPPER_WRAPPER
+    assert get_launch_options("730", steam_root) == (
+        compose_capture_options("%command%", "/usr/bin/obs-gamecapture")
+    )
 
 
 def test_inject_prepends_to_existing_options(tmp_path, steam_not_running):
     steam_root = _make_fake_steam(tmp_path, launch_options={"730": "%command%"})
-    inject_capture_wrapper("730", steam_root)
+    inject_capture_wrapper("730", steam_root, wrapper_path="/usr/bin/obs-gamecapture")
     opts = get_launch_options("730", steam_root)
-    assert opts.startswith(CLIPPER_WRAPPER)
-    assert "%command%" in opts
+    assert opts == compose_capture_options("%command%", "/usr/bin/obs-gamecapture")
 
 
 def test_inject_idempotent_returns_false(tmp_path, steam_not_running):
-    steam_root = _make_fake_steam(tmp_path, launch_options={"730": f"{CLIPPER_WRAPPER} %command%"})
-    added = inject_capture_wrapper("730", steam_root)
+    steam_root = _make_fake_steam(
+        tmp_path,
+        launch_options={"730": compose_capture_options("%command%", "/usr/bin/obs-gamecapture")},
+    )
+    added = inject_capture_wrapper("730", steam_root, wrapper_path="/usr/bin/obs-gamecapture")
     assert added is False
 
 
 def test_inject_no_double_add(tmp_path, steam_not_running):
     steam_root = _make_fake_steam(tmp_path, launch_options={"730": ""})
-    inject_capture_wrapper("730", steam_root)
-    inject_capture_wrapper("730", steam_root)
-    assert get_launch_options("730", steam_root).count(CLIPPER_WRAPPER) == 1
+    inject_capture_wrapper("730", steam_root, wrapper_path="/usr/bin/obs-gamecapture")
+    with pytest.raises(CaptureProviderUnverifiedError):
+        inject_capture_wrapper("730", steam_root)
+    assert get_launch_options("730", steam_root).count("/usr/bin/obs-gamecapture") == 1
 
 
 def test_inject_raises_if_steam_running(tmp_path, monkeypatch):
-    monkeypatch.setattr(steam_mod, "_is_steam_running", lambda: True)
+    monkeypatch.setattr(steam_mod, "_is_steam_running", lambda *args, **kwargs: True)
     steam_root = _make_fake_steam(tmp_path, launch_options={"730": ""})
     with pytest.raises(RuntimeError):
+        inject_capture_wrapper("730", steam_root, wrapper_path="/usr/bin/obs-gamecapture")
+
+
+def test_unverified_injection_never_writes(tmp_path, steam_not_running):
+    steam_root = _make_fake_steam(tmp_path, launch_options={"730": "keep  spacing"})
+    with pytest.raises(CaptureProviderUnverifiedError):
         inject_capture_wrapper("730", steam_root)
+    assert get_launch_options("730", steam_root) == "keep  spacing"
+
+
+@pytest.mark.parametrize(
+    "original",
+    [
+        "MANGOHUD=1  %command%   -novid",
+        'env FOO="two words" %command%',
+        "--аргумент  значення",
+        'gamescope -- %command% --nested="a b"',
+    ],
+)
+def test_compose_capture_options_preserves_original_exactly(original):
+    applied = compose_capture_options(original, "/home/user/My Tools/obs-gamecapture")
+    prefix = steam_mod.quote_wrapper_path("/home/user/My Tools/obs-gamecapture")
+    if "%command%" in original:
+        assert applied.replace(prefix + " ", "", 1) == original
+    else:
+        assert applied == f"{prefix} %command% {original}"
+
+
+@pytest.mark.parametrize(
+    "wrapper_path",
+    [
+        "/home/user/$TOOLS/obs-gamecapture",
+        "/home/user/`tools`/obs-gamecapture",
+        "/home/user/tools\\obs-gamecapture",
+        '/home/user/"tools"/obs-gamecapture',
+        "/home/user/tools\nobs-gamecapture",
+    ],
+)
+def test_compose_capture_options_quotes_shell_active_wrapper_paths(wrapper_path):
+    import shlex
+
+    if "\n" in wrapper_path:
+        with pytest.raises(ValueError):
+            compose_capture_options("%command%", wrapper_path)
+        return
+    parts = shlex.split(compose_capture_options("%command%", wrapper_path))
+    assert parts[3] == wrapper_path
 
 
 # ---------------------------------------------------------------------------
@@ -584,18 +674,39 @@ def test_inject_raises_if_steam_running(tmp_path, monkeypatch):
 
 
 def test_remove_removes_wrapper(tmp_path, steam_not_running):
-    steam_root = _make_fake_steam(tmp_path, launch_options={"730": f"{CLIPPER_WRAPPER} %command%"})
-    removed = remove_capture_wrapper("730", steam_root)
+    original = "MANGOHUD=1  %command%"
+    mutation = prepare_capture_injection(original, "/usr/bin/obs-gamecapture")
+    steam_root = _make_fake_steam(tmp_path, launch_options={"730": ""})
+    set_launch_options("730", mutation.applied, steam_root)
+    removed = remove_capture_wrapper(
+        "730",
+        steam_root,
+        integration={
+            "managed_launch_options": True,
+            "original_launch_options": original,
+            "applied_launch_options": mutation.applied,
+            "wrapper_prefix": mutation.wrapper_prefix,
+        },
+    )
     assert removed is True
-    opts = get_launch_options("730", steam_root)
-    assert CLIPPER_WRAPPER not in opts.split()
+    assert get_launch_options("730", steam_root) == original
 
 
 def test_remove_preserves_remaining_options(tmp_path, steam_not_running):
-    steam_root = _make_fake_steam(
-        tmp_path, launch_options={"730": f"{CLIPPER_WRAPPER} --extra %command%"}
+    applied = compose_capture_options("%command%", "/usr/bin/obs-gamecapture")
+    edited = f"{applied} --extra"
+    steam_root = _make_fake_steam(tmp_path, launch_options={"730": ""})
+    set_launch_options("730", edited, steam_root)
+    remove_capture_wrapper(
+        "730",
+        steam_root,
+        integration={
+            "managed_launch_options": True,
+            "original_launch_options": "",
+            "applied_launch_options": applied,
+            "wrapper_prefix": steam_mod.quote_wrapper_path("/usr/bin/obs-gamecapture"),
+        },
     )
-    remove_capture_wrapper("730", steam_root)
     opts = get_launch_options("730", steam_root)
     assert "--extra" in opts
     assert "%command%" in opts
@@ -610,10 +721,19 @@ def test_remove_noop_if_wrapper_absent(tmp_path, steam_not_running):
 
 
 def test_remove_raises_if_steam_running(tmp_path, monkeypatch):
-    monkeypatch.setattr(steam_mod, "_is_steam_running", lambda: True)
+    monkeypatch.setattr(steam_mod, "_is_steam_running", lambda *args, **kwargs: True)
     steam_root = _make_fake_steam(tmp_path, launch_options={"730": f"{CLIPPER_WRAPPER} %command%"})
     with pytest.raises(RuntimeError):
-        remove_capture_wrapper("730", steam_root)
+        remove_capture_wrapper(
+            "730",
+            steam_root,
+            integration={
+                "managed_launch_options": True,
+                "original_launch_options": "",
+                "applied_launch_options": f"{CLIPPER_WRAPPER} %command%",
+                "wrapper_prefix": "obs-gamecapture",
+            },
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -681,11 +801,13 @@ def test_restart_steam_around_uses_host_helper_and_runs_action(monkeypatch):
         def available(self):
             return True
 
-        def stop_steam(self):
+        def stop_steam(self, environment):
+            assert environment is EnvironmentKind.NATIVE_STEAM
             calls.append("stop")
             return Result()
 
-        def start_steam(self):
+        def start_steam(self, environment):
+            assert environment is EnvironmentKind.NATIVE_STEAM
             calls.append("start")
             return Result()
 
@@ -708,11 +830,13 @@ def test_restart_steam_around_relaunches_after_action_failure(monkeypatch):
         def available(self):
             return True
 
-        def stop_steam(self):
+        def stop_steam(self, environment):
+            assert environment is EnvironmentKind.NATIVE_STEAM
             calls.append("stop")
             return Result()
 
-        def start_steam(self):
+        def start_steam(self, environment):
+            assert environment is EnvironmentKind.NATIVE_STEAM
             calls.append("start")
             return Result()
 
@@ -736,7 +860,8 @@ def test_restart_steam_around_stops_when_shutdown_fails(monkeypatch):
         def available(self):
             return True
 
-        def stop_steam(self):
+        def stop_steam(self, environment):
+            assert environment is EnvironmentKind.NATIVE_STEAM
             return Result()
 
     monkeypatch.setattr(steam_mod, "HostMonitorManager", HostManager)
@@ -747,7 +872,7 @@ def test_restart_steam_around_stops_when_shutdown_fails(monkeypatch):
 
 def test_steam_running_mock_triggers_runtime_error(monkeypatch):
     """When the mock says Steam is running, set_launch_options must raise."""
-    monkeypatch.setattr(steam_mod, "_is_steam_running", lambda: True)
+    monkeypatch.setattr(steam_mod, "_is_steam_running", lambda *args, **kwargs: True)
 
     # We need a valid steam root for this check to reach the RuntimeError.
     # Use a dummy path — the error fires before any I/O.
@@ -771,7 +896,224 @@ def test_steam_running_mock_triggers_runtime_error(monkeypatch):
 
 def test_steam_not_running_mock_allows_write(monkeypatch, tmp_path):
     """When the mock says Steam is not running, set_launch_options succeeds."""
-    monkeypatch.setattr(steam_mod, "_is_steam_running", lambda: False)
+    monkeypatch.setattr(steam_mod, "_is_steam_running", lambda *args, **kwargs: False)
     steam_root = _make_fake_steam(tmp_path, launch_options={})
     set_launch_options("730", "hello", steam_root)
     assert get_launch_options("730", steam_root) == "hello"
+
+
+def _bundled_wrapper() -> str:
+    return (
+        "/home/test/.var/app/io.github.leesethefox.Clipper/data/game-capture/"
+        "current/bin/clipper-gamecapture"
+    )
+
+
+@pytest.mark.parametrize("home_prefix", ["/home", "/var/home"])
+def test_flatpak_library_paths_are_mapped_to_the_host_data_root(tmp_path, home_prefix):
+    root = _make_fake_steam(
+        tmp_path, games=[{"appid": "730", "name": "Game", "installdir": "game"}]
+    )
+    visible = Path("/home/test/.local/share/Steam")
+    (root / "steamapps/libraryfolders.vdf").write_text(
+        f'"libraryfolders" {{ "0" {{ "path" "{home_prefix}/test/.local/share/Steam" }} }}'
+    )
+    installation = SteamInstallation(
+        "flatpak:test",
+        EnvironmentKind.FLATPAK_STEAM_USER,
+        root,
+        game_visible_data_root=visible,
+    )
+    games = get_installed_games(installation, account_id="12345678")
+    assert len(games) == 1
+    assert games[0].install_path == str(root / "steamapps/common/game")
+    assert games[0].steam_account_id == "12345678"
+
+
+def test_legacy_wrapper_is_upgraded_and_removed_without_host_dependency(
+    tmp_path, steam_not_running
+):
+    root = _make_fake_steam(tmp_path, launch_options={"730": "obs-gamecapture %command% -novid"})
+    config = ClipperConfig(tmp_path / "config.json")
+    previous = {"appid": "730", "name": "Game", "capture_mode": "game_capture"}
+    config.set("whitelist", [previous])
+    entry = dict(previous, steam_installation="native:test", steam_account_id="12345678")
+    updated = steam_mod.apply_game_capture_update_transaction(
+        config, previous, entry, _bundled_wrapper(), root
+    )
+    assert not get_launch_options("730", root).startswith("obs-gamecapture")
+    steam_mod.apply_game_capture_remove_transaction(config, updated, root)
+    assert get_launch_options("730", root) == "%command% -novid"
+    assert config.get("whitelist") == []
+
+
+def test_existing_managed_wrapper_migration_restores_original_options(tmp_path, steam_not_running):
+    root = _make_fake_steam(tmp_path, launch_options={"730": "FOO=1 %command% -arg"})
+    config = ClipperConfig(tmp_path / "config.json")
+    entry = {
+        "appid": "730",
+        "name": "Game",
+        "capture_mode": "game_capture",
+        "steam_installation": "native:test",
+        "steam_account_id": "12345678",
+    }
+    previous = steam_mod.apply_game_capture_add_transaction(config, entry, "/old/wrapper", root)
+    updated = steam_mod.apply_game_capture_update_transaction(
+        config, previous, previous, _bundled_wrapper(), root
+    )
+    assert "/old/wrapper" not in get_launch_options("730", root)
+    steam_mod.apply_game_capture_remove_transaction(config, updated, root)
+    assert get_launch_options("730", root) == "FOO=1 %command% -arg"
+
+
+def test_add_transaction_persists_exact_ownership_and_clears_journal(tmp_path, steam_not_running):
+    steam_root = _make_fake_steam(tmp_path, launch_options={"730": ""})
+    set_launch_options("730", 'MANGOHUD=1  %command%  "two words"', steam_root)
+    config = ClipperConfig(tmp_path / "config.json")
+    entry = {
+        "name": "Game",
+        "appid": "730",
+        "capture_mode": "game_capture",
+        "steam_installation": "native:test",
+        "steam_environment": "native_steam",
+        "steam_account_id": "12345678",
+    }
+
+    committed = steam_mod.apply_game_capture_add_transaction(
+        config, entry, _bundled_wrapper(), steam_root
+    )
+
+    integration = committed["game_capture_integration"]
+    assert integration["original_launch_options"] == ('MANGOHUD=1  %command%  "two words"')
+    assert (
+        get_launch_options("730", steam_root).replace(integration["wrapper_prefix"] + " ", "", 1)
+        == integration["original_launch_options"]
+    )
+    assert config.get("pending_game_capture_change") is None
+    assert config.get("whitelist") == [committed]
+
+
+def test_update_transaction_replaces_entry_only_after_launch_option_commit(
+    tmp_path, steam_not_running
+):
+    steam_root = _make_fake_steam(tmp_path, launch_options={"730": "MANGOHUD=1"})
+    config = ClipperConfig(tmp_path / "config.json")
+    previous = {
+        "name": "Game",
+        "appid": "730",
+        "capture_mode": "display_capture",
+        "steam_installation": "native:test",
+        "steam_environment": "native_steam",
+        "steam_account_id": "12345678",
+    }
+    config.set("whitelist", [previous])
+    replacement = dict(previous, capture_mode="game_capture")
+
+    committed = steam_mod.apply_game_capture_update_transaction(
+        config, previous, replacement, _bundled_wrapper(), steam_root
+    )
+
+    assert config.get("whitelist") == [committed]
+    assert committed["capture_mode"] == "game_capture"
+    assert get_launch_options("730", steam_root) == compose_capture_options(
+        "MANGOHUD=1", _bundled_wrapper()
+    )
+    assert config.get("pending_game_capture_change") is None
+
+
+@pytest.mark.parametrize("running", [False, True])
+def test_interrupted_add_reconciliation_rolls_back_untracked_wrapper(
+    tmp_path, steam_not_running, monkeypatch, running
+):
+    steam_root = _make_fake_steam(tmp_path, launch_options={"730": "keep  %command%"})
+    config_path = tmp_path / "config.json"
+    config = ClipperConfig(config_path)
+    real_set = config.set
+
+    def fail_whitelist(key, value):
+        if key == "whitelist":
+            raise OSError("injected persistence failure")
+        return real_set(key, value)
+
+    monkeypatch.setattr(config, "set", fail_whitelist)
+    entry = {
+        "name": "Game",
+        "appid": "730",
+        "capture_mode": "game_capture",
+        "steam_installation": "native:test",
+        "steam_environment": "native_steam",
+        "steam_account_id": "12345678",
+    }
+    with pytest.raises(OSError, match="injected"):
+        steam_mod.apply_game_capture_add_transaction(config, entry, _bundled_wrapper(), steam_root)
+    assert steam_mod.quote_wrapper_path(_bundled_wrapper()) in get_launch_options("730", steam_root)
+
+    recovered = ClipperConfig(config_path)
+    installation = SteamInstallation("native:test", EnvironmentKind.NATIVE_STEAM, steam_root)
+    monkeypatch.setattr(steam_mod, "discover_steam_installations", lambda: [installation])
+    monkeypatch.setattr(steam_mod.game_capture, "ensure_payload", lambda: None)
+    monkeypatch.setattr(steam_mod, "_is_steam_running", lambda **kwargs: running)
+    updates = steam_mod.capture_updates(recovered)
+    if running:
+        assert updates == [({}, installation, True)]
+
+        def restart(action, environment):
+            assert environment == installation.environment
+            monkeypatch.setattr(steam_mod, "_is_steam_running", lambda **kwargs: False)
+            action()
+
+        monkeypatch.setattr(steam_mod, "restart_steam_around", restart)
+        steam_mod.apply_capture_updates(recovered, updates)
+    else:
+        assert updates == []
+    assert get_launch_options("730", steam_root) == "keep  %command%"
+    assert recovered.get("pending_game_capture_change") is None
+
+
+def test_interrupted_update_reconciliation_keeps_old_entry_and_options(
+    tmp_path, steam_not_running, monkeypatch
+):
+    steam_root = _make_fake_steam(tmp_path, launch_options={"730": "keep"})
+    config_path = tmp_path / "config.json"
+    config = ClipperConfig(config_path)
+    previous = {
+        "name": "Game",
+        "appid": "730",
+        "capture_mode": "display_capture",
+        "steam_installation": "native:test",
+        "steam_environment": "native_steam",
+        "steam_account_id": "12345678",
+    }
+    config.set("whitelist", [previous])
+    real_set = config.set
+
+    def fail_replacement(key, value):
+        if key == "whitelist":
+            raise OSError("injected replacement failure")
+        return real_set(key, value)
+
+    monkeypatch.setattr(config, "set", fail_replacement)
+    with pytest.raises(OSError, match="replacement"):
+        steam_mod.apply_game_capture_update_transaction(
+            config,
+            previous,
+            dict(previous, capture_mode="game_capture"),
+            _bundled_wrapper(),
+            steam_root,
+        )
+
+    recovered = ClipperConfig(config_path)
+    installation = SteamInstallation("native:test", EnvironmentKind.NATIVE_STEAM, steam_root)
+    assert reconcile_pending_game_capture_change(recovered, [installation]) == ("rolled_back")
+    assert get_launch_options("730", steam_root) == "keep"
+    assert recovered.get("whitelist") == [previous]
+
+
+def test_managed_removal_refuses_unrelated_user_edit():
+    with pytest.raises(steam_mod.LaunchOptionConflictError):
+        steam_mod.remove_managed_capture_options(
+            "gamescope %command%",
+            original="%command%",
+            applied='"/managed/wrapper" %command%',
+            wrapper_prefix='"/managed/wrapper"',
+        )
