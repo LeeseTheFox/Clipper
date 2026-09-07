@@ -15,6 +15,12 @@ ICON_128 = REPO_ROOT / "ui/icons/hicolor/128x128/apps" / f"{APP_ID}.png"
 STEAM_ICON = REPO_ROOT / "ui/icons/hicolor/scalable/actions/steam-symbolic.svg"
 VENDOR_DIR = REPO_ROOT / "vendor"
 README = REPO_ROOT / "packaging" / "flatpak" / "README.md"
+LINT_EXCEPTIONS = REPO_ROOT / "packaging" / "flatpak" / "lint-exceptions.json"
+PAYLOAD_VALIDATOR = REPO_ROOT / "tools" / "validate_game_capture_payload.py"
+PAYLOAD_BUILDER = REPO_ROOT / "tools" / "build_game_capture_payload.py"
+CLIPPER_IPC_PATCH = (
+    REPO_ROOT / "packaging/flatpak/patches/obs-vkcapture-clipper-ipc.patch"
+)
 
 
 def _load_icon_names_module():
@@ -68,6 +74,9 @@ def test_flatpak_exported_app_id_files_are_consistent():
     assert ICON.exists()
     assert ICON_128.exists()
     assert STEAM_ICON.exists()
+    assert PAYLOAD_VALIDATOR.exists()
+    assert PAYLOAD_BUILDER.exists()
+    assert CLIPPER_IPC_PATCH.exists()
     assert sorted(
         path.relative_to(REPO_ROOT).as_posix()
         for path in (REPO_ROOT / "ui/icons").rglob("*")
@@ -159,6 +168,76 @@ def test_flatpak_manifest_uses_exported_app_id():
     assert f"/app/share/licenses/{APP_ID}/xapp-symbolic-icons-COPYRIGHT" in manifest
 
 
+def test_game_capture_permissions_are_narrow_and_documented():
+    manifest = MANIFEST.read_text(encoding="utf-8")
+    readme = README.read_text(encoding="utf-8")
+
+    assert "--filesystem=xdg-data/Steam:rw" in manifest
+    assert (
+        "--filesystem=~/.var/app/com.valvesoftware.Steam/.local/share/Steam:rw"
+        in manifest
+    )
+    assert "--filesystem=~/snap/steam/common/.local/share/Steam:rw" in manifest
+    assert "--talk-name=org.freedesktop.Flatpak" in manifest
+    assert "--filesystem=home" not in manifest
+    assert "--filesystem=xdg-data:rw" not in manifest
+    assert "data/game-capture" in readme
+    assert "read access" in readme
+
+
+def test_game_capture_permission_linter_exceptions_are_exact_and_documented():
+    import json
+
+    exceptions = json.loads(LINT_EXCEPTIONS.read_text(encoding="utf-8"))[APP_ID]
+    expected = {
+        "finish-args-flatpak-spawn-access",
+        "finish-args-flatpak-appdata-folder-com.valvesoftware.Steam-.local-share-Steam-rw-access",
+        "finish-args-unnecessary-xdg-data-Steam-rw-access",
+    }
+    readme = README.read_text(encoding="utf-8")
+
+    assert set(exceptions) == expected
+    assert all(exception in readme for exception in expected)
+
+
+def test_host_helpers_are_statically_linked_in_packaged_build():
+    manifest = MANIFEST.read_text(encoding="utf-8")
+
+    assert "make -C engine/monitor LDFLAGS=-static" in manifest
+
+
+
+def test_flatpak_builds_complete_multiarch_payload_from_one_pinned_source():
+    manifest = MANIFEST.read_text(encoding="utf-8")
+    builder = PAYLOAD_BUILDER.read_text(encoding="utf-8")
+    patch = CLIPPER_IPC_PATCH.read_text(encoding="utf-8")
+
+    assert "- name: obs-vkcapture" in manifest
+    assert "path: patches/obs-vkcapture-clipper-ipc.patch" in manifest
+    assert "receiver-build/linux-vkcapture.so" in manifest
+    assert "/app/lib/obs-plugins/linux-vkcapture.so" in manifest
+    assert "build_game_capture_payload.py" in manifest
+    assert "glibc-2.17-317.el7.x86_64.rpm" in manifest
+    assert "glibc-2.17-317.el7.i686.rpm" in manifest
+    assert "validate_game_capture_payload.py /app --self-test" in manifest
+
+    assert 'PAYLOAD_VERSION = "obs-vkcapture-1.5.6-clipper.1"' in builder
+    assert '"-march=x86-64"' in builder
+    assert '"-m32"' in builder
+    assert '"-march=i686"' in builder
+    assert '"linker_emulation": "elf_i386"' in builder
+    assert '"-mno-sse2"' in builder
+    assert '"--build-id=sha1"' in builder
+    assert "libVkLayer_clipper_vkcapture.so" in builder
+    assert "libclipper_glcapture.so" in builder
+    assert "CLIPPER_GAME_CAPTURE=1" in builder
+    assert '"exec \\"$@\\"\\n"' in builder
+
+    assert patch.count("/io/github/leesethefox/Clipper/vkcapture/") == 2
+    assert "cred.uid != getuid()" in patch
+    assert patch.count("/com/obsproject/vkcapture") == 2
+
+
 def test_flatpak_installs_only_the_selected_xapp_icon():
     manifest = MANIFEST.read_text(encoding="utf-8")
     xapp_module = manifest.split("  - name: xapp-trash-icon\n", 1)[1].split(
@@ -206,7 +285,7 @@ def test_manifest_network_sources_are_pinned():
             source_blocks.append(current)
             continue
         if line == "- type: file":
-            current = {"type": "file", "sha256": False}
+            current = {"type": "file", "url": False, "sha256": False}
             source_blocks.append(current)
             continue
         if current is None:
@@ -229,7 +308,7 @@ def test_manifest_network_sources_are_pinned():
             assert source["commit"], source
         if source["type"] == "archive":
             assert source["sha256"], source
-        if source["type"] == "file":
+        if source["type"] == "file" and source.get("url"):
             assert source["sha256"], source
 
 
@@ -338,6 +417,7 @@ def test_manifest_finish_args_keep_narrow_flatpak_permissions():
         "--socket=pulseaudio",
         "--filesystem=xdg-videos:create",
         "--filesystem=xdg-data/Steam:rw",
+        "--filesystem=~/snap/steam/common/.local/share/Steam:rw",
         "--filesystem=/mnt:ro",
         "--filesystem=/run/media:ro",
         "--filesystem=xdg-run/pipewire-0",
@@ -373,8 +453,8 @@ def test_manifest_and_engine_use_bundled_obs_paths():
     ):
         assert f"- name: {module_name}" in manifest
 
-    assert "tag: v1.5.1" in manifest
-    assert "commit: 553fbb146a6902e58ac4fc1cd8e1d3e25dc98b0d" in manifest
+    assert "tag: v1.5.6" in manifest
+    assert "commit: a9ea91fe1994708067e95d4159852b11b4209a16" in manifest
 
     assert '#define CLIPPER_PREFIX_DEFAULT "/app"' in engine_source
     assert '#define OBS_LIBDIR_DEFAULT CLIPPER_PREFIX_DEFAULT "/lib"' in engine_source

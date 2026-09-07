@@ -102,6 +102,22 @@ jobs:
           cache-key: clipper-flatpak-${{ hashFiles('packaging/flatpak/io.github.leesethefox.Clipper.yml') }}
           upload-artifact: false
 
+      - name: Validate built game-capture artifacts
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          bundle="Clipper-${VERSION}-x86_64.flatpak"
+          flatpak --user install --noninteractive --or-update "$bundle"
+          deployment="$(flatpak --user info --show-location io.github.leesethefox.Clipper)/files"
+          python3 tools/validate_game_capture_payload.py "$deployment" \
+            --report game-capture-payload-report.txt
+
+      - name: Store game-capture artifact report
+        uses: actions/upload-artifact@v4
+        with:
+          name: game-capture-payload-report
+          path: game-capture-payload-report.txt
+
       - name: Create or update GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}

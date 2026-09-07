@@ -61,6 +61,7 @@ import select
 import socket
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -68,6 +69,7 @@ sys.path.insert(0, "/app/share/clipper/ui")
 
 from monitor_ipc import MonitorIpcServer
 from monitor_manager import HostMonitorManager
+import game_capture
 
 
 def print_result(name, value):
@@ -332,11 +334,27 @@ def monitor_smoke(isolated):
     return ok
 
 
+def game_capture_smoke():
+    try:
+        with tempfile.TemporaryDirectory(prefix="clipper-capture-smoke-") as temp:
+            wrapper = game_capture.ensure_payload(destination=Path(temp))
+            result = subprocess.run(
+                [str(wrapper), "true"], capture_output=True, text=True, timeout=10
+            )
+        ok = result.returncode == 0
+        print_result("game_capture", {"ok": ok, "stderr": result.stderr})
+        return ok
+    except Exception as exc:
+        print_result("game_capture", {"ok": False, "error": repr(exc)})
+        return False
+
+
 isolated = os.environ.get("CLIPPER_SMOKE_ISOLATED") == "1"
 ui_ok = ui_import_smoke()
 engine_ok = engine_save_smoke()
 monitor_ok = monitor_smoke(isolated)
-raise SystemExit(0 if ui_ok and engine_ok and monitor_ok else 1)
+capture_ok = game_capture_smoke()
+raise SystemExit(0 if ui_ok and engine_ok and monitor_ok and capture_ok else 1)
 '''
 
 

@@ -1,5 +1,7 @@
 {
   "io.github.leesethefox.Clipper": [
-    "finish-args-flatpak-spawn-access"
+    "finish-args-flatpak-spawn-access",
+    "finish-args-flatpak-appdata-folder-com.valvesoftware.Steam-.local-share-Steam-rw-access",
+    "finish-args-unnecessary-xdg-data-Steam-rw-access"
   ]
 }

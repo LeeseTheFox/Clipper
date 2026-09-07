@@ -12,7 +12,7 @@ SRCS = clipper_monitor_host.c $(VENDOR_DIR)/cJSON.c
 all: $(TARGET)
 
 $(TARGET): $(SRCS)
-	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ $(SRCS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ $(SRCS) $(LDFLAGS)
 
 clean:
 	rm -f $(TARGET)

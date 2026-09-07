@@ -46,6 +46,54 @@ The manifest requests `--talk-name=org.freedesktop.Flatpak` so Clipper can run i
 
 The helper only checks processes, drives its monitor service, and handles the explicit Steam restart flow. It does not run as root, accept shell snippets or arbitrary commands, launch games, modify Steam launch options, or inject into games.
 
+## Bundled game capture
+
+The package builds x86_64 and i386 Vulkan/OpenGL hooks and the OBS receiver from
+the same pinned obs-vkcapture revision. Only the hooks use a GLIBC 2.17 build
+sysroot; its RPMs and libraries are build inputs, not installed dependencies.
+The receiver uses a per-user Clipper socket so an OBS installation cannot take
+its connection. The build validates ELF architecture, ABI imports, library
+paths, hashes, licenses, and both architectures' ability to load the hooks.
+
+At runtime Clipper copies the small payload to
+`~/.var/app/io.github.leesethefox.Clipper/data/game-capture`, activating updates
+atomically. Flatpak Steam gets read access to this directory through one
+per-user filesystem override, which applies to user and system Steam installs.
+This uses the existing Flatpak host permission; it installs no extension,
+downloads nothing, and preserves other overrides. Steam must restart to see a
+new permission and to safely update its per-account launch options.
+
+The intentional linter exceptions are `finish-args-flatpak-spawn-access`,
+`finish-args-flatpak-appdata-folder-com.valvesoftware.Steam-.local-share-Steam-rw-access`,
+and `finish-args-unnecessary-xdg-data-Steam-rw-access`. Steam data access is used
+for discovery and atomic launch-option writes, including Flatpak's private
+Steam root. `~/.steam` also covers Debian's native client layout.
+
+Flatpak retains application data on a normal uninstall. Choosing to delete
+Clipper's data (or using `flatpak uninstall --delete-data
+io.github.leesethefox.Clipper`) removes the wrapper and every exported hook.
+The launch option falls through to the game when the wrapper is absent.
+Flatpak has no application uninstall hook: a Steam filesystem override may
+remain, but points only to the removed directory. Removing a game in Clipper
+restores its launch options; later user edits are preserved when the exact
+Clipper prefix can be removed safely. Older payload versions are retained so
+already-running games can continue loading their libraries.
+
+Native glibc Linux and Flatpak Steam are the supported game-capture targets.
+Unsupported third-party sandboxes (including Steam Snap) should use display capture.
+ARM, native musl games, and anti-cheat-restricted injection are not covered by
+the x86_64/i386 payload.
+
+For real frame verification, compile `engine/gamecapture/frame_harness.c` with
+`-lGL -lX11 -lvulkan`, then run
+`./venv/bin/python tools/game_capture_frame_smoke.py /absolute/path/to/harness --api vulkan`
+(or `--api opengl`). The test uses the installed Clipper receiver, saves a clip,
+and checks decoded frames change. `--steam-runtime /path/to/_v2-entry-point`
+tests Steam's container runtime; `--sandbox` additionally installs a temporary
+local test Flatpak and removes it afterward. These optional tests require a
+graphical session, ffmpeg, and locally installed Freedesktop 25.08 runtime/SDK
+for the sandbox mode. They do not change Steam or Clipper configuration.
+
 ## Before a Flathub submission
 
 - Make the project URL in AppStream metadata publicly reachable.

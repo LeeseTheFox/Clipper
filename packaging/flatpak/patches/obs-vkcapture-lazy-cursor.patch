@@ -1,8 +1,8 @@
 diff --git a/src/vkcapture.c b/src/vkcapture.c
-index d8947c0..4d554a4 100644
+index b974e22..b57b0c2 100644
 --- a/src/vkcapture.c
 +++ b/src/vkcapture.c
-@@ -196,6 +196,7 @@ static void cursor_destroy(vkcapture_source_t *ctx)
+@@ -201,6 +201,7 @@ static void cursor_destroy(vkcapture_source_t *ctx)
          obs_enter_graphics();
          xcb_xcursor_destroy(ctx->xcursor);
          obs_leave_graphics();
@@ -10,16 +10,16 @@ index d8947c0..4d554a4 100644
      }
      if (!source_instances) {
          if (xcb) {
-@@ -322,6 +323,8 @@ static void vkcapture_source_update(void *data, obs_data_t *settings)
+@@ -325,6 +326,7 @@ static void vkcapture_source_update(void *data, obs_data_t *settings)
+ static void vkcapture_source_update(void *data, obs_data_t *settings)
  {
      vkcapture_source_t *ctx = data;
- 
+-
 +    bool was_show_cursor = ctx->show_cursor;
 +
      ctx->show_cursor = obs_data_get_bool(settings, "show_cursor");
      ctx->allow_transparency = obs_data_get_bool(settings, "allow_transparency");
-     ctx->force_hdr = obs_data_get_bool(settings, "force_hdr");
-@@ -338,6 +341,12 @@ static void vkcapture_source_update(void *data, obs_data_t *settings)
+@@ -341,6 +343,12 @@ static void vkcapture_source_update(void *data, obs_data_t *settings)
      if (!strlen(ctx->window)) {
          ctx->window = NULL;
      }
@@ -30,14 +30,25 @@ index d8947c0..4d554a4 100644
 +        cursor_destroy(ctx);
 +    }
  }
- 
+-
++
  static void *vkcapture_source_create(obs_data_t *settings, obs_source_t *source)
-@@ -349,8 +358,6 @@ static void *vkcapture_source_create(obs_data_t *settings, obs_source_t *source)
- 
+@@ -353,11 +361,9 @@ static void *vkcapture_source_create(obs_data_t *settings, obs_source_t *source)
      vkcapture_source_update(ctx, settings);
- 
+-
 -    cursor_create(ctx);
 -
++
+-	proc_handler_t *ph = obs_source_get_proc_handler(source);
+-	proc_handler_add(
+-		ph,
+-		"void get_hooked(out bool hooked, out string executable)",
+-		vkcapture_get_hooked, ctx);
+-
++	proc_handler_t *ph = obs_source_get_proc_handler(source);
++	proc_handler_add(
++		ph,
++		"void get_hooked(out bool hooked, out string executable)",
++		vkcapture_get_hooked, ctx);
++
      UNUSED_PARAMETER(settings);
-     return ctx;
- }

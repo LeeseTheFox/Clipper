@@ -1,0 +1,155 @@
+diff --git a/src/capture.c b/src/capture.c
+index 247c04b..a881ddc 100644
+--- a/src/capture.c
++++ b/src/capture.c
+@@ -22,6 +22,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
+ #include <stdio.h>
+ #include <string.h>
+ 
++#include <stddef.h>
+ #include <errno.h>
+ #include <unistd.h>
+ #include <limits.h>
+@@ -29,6 +30,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>
+ #include <sys/un.h>
+ #include <sys/socket.h>
+ 
++#define CLIPPER_SOCKET_PREFIX "/io/github/leesethefox/Clipper/vkcapture/"
++
+ static struct {
+     int connfd;
+     bool accepted;
+@@ -76,17 +79,32 @@ static bool get_exe(char *buf, size_t bufsize)
+     return true;
+ }
+ 
+-static bool capture_try_connect()
++static bool capture_socket_address(struct sockaddr_un *addr, socklen_t *length)
+ {
+-    const char sockname[] = "/com/obsproject/vkcapture";
++    memset(addr, 0, sizeof(*addr));
++    addr->sun_family = PF_LOCAL;
++    const int written = snprintf(addr->sun_path + 1, sizeof(addr->sun_path) - 1,
++        "%s%lu", CLIPPER_SOCKET_PREFIX, (unsigned long)getuid());
++    if (written < 0 || (size_t)written >= sizeof(addr->sun_path) - 1) {
++        return false;
++    }
++    *length = (socklen_t)(offsetof(struct sockaddr_un, sun_path) + 1 + written);
++    return true;
++}
+ 
++static bool capture_try_connect()
++{
+     struct sockaddr_un addr;
+-    addr.sun_family = PF_LOCAL;
+-    addr.sun_path[0] = '\0'; // Abstract socket
+-    memcpy(&addr.sun_path[1], sockname, sizeof(sockname) - 1);
++    socklen_t address_length;
++    if (!capture_socket_address(&addr, &address_length)) {
++        return false;
++    }
+ 
+     int sock = socket(PF_LOCAL, SOCK_STREAM | SOCK_CLOEXEC | SOCK_NONBLOCK, 0);
+-    int ret = connect(sock, (const struct sockaddr *)&addr, sizeof(addr.sun_family) + sizeof(sockname));
++    if (sock < 0) {
++        return false;
++    }
++    int ret = connect(sock, (const struct sockaddr *)&addr, address_length);
+     if (ret == -1) {
+         close(sock);
+         return false;
+diff --git a/src/vkcapture.c b/src/vkcapture.c
+index b974e22..a187514 100644
+--- a/src/vkcapture.c
++++ b/src/vkcapture.c
+@@ -22,6 +22,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
+ #include <obs-nix-platform.h>
+ 
+ #include <poll.h>
++#include <stddef.h>
+ #include <errno.h>
+ #include <unistd.h>
+ #include <string.h>
+@@ -38,6 +39,8 @@ with this program. If not, see <https://www.gnu.org/licenses/>
+ #include "capture.h"
+ #include "plugin-macros.h"
+ 
++#define CLIPPER_SOCKET_PREFIX "/io/github/leesethefox/Clipper/vkcapture/"
++
+ #if HAVE_X11_XCB
+ #include "xcursor-xcb.h"
+ static xcb_connection_t *xcb = NULL;
+@@ -910,10 +913,21 @@ static void server_cleanup_client(vkcapture_client_t *client)
+     pthread_mutex_unlock(&server.mutex);
+ }
+ 
+-static void *server_thread_run(void *data)
++static bool capture_socket_address(struct sockaddr_un *addr, socklen_t *length)
+ {
+-    const char sockname[] = "/com/obsproject/vkcapture";
++    memset(addr, 0, sizeof(*addr));
++    addr->sun_family = PF_LOCAL;
++    const int written = snprintf(addr->sun_path + 1, sizeof(addr->sun_path) - 1,
++        "%s%lu", CLIPPER_SOCKET_PREFIX, (unsigned long)getuid());
++    if (written < 0 || (size_t)written >= sizeof(addr->sun_path) - 1) {
++        return false;
++    }
++    *length = (socklen_t)(offsetof(struct sockaddr_un, sun_path) + 1 + written);
++    return true;
++}
+ 
++static void *server_thread_run(void *data)
++{
+     int bufid = 0;
+     int clientid = 0;
+ 
+@@ -921,12 +935,14 @@ static void *server_thread_run(void *data)
+     da_init(server.clients);
+ 
+     struct sockaddr_un addr;
+-    addr.sun_family = PF_LOCAL;
+-    addr.sun_path[0] = '\0'; // Abstract socket
+-    memcpy(&addr.sun_path[1], sockname, sizeof(sockname) - 1);
++    socklen_t address_length;
++    if (!capture_socket_address(&addr, &address_length)) {
++        blog(LOG_ERROR, "Clipper socket address is too long");
++        return NULL;
++    }
+ 
+     int sockfd = socket(PF_LOCAL, SOCK_STREAM | SOCK_CLOEXEC | SOCK_NONBLOCK, 0);
+-    int ret = bind(sockfd, (const struct sockaddr *)&addr, sizeof(addr.sun_family) + sizeof(sockname));
++    int ret = bind(sockfd, (const struct sockaddr *)&addr, address_length);
+     if (ret < 0) {
+         blog(LOG_ERROR, "Cannot bind unix socket to %s: %d", addr.sun_path, errno);
+         return NULL;
+@@ -960,6 +976,18 @@ static void *server_thread_run(void *data)
+         if (server_has_event_on_fd(sockfd)) {
+             int clientfd = accept4(sockfd, NULL, NULL, SOCK_CLOEXEC | SOCK_NONBLOCK);
+             if (clientfd >= 0) {
++                struct ucred cred = {0};
++                socklen_t cred_len = sizeof(cred);
++                if (getsockopt(clientfd, SOL_SOCKET, SO_PEERCRED, &cred, &cred_len) != 0) {
++                    blog(LOG_WARNING, "Rejected client without socket credentials: %s", strerror(errno));
++                    close(clientfd);
++                    continue;
++                }
++                if (cred.uid != getuid()) {
++                    blog(LOG_WARNING, "Rejected game-capture client with a different uid");
++                    close(clientfd);
++                    continue;
++                }
+                 vkcapture_client_t client = {0};
+                 memset(&client.buf_fds, -1, sizeof(client.buf_fds));
+                 client.id = ++clientid;
+@@ -968,11 +996,6 @@ static void *server_thread_run(void *data)
+                 da_push_back(server.clients, &client);
+                 pthread_mutex_unlock(&server.mutex);
+                 server_add_fd(client.sockfd, POLLIN);
+-                struct ucred cred = {0};
+-                socklen_t cred_len = sizeof(cred);
+-                if (getsockopt(client.sockfd, SOL_SOCKET, SO_PEERCRED, &cred, &cred_len) != 0) {
+-                    blog(LOG_WARNING, "Failed to get socket credentials: %s", strerror(errno));
+-                }
+                 blog(LOG_INFO, "Client %d connected (pid=%d)", client.id, cred.pid);
+             } else {
+                 if (errno != EAGAIN && errno != EWOULDBLOCK && errno != ECONNABORTED) {

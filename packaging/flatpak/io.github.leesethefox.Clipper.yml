@@ -21,6 +21,13 @@ finish-args:
   - --socket=pulseaudio
   - --filesystem=xdg-videos:create
   - --filesystem=xdg-data/Steam:rw
+  - --filesystem=~/.steam:rw
+  # Steam's Flatpak data is a separate sandbox tree. Limit access to the
+  # canonical Steam data root used for game discovery and transactional VDF.
+  - --filesystem=~/.var/app/com.valvesoftware.Steam/.local/share/Steam:rw
+  # Canonical Steam Snap stores its client data below SNAP_USER_COMMON. Do not
+  # grant the rest of the Snap tree or the user's home directory.
+  - --filesystem=~/snap/steam/common/.local/share/Steam:rw
   - --filesystem=/mnt:ro
   - --filesystem=/run/media:ro
   - --filesystem=xdg-run/pipewire-0
@@ -162,20 +169,60 @@ modules:
       - type: patch
         path: patches/obs-low-resource-video.patch
 
+  # Build the receiver and portable game hooks from the same patched source.
   - name: obs-vkcapture
-    buildsystem: cmake-ninja
-    builddir: true
-    config-opts:
-      - -DCMAKE_BUILD_TYPE=Release
-      - -DBUILD_PLUGIN=ON
+    buildsystem: simple
+    build-commands:
+      - cmake -S . -B receiver-build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_PLUGIN=ON -DCMAKE_INSTALL_PREFIX=/app
+      - cmake --build receiver-build --target linux-vkcapture
+      - install -Dm755 receiver-build/linux-vkcapture.so /app/lib/obs-plugins/linux-vkcapture.so
+      - install -d /app/share/obs/obs-plugins/linux-vkcapture/locale
+      - install -m644 data/locale/*.ini /app/share/obs/obs-plugins/linux-vkcapture/locale/
+      - python3 build_game_capture_payload.py --source=. --rpm-dir=sysroot-rpms --build-dir=payload-build --destination=/app/share/clipper/game-capture/payloads/obs-vkcapture-1.5.6-clipper.1
+      - install -Dm644 LICENSE /app/share/licenses/io.github.leesethefox.Clipper/obs-vkcapture-GPL-2.0.txt
     sources:
       - type: git
         url: https://github.com/nowrep/obs-vkcapture.git
-        # Keep the OBS receiver aligned with the native Steam hook package.
-        tag: v1.5.1
-        commit: 553fbb146a6902e58ac4fc1cd8e1d3e25dc98b0d
+        tag: v1.5.6
+        commit: a9ea91fe1994708067e95d4159852b11b4209a16
       - type: patch
         path: patches/obs-vkcapture-lazy-cursor.patch
+      - type: patch
+        path: patches/obs-vkcapture-clipper-ipc.patch
+      - type: file
+        path: ../../tools/build_game_capture_payload.py
+      - type: file
+        url: https://archive.kernel.org/centos-vault/7.9.2009/os/x86_64/Packages/glibc-2.17-317.el7.x86_64.rpm
+        sha256: 49eb081de1ddd13f5440abdbb3b42cdd01d11b74d624793ae1b80a1cf432551b
+        dest: sysroot-rpms
+      - type: file
+        url: https://archive.kernel.org/centos-vault/7.9.2009/os/x86_64/Packages/glibc-2.17-317.el7.i686.rpm
+        sha256: e4df5a58d0f90095d141e1835d93bb4822824a49e24db3d00d712c1bc6683686
+        dest: sysroot-rpms
+      - type: file
+        url: https://archive.kernel.org/centos-vault/7.9.2009/os/x86_64/Packages/glibc-devel-2.17-317.el7.x86_64.rpm
+        sha256: 57e04523b12c9aa5a0632cbfa2ff13e33f1ecec5e6bd0b609a77d9c24cebf8c4
+        dest: sysroot-rpms
+      - type: file
+        url: https://archive.kernel.org/centos-vault/7.9.2009/os/x86_64/Packages/glibc-devel-2.17-317.el7.i686.rpm
+        sha256: e3bebba3a5737523364d480b7992bcd7faea3be46818ba587c6881f0a393e0aa
+        dest: sysroot-rpms
+      - type: file
+        url: https://archive.kernel.org/centos-vault/7.9.2009/os/x86_64/Packages/glibc-headers-2.17-317.el7.x86_64.rpm
+        sha256: b7e4e19b362cbd73e09e6ee5eff3d70dbeb7cc2c702a927b8f646f324d4ec4a3
+        dest: sysroot-rpms
+      - type: file
+        url: https://archive.kernel.org/centos-vault/7.9.2009/os/x86_64/Packages/kernel-headers-3.10.0-1160.el7.x86_64.rpm
+        sha256: 81b4e4f401d2402736ceba4627eaafd5b615c2cc45aa4d4f941ea79562045139
+        dest: sysroot-rpms
+      - type: file
+        url: https://archive.kernel.org/centos-vault/7.9.2009/os/x86_64/Packages/libgcc-4.8.5-44.el7.x86_64.rpm
+        sha256: cb1967fba485ad3da345e33018c0e8b367359f251c6b1a8847a4976579d74ffa
+        dest: sysroot-rpms
+      - type: file
+        url: https://archive.kernel.org/centos-vault/7.9.2009/os/x86_64/Packages/libgcc-4.8.5-44.el7.i686.rpm
+        sha256: ca7f63386ed014a1b1e1f31b1532b72dfa54c666560f85dbb6b67857831676d5
+        dest: sysroot-rpms
 
   - name: obs-pipewire-audio-capture
     buildsystem: cmake-ninja
@@ -215,7 +262,9 @@ modules:
     buildsystem: simple
     build-commands:
       - python3 tools/build_translations.py --output-dir=/app/share/locale
-      - make -C engine/monitor
+      # Host-executed helpers are static so the GNOME runtime's newer glibc
+      # does not become an undeclared host ABI requirement.
+      - make -C engine/monitor LDFLAGS=-static
       - make -C engine/src OBS_PREFIX=/app
       - install -Dm755 clipper /app/bin/clipper
       - make -C engine/src OBS_PREFIX=/app install
@@ -230,6 +279,7 @@ modules:
       - install -d /app/share/clipper/ui
       - find ui -maxdepth 1 -type f -name '*.py' ! -name 'test_*.py' -exec install -Dm644 '{}' '/app/share/clipper/{}' ';'
       - install -Dm644 ui/sounds/clip-saved.wav /app/share/clipper/ui/sounds/clip-saved.wav
+      - python3 tools/validate_game_capture_payload.py /app --self-test
     sources:
       - type: dir
         path: ../..
