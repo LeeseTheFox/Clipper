@@ -116,6 +116,8 @@ def allow_flatpak_steam() -> None:
         command = [
             "flatpak-spawn",
             "--host",
+            # The UI's /app working directory does not exist on the host.
+            "--directory=/",
             f"--env=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/{os.getuid()}/bus",
             f"--env=XDG_DATA_HOME={Path.home() / '.local/share'}",
             f"--env=XDG_CONFIG_HOME={Path.home() / '.config'}",

@@ -90,6 +90,8 @@ def test_flatpak_steam_permission_is_one_read_only_path(monkeypatch, tmp_path):
     game_capture.allow_flatpak_steam()
     command = calls[0]
     assert command[:2] == ["flatpak-spawn", "--host"]
+    # Never inherit the UI's sandbox-only /app/share/clipper/ui directory.
+    assert "--directory=/" in command[2:-5]
     assert command[-5:] == [
         "flatpak",
         "override",
