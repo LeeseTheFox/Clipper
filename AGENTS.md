@@ -52,6 +52,10 @@ This file gives coding agents the minimum repo-specific instructions needed to w
   become public changelog entries.
 - A successful release is titled `Clipper X.Y.Z` and includes a
   `Clipper-X.Y.Z-x86_64.flatpak` asset.
+- When monitoring a remote build or release workflow, wait 10 minutes between
+  status checks. Use the available wait mechanism rather than polling at short
+  intervals; after each wait, check the workflow once and repeat only if it is
+  still running.
 
 ## Startup Benchmark
 
