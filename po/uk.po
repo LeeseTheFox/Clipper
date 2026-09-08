@@ -846,7 +846,7 @@ msgid "Encoding"
 msgstr "Кодування"
 
 #: ui/editor_export_dialog.py:430 ui/settings_view.py:1175
-#: ui/setup_window.py:362
+#: ui/setup_window.py:388
 msgid "Resolution"
 msgstr "Роздільна здатність"
 
@@ -863,7 +863,7 @@ msgstr "%(width)d × %(height)d (нативна)"
 msgid "Native"
 msgstr "Нативна"
 
-#: ui/editor_export_dialog.py:456 ui/setup_window.py:389
+#: ui/editor_export_dialog.py:456 ui/setup_window.py:415
 msgid "Video codec"
 msgstr "Відеокодек"
 
@@ -899,7 +899,7 @@ msgstr "Середня"
 msgid "High"
 msgstr "Висока"
 
-#: ui/editor_export_dialog.py:558 ui/setup_window.py:398
+#: ui/editor_export_dialog.py:558 ui/setup_window.py:424
 msgid "Audio codec"
 msgstr "Аудіокодек"
 
@@ -1481,7 +1481,7 @@ msgid "Choose a key too"
 msgstr "Також обери клавішу"
 
 #: ui/hotkeys.py:235 ui/hotkeys.py:252 ui/settings_view.py:1609
-#: ui/setup_window.py:623
+#: ui/setup_window.py:649
 msgid "Not set"
 msgstr "Не встановлено"
 
@@ -1950,7 +1950,7 @@ msgstr "Щоб зміни набули чинності, потрібно пер
 msgid "Configure clip and encoding settings"
 msgstr "Налаштуй параметри кліпів і кодування"
 
-#: ui/settings_view.py:1112 ui/setup_window.py:274
+#: ui/settings_view.py:1112 ui/setup_window.py:300
 msgid "Clip length"
 msgstr "Тривалість кліпу"
 
@@ -1962,19 +1962,19 @@ msgstr "Скільки секунд зберігати в пам’яті"
 msgid "seconds"
 msgstr "секунд"
 
-#: ui/settings_view.py:1135 ui/setup_window.py:293
+#: ui/settings_view.py:1135 ui/setup_window.py:319
 msgid "File size limit"
 msgstr "Обмеження розміру файла"
 
-#: ui/settings_view.py:1136 ui/setup_window.py:294
+#: ui/settings_view.py:1136 ui/setup_window.py:320
 msgid "Maximum size retained for each clip"
 msgstr "Максимально дозволений розмір для кожного кліпу"
 
-#: ui/settings_view.py:1154 ui/setup_window.py:317
+#: ui/settings_view.py:1154 ui/setup_window.py:343
 msgid "MiB"
 msgstr "МіБ"
 
-#: ui/settings_view.py:1163 ui/setup_window.py:371
+#: ui/settings_view.py:1163 ui/setup_window.py:397
 msgid "Frame rate"
 msgstr "Частота кадрів"
 
@@ -2022,11 +2022,11 @@ msgstr "Пристрій апаратного прискорення"
 msgid "Change capture target display"
 msgstr "Змінити цільовий екран захоплення"
 
-#: ui/settings_view.py:1323 ui/settings_view.py:1501 ui/setup_window.py:445
+#: ui/settings_view.py:1323 ui/settings_view.py:1501 ui/setup_window.py:471
 msgid "Opens the system display picker"
 msgstr "Відкриває системний засіб вибору екрана"
 
-#: ui/settings_view.py:1324 ui/setup_window.py:446
+#: ui/settings_view.py:1324 ui/setup_window.py:472
 msgid "Pick display…"
 msgstr "Обрати екран…"
 
@@ -2046,7 +2046,7 @@ msgstr "Тека збереження"
 msgid "Hotkey"
 msgstr "Сполучення клавіш"
 
-#: ui/settings_view.py:1360 ui/settings_view.py:1623 ui/setup_window.py:532
+#: ui/settings_view.py:1360 ui/settings_view.py:1623 ui/setup_window.py:558
 msgid "Your desktop may ask you to approve or change this shortcut"
 msgstr "Система може попросити підтвердження цього сполучення клавіш"
 
@@ -2102,7 +2102,7 @@ msgstr "Відновлювати розміри головного вікна, �
 msgid "The system display picker is unavailable"
 msgstr "Системний засіб вибору екрана недоступний"
 
-#: ui/settings_view.py:1492 ui/setup_window.py:562
+#: ui/settings_view.py:1492 ui/setup_window.py:588
 msgid "Waiting for the system display picker…"
 msgstr "Очікування системного засобу вибору екрана…"
 
@@ -2132,8 +2132,8 @@ msgstr "Не вдалося оновити налаштування автоза
 msgid "Choose output folder"
 msgstr "Обери теку збереження"
 
-#: ui/settings_view.py:1622 ui/settings_view.py:1638 ui/setup_window.py:531
-#: ui/setup_window.py:540
+#: ui/settings_view.py:1622 ui/settings_view.py:1638 ui/setup_window.py:557
+#: ui/setup_window.py:566
 msgid "Managed by your desktop's global shortcut settings"
 msgstr "Керується глобальними системними налаштуваннями сполучень клавіш"
 
@@ -2145,36 +2145,36 @@ msgstr "Рушій успішно перезапущено"
 msgid "Failed to restart engine. Please restart manually."
 msgstr "Не вдалося перезапустити рушій. Перезапусти його вручну."
 
-#: ui/setup_window.py:43
+#: ui/setup_window.py:44
 msgid "Unknown encoder"
 msgstr "Невідомий кодер"
 
-#: ui/setup_window.py:67 ui/setup_window.py:109
+#: ui/setup_window.py:84 ui/setup_window.py:135
 msgid "Set up Clipper"
 msgstr "Налаштування Clipper"
 
-#: ui/setup_window.py:136 ui/setup_window.py:598
+#: ui/setup_window.py:162 ui/setup_window.py:624
 #, python-format
 msgid "Step %(current)d of %(total)d"
 msgstr "Крок %(current)d із %(total)d"
 
-#: ui/setup_window.py:154
+#: ui/setup_window.py:180
 msgid "Skip setup"
 msgstr "Пропустити налаштування"
 
-#: ui/setup_window.py:162
+#: ui/setup_window.py:188
 msgid "Back"
 msgstr "Назад"
 
-#: ui/setup_window.py:167 ui/setup_window.py:609
+#: ui/setup_window.py:193 ui/setup_window.py:635
 msgid "Next"
 msgstr "Далі"
 
-#: ui/setup_window.py:198
+#: ui/setup_window.py:224
 msgid "Welcome to Clipper"
 msgstr "Ласкаво просимо до Clipper"
 
-#: ui/setup_window.py:205
+#: ui/setup_window.py:231
 msgid ""
 "Set up clip length, quality, codecs, your save shortcut, and the display "
 "used for capture. Every choice can be changed later."
@@ -2183,7 +2183,7 @@ msgstr ""
 "екран, який використовується для захоплення. Усі параметри можна буде "
 "змінити пізніше."
 
-#: ui/setup_window.py:210
+#: ui/setup_window.py:236
 msgid ""
 "Set up clip length, quality, codecs, and your save shortcut. Every choice "
 "can be changed later."
@@ -2191,67 +2191,67 @@ msgstr ""
 "Налаштуй тривалість кліпу, якість, кодери та сполучення клавіш збереження. "
 "Усі параметри можна буде змінити пізніше."
 
-#: ui/setup_window.py:268
+#: ui/setup_window.py:294
 msgid "Clips and shortcut"
 msgstr "Кліпи та сполучення клавіш"
 
-#: ui/setup_window.py:269
+#: ui/setup_window.py:295
 msgid "Choose the clip length and how to save it."
 msgstr "Обери тривалість кліпу та спосіб його збереження."
 
-#: ui/setup_window.py:275
+#: ui/setup_window.py:301
 msgid "Clip length in seconds"
 msgstr "Тривалість кліпу в секундах"
 
-#: ui/setup_window.py:325
+#: ui/setup_window.py:351
 msgid "Save shortcut"
 msgstr "Сполучення клавіш збереження"
 
-#: ui/setup_window.py:355
+#: ui/setup_window.py:381
 msgid "Video and audio"
 msgstr "Відео й аудіо"
 
-#: ui/setup_window.py:356
+#: ui/setup_window.py:382
 msgid ""
 "Set the output size, frame rate, container, and encoders used for clips."
 msgstr ""
 "Налаштуй розмір вихідного відео, частоту кадрів, контейнер і кодери, які "
 "використовуються для кліпів."
 
-#: ui/setup_window.py:363
+#: ui/setup_window.py:389
 msgid "Output dimensions"
 msgstr "Розміри вихідного відео"
 
-#: ui/setup_window.py:372
+#: ui/setup_window.py:398
 msgid "Frames recorded each second"
 msgstr "Кадрів записується щосекунди"
 
-#: ui/setup_window.py:373
+#: ui/setup_window.py:399
 #, python-format
 msgid "%(fps)d FPS"
 msgstr "%(fps)d FPS"
 
-#: ui/setup_window.py:380
+#: ui/setup_window.py:406
 msgid "Container"
 msgstr "Контейнер"
 
-#: ui/setup_window.py:381
+#: ui/setup_window.py:407
 msgid "File format used when a clip is saved"
 msgstr "Формат файла, що використовується під час збереження кліпу"
 
-#: ui/setup_window.py:390
+#: ui/setup_window.py:416
 msgid "Encoder used for the picture"
 msgstr "Кодер зображення"
 
-#: ui/setup_window.py:399
+#: ui/setup_window.py:425
 msgid "Encoder used for sound"
 msgstr "Кодер звуку"
 
-#: ui/setup_window.py:436
+#: ui/setup_window.py:462
 msgid "Capture display"
 msgstr "Екран захоплення"
 
-#: ui/setup_window.py:438
+#: ui/setup_window.py:464
 msgid ""
 "Choose the primary display, or the display where your games will appear. The "
 "system picker controls this permission."
@@ -2259,15 +2259,15 @@ msgstr ""
 "Обери основний дисплей або дисплей, на якому відображатимуться ігри. "
 "Системний засіб вибору керує цим дозволом."
 
-#: ui/setup_window.py:444
+#: ui/setup_window.py:470
 msgid "Target capture display"
 msgstr "Цільовий екран захоплення"
 
-#: ui/setup_window.py:479
+#: ui/setup_window.py:505
 msgid "All set!"
 msgstr "Усе готово!"
 
-#: ui/setup_window.py:486
+#: ui/setup_window.py:512
 msgid ""
 "Clipper is ready to save your recent gameplay. You can change these settings "
 "at any time."
@@ -2275,7 +2275,7 @@ msgstr ""
 "Clipper готовий зберігати твій нещодавній ігровий процес. Ти можеш змінити "
 "ці параметри будь-коли."
 
-#: ui/setup_window.py:609
+#: ui/setup_window.py:635
 msgid "Start using Clipper"
 msgstr "Почати користуватися Clipper"
 

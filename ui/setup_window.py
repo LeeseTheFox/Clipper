@@ -27,6 +27,7 @@ from settings_view import (
     _FPS_VALUES,
     InlineHotkeyCapture,
     _index_of,
+    _parse_resolution,
     _primary_display_resolution,
     _resolution_options,
 )
@@ -43,6 +44,22 @@ def _encoder_label(encoder: dict[str, Any]) -> str:
     name = str(encoder.get("name") or encoder.get("id") or _("Unknown encoder"))
     codec = encoder.get("codec")
     return f"{name} ({codec})" if codec else name
+
+
+def _initial_setup_resolution(
+    configured_resolution: str,
+    detected_resolution: str | None,
+    *,
+    config_was_loaded: bool,
+) -> str:
+    """Prefer the native display size for a new config, preserving saved choices."""
+    if (
+        not config_was_loaded
+        and detected_resolution is not None
+        and _parse_resolution(detected_resolution) is not None
+    ):
+        return detected_resolution
+    return configured_resolution
 
 
 class SetupWindow(Adw.ApplicationWindow):
@@ -86,9 +103,18 @@ class SetupWindow(Adw.ApplicationWindow):
         self._capability_retry_count = 0
         self._display_request_active = False
 
+        configured_resolution = self._config.get("resolution", "1920x1080")
+        detected_resolution = _primary_display_resolution()
+        initial_resolution = _initial_setup_resolution(
+            configured_resolution,
+            detected_resolution,
+            config_was_loaded=getattr(self._config, "load_status", None) == "loaded",
+        )
+        if initial_resolution != configured_resolution:
+            self._config.set("resolution", initial_resolution)
         self._resolution_values = _resolution_options(
-            self._config.get("resolution", "1920x1080"),
-            _primary_display_resolution(),
+            initial_resolution,
+            detected_resolution,
         )
         self._format_values = [value for _, value in _FALLBACK_FORMAT_OPTIONS]
         self._video_encoder_values = [

@@ -1,6 +1,12 @@
 from types import SimpleNamespace
 
-from setup_window import SetupWindow, _encoder_label, _resolution_label
+import setup_window as _setup_window_module
+from setup_window import (
+    SetupWindow,
+    _encoder_label,
+    _initial_setup_resolution,
+    _resolution_label,
+)
 
 
 class ConfigStub:
@@ -67,6 +73,44 @@ def test_setup_labels_present_resolution_and_runtime_codec_clearly():
     assert _encoder_label(
         {"id": "ffmpeg_vaapi", "name": "FFmpeg VAAPI", "codec": "h264"}
     ) == "FFmpeg VAAPI (h264)"
+
+
+def test_new_setup_prefers_detected_native_resolution():
+    assert (
+        _initial_setup_resolution(
+            "1920x1080", "2560x1440", config_was_loaded=False
+        )
+        == "2560x1440"
+    )
+
+
+def test_setup_preserves_resolution_from_existing_config():
+    assert (
+        _initial_setup_resolution(
+            "1920x1080", "2560x1440", config_was_loaded=True
+        )
+        == "1920x1080"
+    )
+
+
+def test_new_setup_falls_back_when_display_resolution_is_unavailable():
+    assert (
+        _initial_setup_resolution("1920x1080", None, config_was_loaded=False)
+        == "1920x1080"
+    )
+
+
+def test_new_setup_selects_and_saves_detected_native_resolution(monkeypatch):
+    monkeypatch.setattr(
+        _setup_window_module, "_primary_display_resolution", lambda: "2560x1440"
+    )
+    config = ConfigStub()
+
+    setup = SetupWindow(application=None, config=config)
+
+    assert config.values["resolution"] == "2560x1440"
+    assert setup._resolution_values[setup._resolution_row.get_selected()] == "2560x1440"
+    setup.destroy()
 
 
 def test_setup_welcome_page_has_the_catalog_driven_language_picker():
