@@ -1234,7 +1234,7 @@ class ClipperApplication(Adw.Application):
         self._restart_engine()
 
     def _on_clip_saved(self, response: dict):
-        """Handle response from save_replay_buffer command."""
+        """Handle completion of a replay-buffer save."""
         if response.get("ok"):
             self._log("Clip saved successfully")
             if self._config.get("play_sound_on_clip_saved", False):
@@ -1250,6 +1250,10 @@ class ClipperApplication(Adw.Application):
                 self.send_notification("clip-captured", notification)
         else:
             error = response.get("error", "Unknown error")
+            if error == "save_failed":
+                error = _(
+                    "Could not write the clip. Check the save folder and available disk space."
+                )
             self._show_error(_("Failed to save clip: %(error)s") % {"error": error})
 
     def open_editor(self, clip_path, completed_callback=None) -> None:

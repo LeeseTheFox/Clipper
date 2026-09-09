@@ -168,6 +168,8 @@ modules:
         path: patches/obs-disable-websocket.patch
       - type: patch
         path: patches/obs-low-resource-video.patch
+      - type: patch
+        path: patches/obs-replay-save-result.patch
 
   # Build the receiver and portable game hooks from the same patched source.
   - name: obs-vkcapture

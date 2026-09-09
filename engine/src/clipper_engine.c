@@ -289,6 +289,17 @@ static bool is_safe_clip_name_char(unsigned char ch)
     return isalnum(ch) || ch == '-' || ch == '_' || ch == '.';
 }
 
+static bool error_would_block(int error_number)
+{
+    if (error_number == EAGAIN)
+        return true;
+#if EWOULDBLOCK != EAGAIN
+    if (error_number == EWOULDBLOCK)
+        return true;
+#endif
+    return false;
+}
+
 static void sanitize_clip_filename_part(const char *input, char *output, size_t size)
 {
     if (!output || size == 0)
@@ -344,7 +355,7 @@ static void write_json_locked(int fd, cJSON *obj)
         ssize_t n = write(fd, str + done, len - done);
         if (n < 0) {
             if (errno == EINTR) continue;
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            if (error_would_block(errno)) {
                 struct pollfd pfd = {
                     .fd = fd,
                     .events = POLLOUT,
@@ -370,7 +381,7 @@ static void write_json_locked(int fd, cJSON *obj)
             break;
         if (n < 0 && errno == EINTR)
             continue;
-        if (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+        if (n < 0 && error_would_block(errno)) {
             struct pollfd pfd = {
                 .fd = fd,
                 .events = POLLOUT,
@@ -504,7 +515,7 @@ static void accept_client(engine_state_t *state)
     socklen_t addr_len = sizeof(addr);
     int cfd = accept(state->server_fd, (struct sockaddr *)&addr, &addr_len);
     if (cfd < 0) {
-        if (errno != EAGAIN && errno != EWOULDBLOCK)
+        if (!error_would_block(errno))
             perror("[engine] accept");
         return;
     }
@@ -562,6 +573,18 @@ static void on_clip_saved(void *param, calldata_t *cd)
     broadcast_event(state, ev);      /* acquires mutex internally */
     cJSON_Delete(ev);
     calldata_free(&replay_cd);
+}
+
+static void on_clip_save_failed(void *param, calldata_t *cd)
+{
+    (void)cd;
+    engine_state_t *state = param;
+    cJSON *ev = cJSON_CreateObject();
+    if (!ev)
+        return;
+    cJSON_AddStringToObject(ev, "event", "clip_save_failed");
+    broadcast_event(state, ev);
+    cJSON_Delete(ev);
 }
 
 /* ── Command handlers ────────────────────────────────────────────────────── */
@@ -2263,7 +2286,8 @@ static void process_client_data(engine_state_t *state, int idx)
 
     ssize_t n = read(c->fd, c->buf + c->buf_len, (size_t)space);
     if (n < 0) {
-        if (errno == EAGAIN || errno == EWOULDBLOCK) return;
+        if (error_would_block(errno))
+            return;
         close_client(state, idx);
         return;
     }
@@ -2672,7 +2696,7 @@ static bool register_audio_source(engine_state_t *state, obs_source_t *source,
     if (g_verbose) {
         fprintf(stderr,
                 "[engine] audio source routed to track %d with mask 0x%x volume %.2f\n",
-                track, mask, volume);
+                track, mask, (double)volume);
     }
 
     return true;
@@ -3115,8 +3139,8 @@ static bool libobs_init(engine_state_t *state)
         fprintf(stderr,
                 "[engine] video pipeline: NV12 Rec.709 full range SDR "
                 "(SDR white %.0f nits, HDR peak %.0f nits)\n",
-                obs_get_video_sdr_white_level(),
-                obs_get_video_hdr_nominal_peak_level());
+                (double)obs_get_video_sdr_white_level(),
+                (double)obs_get_video_hdr_nominal_peak_level());
 
     /* 5. Reset audio */
     struct obs_audio_info oai = {
@@ -3306,6 +3330,7 @@ static bool libobs_init(engine_state_t *state)
      *     first save is not missed. */
     signal_handler_t *sh = obs_output_get_signal_handler(state->replay_output);
     signal_handler_connect(sh, "saved", on_clip_saved, state);
+    signal_handler_connect(sh, "save_failed", on_clip_save_failed, state);
 
     fprintf(stderr, "[engine] libobs initialised OK\n");
     return true;

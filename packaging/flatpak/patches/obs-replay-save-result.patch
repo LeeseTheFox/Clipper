@@ -1,0 +1,102 @@
+--- a/plugins/obs-ffmpeg/obs-ffmpeg-mux.c
++++ b/plugins/obs-ffmpeg/obs-ffmpeg-mux.c
+@@ -44,8 +44,15 @@
+ }
+ #endif
+ 
++static void replay_buffer_save_failed(struct ffmpeg_muxer *stream)
++{
++	calldata_t cd = {0};
++	signal_handler_signal(obs_output_get_signal_handler(stream->output), "save_failed", &cd);
++}
++
+ static inline void replay_buffer_clear(struct ffmpeg_muxer *stream)
+ {
++	bool cancelled_save = stream->save_ts != 0;
+ 	while (stream->packets.size > 0) {
+ 		struct encoder_packet pkt;
+ 		deque_pop_front(&stream->packets, &pkt, sizeof(pkt));
+@@ -59,6 +66,8 @@
+ 	stream->max_time = 0;
+ 	stream->save_ts = 0;
+ 	stream->keyframes = 0;
++	if (cancelled_save)
++		replay_buffer_save_failed(stream);
+ }
+ 
+ static void ffmpeg_mux_destroy(void *data)
+@@ -928,10 +937,13 @@
+ 		obs_encoder_t *vencoder = obs_output_get_video_encoder(stream->output);
+ 		if (obs_encoder_paused(vencoder)) {
+ 			info("Could not save buffer because encoders paused");
++			replay_buffer_save_failed(stream);
+ 			return;
+ 		}
+ 
+ 		stream->save_ts = os_gettime_ns() / 1000LL;
++	} else {
++		replay_buffer_save_failed(stream);
+ 	}
+ }
+ 
+@@ -963,6 +975,7 @@
+ 
+ 	signal_handler_t *sh = obs_output_get_signal_handler(output);
+ 	signal_handler_add(sh, "void saved()");
++	signal_handler_add(sh, "void save_failed()");
+ 
+ 	return stream;
+ }
+@@ -1091,6 +1104,7 @@
+ {
+ 	struct ffmpeg_muxer *stream = data;
+ 	bool error = false;
++	size_t released_packets = 0;
+ 
+ 	start_pipe(stream, stream->path.array);
+ 
+@@ -1114,24 +1128,26 @@
+ 			goto error;
+ 		}
+ 		obs_encoder_packet_release(pkt);
++		released_packets++;
+ 	}
+ 
+-	info("Wrote replay buffer to '%s'", stream->path.array);
+-
+ error:
+-	os_process_pipe_destroy(stream->pipe);
++	if (os_process_pipe_destroy(stream->pipe) != 0)
++		error = true;
+ 	stream->pipe = NULL;
+-	if (error) {
+-		for (size_t i = 0; i < stream->mux_packets.num; i++)
+-			obs_encoder_packet_release(&stream->mux_packets.array[i]);
+-	}
++	for (size_t i = released_packets; i < stream->mux_packets.num; i++)
++		obs_encoder_packet_release(&stream->mux_packets.array[i]);
+ 	da_free(stream->mux_packets);
+ 	os_atomic_set_bool(&stream->muxing, false);
+ 
+ 	if (!error) {
++		info("Wrote replay buffer to '%s'", stream->path.array);
+ 		calldata_t cd = {0};
+ 		signal_handler_t *sh = obs_output_get_signal_handler(stream->output);
+ 		signal_handler_signal(sh, "saved", &cd);
++	} else {
++		warn("Could not save replay buffer to '%s'", stream->path.array);
++		replay_buffer_save_failed(stream);
+ 	}
+ 
+ 	return NULL;
+@@ -1182,7 +1198,11 @@
+ 	stream->mux_thread_joinable = pthread_create(&stream->mux_thread, NULL, replay_buffer_mux_thread, stream) == 0;
+ 	if (!stream->mux_thread_joinable) {
+ 		warn("Failed to create muxer thread");
++		for (size_t i = 0; i < stream->mux_packets.num; i++)
++			obs_encoder_packet_release(&stream->mux_packets.array[i]);
++		da_free(stream->mux_packets);
+ 		os_atomic_set_bool(&stream->muxing, false);
++		replay_buffer_save_failed(stream);
+ 	}
+ }

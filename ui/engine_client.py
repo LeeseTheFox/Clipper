@@ -46,6 +46,9 @@ class EngineClient:
 
         # Command callbacks are matched to responses in socket order.
         self._pending_commands: deque[Callable[[dict], None] | None] = deque()
+        self.pending_saves = 0
+        self._save_request: object | None = None
+        self._save_callback: Callable[[dict], None] | None = None
 
         # Event handlers: maps event name to list of callbacks
         self._event_handlers: dict[str, list[Callable[[dict], None]]] = {}
@@ -120,6 +123,9 @@ class EngineClient:
         self._connected = False
         self._buf = b""
         self._pending_commands.clear()
+        self.pending_saves = 0
+        self._save_request = None
+        self._save_callback = None
 
         # Handle reconnection logic
         if auto_reconnect and self._should_reconnect:
@@ -264,11 +270,37 @@ class EngineClient:
         """Save the replay buffer to a clip file.
 
         Args:
-            callback: Optional callback for the response
+            callback: Called once when saving finishes or fails, not on acknowledgement
             game_name: Optional game name to include in the clip filename
         """
+        # OBS acknowledges the save command before the file is finished. Keep
+        # restart blocked until its asynchronous completion event arrives, and
+        # avoid overlapping requests that OBS may silently coalesce.
+        if self.pending_saves:
+            return False
         params = {"game_name": game_name} if game_name else {}
-        return self.send_command("save_replay_buffer", callback, **params)
+        self.pending_saves += 1
+        request = self._save_request = object()
+        self._save_callback = callback
+
+        def saved(result):
+            if not result.get("ok") and self._save_request is request:
+                self._finish_save(result)
+
+        sent = self.send_command("save_replay_buffer", saved, **params)
+        if not sent:
+            self.pending_saves = 0
+            self._save_request = None
+            self._save_callback = None
+        return sent
+
+    def _finish_save(self, result: dict) -> None:
+        callback = self._save_callback
+        self.pending_saves = 0
+        self._save_request = None
+        self._save_callback = None
+        if callback:
+            callback(result)
 
     def get_preview_frame(
         self,
@@ -362,6 +394,10 @@ class EngineClient:
         # Otherwise, it's an async event
         if "event" in msg:
             event_name = msg["event"]
+            if event_name == "clip_saved":
+                self._finish_save({"ok": True, "path": msg.get("path", "")})
+            elif event_name == "clip_save_failed":
+                self._finish_save({"ok": False, "error": "save_failed"})
             if event_name in self._event_handlers:
                 for callback in self._event_handlers[event_name]:
                     try:
