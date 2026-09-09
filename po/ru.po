@@ -31,7 +31,7 @@ msgstr "Одна смешанная дорожка"
 msgid "Engine restart required for audio changes"
 msgstr "Для применения настроек звука требуется перезапуск движка"
 
-#: ui/audio_tracks_view.py:72 ui/main_window.py:178 ui/settings_view.py:489
+#: ui/audio_tracks_view.py:72 ui/main_window.py:179 ui/settings_view.py:489
 msgid "Restart engine"
 msgstr "Перезапустить движок"
 
@@ -328,6 +328,7 @@ msgstr ""
 #: ui/clips_view.py:1822 ui/dialogs.py:856 ui/editor_export_dialog.py:345
 #: ui/editor_export_dialog.py:636 ui/editor_export_dialog.py:664
 #: ui/editor_export_dialog.py:772 ui/editor_window.py:3990 ui/editor_wipe.py:16
+#: ui/update_controller.py:316
 msgid "Cancel"
 msgstr "Отмена"
 
@@ -1344,7 +1345,7 @@ msgstr "%(action)s %(track)s"
 msgid "Audio %(number)d"
 msgstr "Аудио %(number)d"
 
-#: ui/editor_window.py:2108 ui/main_window.py:222
+#: ui/editor_window.py:2108 ui/main_window.py:228
 msgid "Audio"
 msgstr "Аудио"
 
@@ -1422,7 +1423,7 @@ msgstr "Экспорт…"
 msgid "Exported to %(name)s"
 msgstr "Экспортировано в %(name)s"
 
-#: ui/editor_window.py:3952 ui/main.py:1940 ui/settings_view.py:1662
+#: ui/editor_window.py:3952 ui/main.py:1967 ui/settings_view.py:1670
 msgid "Unknown error"
 msgstr "Неизвестная ошибка"
 
@@ -1482,7 +1483,7 @@ msgstr "Используй одну основную клавишу для со�
 msgid "Choose a key too"
 msgstr "Также выбери клавишу"
 
-#: ui/hotkeys.py:235 ui/hotkeys.py:252 ui/settings_view.py:1609
+#: ui/hotkeys.py:235 ui/hotkeys.py:252 ui/settings_view.py:1617
 #: ui/setup_window.py:649
 msgid "Not set"
 msgstr "Не задано"
@@ -1658,140 +1659,147 @@ msgstr ""
 "метод «Захват игры». Перед записью рекомендуется закрыть OBS Studio или "
 "Clipper."
 
-#: ui/main.py:528
+#: ui/main.py:543
 msgid "Engine not running"
 msgstr "Движок не запущен"
 
-#: ui/main.py:534
+#: ui/main.py:549
 msgid "Could not send save command to Clipper engine"
 msgstr "Не удалось отправить команду сохранения движку Clipper"
 
-#: ui/main.py:562
+#: ui/main.py:581 ui/update_controller.py:385
 msgid "Restart Clipper?"
 msgstr "Перезапустить Clipper?"
 
-#: ui/main.py:563
+#: ui/main.py:582
 msgid "Clipper needs to be restarted for this change to take effect."
 msgstr "Чтобы это изменение вступило в силу, необходимо перезапустить Clipper."
 
-#: ui/main.py:565
+#: ui/main.py:584 ui/update_controller.py:268 ui/update_controller.py:391
 msgid "Restart later"
 msgstr "Перезапустить позже"
 
-#: ui/main.py:566
+#: ui/main.py:585 ui/update_controller.py:272 ui/update_controller.py:392
 msgid "Restart now"
 msgstr "Перезапустить сейчас"
 
-#: ui/main.py:589
+#: ui/main.py:608
 msgid "Save or discard the video edit before logging out"
 msgstr "Перед выходом сохрани или отмени изменения видео"
 
-#: ui/main.py:700
+#: ui/main.py:719
 #, python-format
 msgid "Could not register save hotkey: %(error)s"
 msgstr "Не удалось зарегистрировать горячую клавишу сохранения: %(error)s"
 
-#: ui/main.py:739
+#: ui/main.py:758
 #, python-format
 msgid "Global hotkey unavailable: %(message)s"
 msgstr "Глобальная горячая клавиша недоступна: %(message)s"
 
-#: ui/main.py:923
+#: ui/main.py:942
 msgid "Acknowledge"
 msgstr "Понятно"
 
-#: ui/main.py:964 ui/settings_view.py:1658
+#: ui/main.py:983 ui/settings_view.py:1666
 msgid "Restarting engine…"
 msgstr "Перезапуск движка…"
 
-#: ui/main.py:974
+#: ui/main.py:993
 msgid "Could not send restart command to Clipper engine"
 msgstr "Не удалось отправить команду перезапуска движку Clipper"
 
-#: ui/main.py:979
+#: ui/main.py:998
 msgid "Engine will start when a whitelisted game is running"
 msgstr "Движок запустится, когда будет запущена разрешённая игра"
 
-#: ui/main.py:990
+#: ui/main.py:1009
 #, python-format
 msgid "Engine restart failed: %(error)s"
 msgstr "Не удалось перезапустить движок: %(error)s"
 
-#: ui/main.py:1108
+#: ui/main.py:1127
 msgid "X11 capture uses the primary X11 display without a system picker."
 msgstr ""
 "Захват X11 использует основной дисплей X11 без системного средства выбора."
 
-#: ui/main.py:1117
+#: ui/main.py:1136
 msgid "The system display picker is already open."
 msgstr "Системное средство выбора экрана уже открыто."
 
-#: ui/main.py:1127
+#: ui/main.py:1146
 msgid "Stop the active game capture before changing the target display."
 msgstr "Останови активный захват игры перед сменой целевого экрана."
 
-#: ui/main.py:1185
+#: ui/main.py:1204
 msgid "Could not disable automatic startup"
 msgstr "Не удалось отключить автоматический запуск"
 
-#: ui/main.py:1192
+#: ui/main.py:1211
 msgid "PipeWire restore token cleared"
 msgstr "Токен восстановления PipeWire очищен"
 
-#: ui/main.py:1248
+#: ui/main.py:1267
 msgid "Clip captured"
 msgstr "Клип записан"
 
-#: ui/main.py:1249
+#: ui/main.py:1268
 msgid "Your clip has been saved."
 msgstr "Клип сохранён."
 
-#: ui/main.py:1253
+#: ui/main.py:1274
+msgid ""
+"Could not write the clip. Check the save folder and available disk space."
+msgstr ""
+"Не удалось записать клип. Проверь папку сохранения и свободное место на "
+"диске."
+
+#: ui/main.py:1276
 #, python-format
 msgid "Failed to save clip: %(error)s"
 msgstr "Не удалось сохранить клип: %(error)s"
 
-#: ui/main.py:1284
+#: ui/main.py:1311
 #, python-format
 msgid "Could not open clip editor: %(error)s"
 msgstr "Не удалось открыть редактор клипа: %(error)s"
 
-#: ui/main.py:1752
+#: ui/main.py:1779
 #, python-format
 msgid "Could not start Clipper engine: %(error)s"
 msgstr "Не удалось запустить движок Clipper: %(error)s"
 
-#: ui/main.py:1811 ui/settings_view.py:1661
+#: ui/main.py:1838 ui/settings_view.py:1669
 #, python-format
 msgid "Engine shutdown failed: %(error)s"
 msgstr "Не удалось остановить движок: %(error)s"
 
-#: ui/main.py:1850 ui/main.py:1886
+#: ui/main.py:1877 ui/main.py:1913
 msgid "Display selection was cancelled."
 msgstr "Выбор экрана отменён."
 
-#: ui/main.py:1855
+#: ui/main.py:1882
 msgid "Capture display selected successfully."
 msgstr "Экран для захвата успешно выбран."
 
-#: ui/main.py:1859
+#: ui/main.py:1886
 msgid "No display was selected before the picker timed out."
 msgstr "До истечения времени ожидания средство выбора не выбрало экран."
 
-#: ui/main.py:1939
+#: ui/main.py:1966
 #, python-format
 msgid "Display capture sync failed: %(error)s"
 msgstr "Ошибка синхронизации захвата экрана: %(error)s"
 
-#: ui/main.py:1971
+#: ui/main.py:2054
 msgid "🦊 Leese"
 msgstr "🦊 Leese"
 
-#: ui/main.py:1975
+#: ui/main.py:2058
 msgid "© 2026 Leese"
 msgstr "© 2026 Leese"
 
-#: ui/main.py:1981
+#: ui/main.py:2064
 msgid "GitHub"
 msgstr "GitHub"
 
@@ -1815,7 +1823,7 @@ msgstr "Аварийно завершён"
 msgid "Clipper"
 msgstr "Clipper"
 
-#: ui/main_window.py:136 ui/main_window.py:422
+#: ui/main_window.py:136 ui/main_window.py:428
 msgid "Engine status"
 msgstr "Состояние движка"
 
@@ -1828,47 +1836,59 @@ msgstr "Главное меню"
 msgid "Preferences"
 msgstr "Настройки"
 
-#: ui/main_window.py:171
+#: ui/main_window.py:170
+msgid "Check for updates"
+msgstr "Проверить обновления"
+
+#: ui/main_window.py:172
 msgid "Show logs"
 msgstr "Показать журналы"
 
-#: ui/main_window.py:174
+#: ui/main_window.py:175
 msgid "Clear PipeWire restore token"
 msgstr "Очистить токен восстановления PipeWire"
 
-#: ui/main_window.py:176
+#: ui/main_window.py:177
 msgid "Reset config"
 msgstr "Сбросить конфигурацию"
 
-#: ui/main_window.py:177
+#: ui/main_window.py:178
 msgid "Reset to factory settings"
 msgstr "Сбросить до заводских настроек"
 
-#: ui/main_window.py:179
+#: ui/main_window.py:180
 msgid "Debug menu"
 msgstr "Дебаг меню"
 
-#: ui/main_window.py:180
+#: ui/main_window.py:181
 msgid "About Clipper"
 msgstr "О Clipper"
 
-#: ui/main_window.py:181 ui/tray.py:528 ui/tray.py:633
+#: ui/main_window.py:182 ui/tray.py:528 ui/tray.py:633
 msgid "Quit"
 msgstr "Выйти"
 
-#: ui/main_window.py:202
+#: ui/main_window.py:191 ui/update_controller.py:189
+msgid "A Clipper update is available"
+msgstr "Доступно обновление Clipper"
+
+#: ui/main_window.py:192
+msgid "View update"
+msgstr "Посмотреть обновление"
+
+#: ui/main_window.py:208
 msgid "Clips"
 msgstr "Клипы"
 
-#: ui/main_window.py:217
+#: ui/main_window.py:223
 msgid "Games"
 msgstr "Игры"
 
-#: ui/main_window.py:463
+#: ui/main_window.py:469
 msgid "Waiting for frame"
 msgstr "Ожидание кадра"
 
-#: ui/main_window.py:556
+#: ui/main_window.py:562
 msgid "Preview unavailable"
 msgstr "Предпросмотр недоступен"
 
@@ -2024,7 +2044,7 @@ msgstr "Устройство аппаратного ускорения"
 msgid "Change capture target display"
 msgstr "Изменить целевой экран захвата"
 
-#: ui/settings_view.py:1323 ui/settings_view.py:1501 ui/setup_window.py:471
+#: ui/settings_view.py:1323 ui/settings_view.py:1509 ui/setup_window.py:471
 msgid "Opens the system display picker"
 msgstr "Открывает системное средство выбора экрана"
 
@@ -2048,7 +2068,7 @@ msgstr "Папка сохранения"
 msgid "Hotkey"
 msgstr "Горячая клавиша"
 
-#: ui/settings_view.py:1360 ui/settings_view.py:1623 ui/setup_window.py:558
+#: ui/settings_view.py:1360 ui/settings_view.py:1631 ui/setup_window.py:558
 msgid "Your desktop may ask you to approve or change this shortcut"
 msgstr "Система может попросить подтвердить или изменить это сочетание клавиш"
 
@@ -2076,74 +2096,82 @@ msgstr "Приложение"
 msgid "Startup and window behavior"
 msgstr "Запуск и поведение окна"
 
-#: ui/settings_view.py:1432
+#: ui/settings_view.py:1423
+msgid "Automatically check for updates"
+msgstr "Автоматически проверять обновления"
+
+#: ui/settings_view.py:1424
+msgid "Check GitHub daily for new Clipper releases"
+msgstr "Ежедневно проверять новые выпуски Clipper на GitHub"
+
+#: ui/settings_view.py:1440
 msgid "Start on boot"
 msgstr "Запускать при входе"
 
-#: ui/settings_view.py:1433
+#: ui/settings_view.py:1441
 msgid "Launch Clipper automatically when you log in"
 msgstr "Автоматически запускать Clipper при входе в систему"
 
-#: ui/settings_view.py:1447
+#: ui/settings_view.py:1455
 msgid "Minimize to tray instead of close"
 msgstr "Сворачивать в трей вместо закрытия"
 
-#: ui/settings_view.py:1449
+#: ui/settings_view.py:1457
 msgid "Hide Clipper to the tray when the window close button is pressed"
 msgstr "Скрывать Clipper в системный трей при нажатии кнопки закрытия окна"
 
-#: ui/settings_view.py:1464
+#: ui/settings_view.py:1472
 msgid "Remember window sizes"
 msgstr "Запоминать размеры окон"
 
-#: ui/settings_view.py:1466
+#: ui/settings_view.py:1474
 msgid "Restore sizes for the main window, video editor and video player"
 msgstr "Восстанавливать размеры главного окна, видеоредактора и видеоплеера"
 
-#: ui/settings_view.py:1488
+#: ui/settings_view.py:1496
 msgid "The system display picker is unavailable"
 msgstr "Системное средство выбора экрана недоступно"
 
-#: ui/settings_view.py:1492 ui/setup_window.py:588
+#: ui/settings_view.py:1500 ui/setup_window.py:588
 msgid "Waiting for the system display picker…"
 msgstr "Ожидание системного средства выбора экрана…"
 
-#: ui/settings_view.py:1496
+#: ui/settings_view.py:1504
 msgid "Could not open the system display picker."
 msgstr "Не удалось открыть системное средство выбора экрана."
 
-#: ui/settings_view.py:1506
+#: ui/settings_view.py:1514
 #, python-format
 msgid "Capture display was not changed: %(message)s"
 msgstr "Экран захвата не изменён: %(message)s"
 
-#: ui/settings_view.py:1525
+#: ui/settings_view.py:1533
 msgid "Tray unavailable. Clipper will quit when closed."
 msgstr "Системный трей недоступен. При закрытии Clipper завершит работу."
 
-#: ui/settings_view.py:1559
+#: ui/settings_view.py:1567
 msgid "Could not update the start-on-boot setting"
 msgstr "Не удалось обновить настройку автозапуска"
 
-#: ui/settings_view.py:1566
+#: ui/settings_view.py:1574
 #, python-format
 msgid "Could not update the start-on-boot setting: %(error)s"
 msgstr "Не удалось обновить настройку автозапуска: %(error)s"
 
-#: ui/settings_view.py:1573
+#: ui/settings_view.py:1581
 msgid "Choose output folder"
 msgstr "Выбери папку сохранения"
 
-#: ui/settings_view.py:1622 ui/settings_view.py:1638 ui/setup_window.py:557
+#: ui/settings_view.py:1630 ui/settings_view.py:1646 ui/setup_window.py:557
 #: ui/setup_window.py:566
 msgid "Managed by your desktop's global shortcut settings"
 msgstr "Управляется глобальными системными настройками сочетаний клавиш"
 
-#: ui/settings_view.py:1671
+#: ui/settings_view.py:1679
 msgid "Engine restarted successfully"
 msgstr "Движок успешно перезапущен"
 
-#: ui/settings_view.py:1680
+#: ui/settings_view.py:1688
 msgid "Failed to restart engine. Please restart manually."
 msgstr "Не удалось перезапустить движок. Перезапусти его вручную."
 
@@ -2288,6 +2316,30 @@ msgstr "Горячие клавиши"
 msgid "Keyboard shortcuts"
 msgstr "Сочетания клавиш"
 
+#: ui/suika_game.py:52 ui/suika_game.py:68
+msgid "Fruit drop"
+msgstr "Фруктопад"
+
+#: ui/suika_game.py:81
+msgid "Score"
+msgstr "Счёт"
+
+#: ui/suika_game.py:82
+msgid "Best"
+msgstr "Лучший"
+
+#: ui/suika_game.py:95
+msgid "Fruit drop game board"
+msgstr "Игровое поле «Фруктопад»"
+
+#: ui/suika_game.py:170
+msgid "Game over"
+msgstr "Игра окончена"
+
+#: ui/suika_game.py:173
+msgid "Play again"
+msgstr "Играть снова"
+
 #: ui/tray.py:143
 msgid "Idle"
 msgstr "Ожидание"
@@ -2299,6 +2351,110 @@ msgstr "Скрыть Clipper"
 #: ui/tray.py:404
 msgid "Show Clipper"
 msgstr "Показать Clipper"
+
+#: ui/update_controller.py:93 ui/update_controller.py:105
+msgid "Checking for updates…"
+msgstr "Проверка обновлений…"
+
+#: ui/update_controller.py:102
+msgid "Install the Flatpak version of Clipper to use in-app updates."
+msgstr ""
+"Установи Flatpak-версию Clipper, чтобы пользоваться обновлениями в "
+"приложении."
+
+#: ui/update_controller.py:138
+msgid "Could not check for updates. Check your connection and try again."
+msgstr ""
+"Не удалось проверить обновления. Проверь соединение и попробуй ещё раз."
+
+#: ui/update_controller.py:152
+msgid "Clipper is up to date."
+msgstr "Установлена последняя версия Clipper."
+
+#: ui/update_controller.py:165 ui/update_controller.py:274
+msgid "Clipper update available"
+msgstr "Доступно обновление Clipper"
+
+#: ui/update_controller.py:167
+#, python-format
+msgid "Clipper %(version)s is ready to download."
+msgstr "Clipper %(version)s готов к загрузке."
+
+#: ui/update_controller.py:187 ui/update_controller.py:270
+msgid "Restart Clipper to finish updating"
+msgstr "Перезапусти Clipper, чтобы завершить обновление"
+
+#: ui/update_controller.py:203
+msgid "Updates"
+msgstr "Обновления"
+
+#: ui/update_controller.py:222
+msgid "Release notes"
+msgstr "Примечания к выпуску"
+
+#: ui/update_controller.py:234 ui/update_controller.py:268
+msgid "Later"
+msgstr "Позже"
+
+#: ui/update_controller.py:237 ui/update_controller.py:283
+msgid "Update"
+msgstr "Обновить"
+
+#: ui/update_controller.py:242
+msgid "Skip this version"
+msgstr "Пропустить эту версию"
+
+#: ui/update_controller.py:271
+msgid "Update installed. Restart Clipper to use the new version."
+msgstr ""
+"Обновление установлено. Перезапусти Clipper, чтобы пользоваться новой "
+"версией."
+
+#: ui/update_controller.py:276
+#, python-format
+msgid ""
+"Installed: %(installed)s\n"
+"Available: %(available)s\n"
+"Download: %(size)s MiB"
+msgstr ""
+"Установлено: %(installed)s\n"
+"Доступно: %(available)s\n"
+"Загрузка: %(size)s MiB"
+
+#: ui/update_controller.py:313
+msgid "Downloading update…"
+msgstr "Загрузка обновления…"
+
+#: ui/update_controller.py:347
+msgid "Installing update…"
+msgstr "Установка обновления…"
+
+#: ui/update_controller.py:359
+msgid ""
+"Could not install the update. Your current version is still available. Try "
+"again."
+msgstr ""
+"Не удалось установить обновление. Текущая версия остаётся доступной. "
+"Попробуй ещё раз."
+
+#: ui/update_controller.py:381
+msgid "Close the editor and wait for clip saving to finish before restarting."
+msgstr ""
+"Перед перезапуском закрой редактор и дождись завершения сохранения клипов."
+
+#: ui/update_controller.py:387
+msgid ""
+"Restarting interrupts recording and clears the replay buffer. Saved clips "
+"are kept."
+msgstr ""
+"Перезапуск прерывает запись и очищает буфер повтора. Сохранённые клипы "
+"остаются."
+
+#: ui/update_controller.py:421
+msgid "Could not restart Clipper. Quit and open it again to use the update."
+msgstr ""
+"Не удалось перезапустить Clipper. Выйди и открой его снова, чтобы "
+"пользоваться обновлением."
 
 #: ui/video_player_window.py:72
 msgid "Raise volume"
@@ -2407,6 +2563,21 @@ msgstr ""
 "Не удалось завершить изменение захвата игры.\n"
 "\n"
 "%(error)s"
+
+#~ msgid "Click in the garden to drop fruit"
+#~ msgstr "Нажмите в саду, чтобы сбросить фрукт"
+
+#~ msgid "The garden is full"
+#~ msgstr "Сад заполнен"
+
+#~ msgid "New game"
+#~ msgstr "Новая игра"
+
+#~ msgid "Match fruit to grow it"
+#~ msgstr "Соединяйте фрукты, чтобы выращивать их"
+
+#~ msgid "Check for a newer version of Clipper."
+#~ msgstr "Проверь наличие новой версии Clipper."
 
 #~ msgid ""
 #~ "Could not find Steam installation.\n"
