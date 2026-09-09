@@ -25,6 +25,11 @@
     <binary>clipper</binary>
   </provides>
   <releases>
+    <release version="1.0.3" date="2026-09-09">
+      <description>
+        <p>Add automatic updates, replay save recovery, and a hidden fruit-drop game.</p>
+      </description>
+    </release>
     <release version="1.0.2" date="2026-09-08">
       <description>
         <p>Improve Steam capture setup and first-run display selection.</p>
