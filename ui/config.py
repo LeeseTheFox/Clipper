@@ -364,6 +364,7 @@ def normalize_audio_config(value) -> dict[str, Any]:
 
 
 DEFAULTS: dict[str, Any] = {
+    "auto_check_updates": True,
     "ui_language": "system",
     "capture_mode": DEFAULT_CAPTURE_MODE,
     "pipewire_restore_token": "",

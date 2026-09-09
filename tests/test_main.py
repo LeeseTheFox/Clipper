@@ -543,6 +543,26 @@ def test_tray_quit_cancels_pending_background_restart():
     assert app._quit_calls == 1
 
 
+def test_background_update_check_does_not_prevent_quitting():
+    app = make_application(minimize_to_tray_on_close=True, tray_available=True)
+    shown = []
+    app._updater = types.SimpleNamespace(busy=True, _checking=True, show=lambda: shown.append(True))
+    app.request_quit()
+    assert app._quit_calls == 1
+    assert not shown
+
+
+def test_update_installation_prevents_quitting():
+    app = make_application(minimize_to_tray_on_close=True, tray_available=True)
+    shown = []
+    app._updater = types.SimpleNamespace(
+        busy=True, _checking=False, show=lambda: shown.append(True)
+    )
+    app.request_quit()
+    assert app._quit_calls == 0
+    assert shown == [True]
+
+
 def test_session_end_routes_through_editor_close_prompt():
     app = make_application(minimize_to_tray_on_close=False, tray_available=True)
 
@@ -1383,6 +1403,16 @@ def test_clip_saved_shows_notification_when_enabled():
     app._on_clip_saved({"ok": True})
 
     assert notifications == [("clip-captured", "Clip captured", "Your clip has been saved.")]
+
+
+def test_update_restart_blocks_new_saves_and_editor_loading():
+    app = object.__new__(ClipperApplication)
+    app._update_restart_pending = True
+    finished = []
+    # Neither operation should need an engine, editor, or worker after reservation.
+    app._on_tray_save_clip()
+    app.open_editor("unused.mkv", lambda: finished.append(True))
+    assert finished == [True]
 
 
 def test_clip_saved_does_not_show_notification_when_disabled():

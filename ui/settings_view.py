@@ -1420,6 +1420,14 @@ class SettingsView(Gtk.Box):
         group = Adw.PreferencesGroup()
         group.set_title(_("App"))
         group.set_description(_("Startup and window behavior"))
+        update_row = Adw.SwitchRow(title=_("Automatically check for updates"),
+                                  subtitle=_("Check GitHub daily for new Clipper releases"))
+        update_row.set_active(
+            self._config.get("auto_check_updates", True) if self._config else True
+        )
+        update_row.connect("notify::active", lambda row, _param:
+                           self._save_key("auto_check_updates", row.get_active()))
+        group.add(update_row)
 
         if self._config is not None and self._language_changed_callback is not None:
             self._language_row = create_language_row(

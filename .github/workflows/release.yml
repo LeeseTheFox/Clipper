@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: clipper-release-publication
   cancel-in-progress: false
 
 jobs:
@@ -118,18 +118,19 @@ jobs:
           name: game-capture-payload-report
           path: game-capture-payload-report.txt
 
+      - name: Prepare update assets
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          bundle="Clipper-${VERSION}-x86_64.flatpak"
+          python3 tools/generate_update_manifest.py "$VERSION" "$bundle" --output update-x86_64.json
+          cp "$bundle" Clipper-x86_64.flatpak
+          sha256sum "$bundle" Clipper-x86_64.flatpak > SHA256SUMS
+
       - name: Create or update GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
           VERSION: ${{ needs.verify.outputs.version }}
           BUNDLE: Clipper-${{ needs.verify.outputs.version }}-x86_64.flatpak
-        run: |
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release edit "$TAG" --title "Clipper ${VERSION}" \
-              --notes-file release-notes.md
-            gh release upload "$TAG" "$BUNDLE#Clipper ${VERSION} (x86_64)" --clobber
-          else
-            gh release create "$TAG" "$BUNDLE#Clipper ${VERSION} (x86_64)" \
-              --title "Clipper ${VERSION}" --notes-file release-notes.md --verify-tag
-          fi
+        run: python3 tools/publish_github_release.py

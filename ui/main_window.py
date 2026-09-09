@@ -167,6 +167,7 @@ class MainWindow(Adw.ApplicationWindow):
         menu_button.set_tooltip_text(_("Main menu"))
         menu = Gio.Menu()
         menu.append(_("Preferences"), "win.preferences")
+        menu.append(_("Check for updates"), "app.check-updates")
         debug_menu = Gio.Menu()
         debug_menu.append(_("Show logs"), "app.show-logs")
         if self._show_display_target_controls:
@@ -187,6 +188,11 @@ class MainWindow(Adw.ApplicationWindow):
         self.add_action(preferences_action)
 
         self.toolbar_view.add_top_bar(self.header)
+        self.update_banner = Adw.Banner(title=_("A Clipper update is available"),
+                                        button_label=_("View update"), revealed=False)
+        self.update_banner.connect("button-clicked", lambda _banner:
+                                   self.get_application().activate_action("view-update", None))
+        self.toolbar_view.add_top_bar(self.update_banner)
 
         # Create view stack for different sections
         self.view_stack = Adw.ViewStack()

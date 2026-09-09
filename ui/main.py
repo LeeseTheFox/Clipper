@@ -266,6 +266,9 @@ class ClipperApplication(Adw.Application):
             self._schedule_presentation_mark("window")
         self._log_display_diagnostics()
         self.window.present()
+        updater = getattr(self, "_updater", None)
+        if updater:
+            updater.refresh_banner()
         if getattr(self, "_reopen_preferences", False):
             self._reopen_preferences = False
             GLib.idle_add(self.window.show_preferences)
@@ -351,6 +354,9 @@ class ClipperApplication(Adw.Application):
         # Start polling engine status to update tray icon
         self._start_status_polling()
         self._migrate_background_autostart_command()
+        from update_controller import UpdateController
+
+        self._updater = UpdateController(self)
 
     def _presentation_state(self) -> str:
         """Return compact process-local timestamps for external diagnostics."""
@@ -422,6 +428,9 @@ class ClipperApplication(Adw.Application):
 
     def do_shutdown(self):
         """Called when the application shuts down"""
+        updater = getattr(self, "_updater", None)
+        if updater:
+            updater.close()
         if self._export_probe_start_id is not None:
             GLib.source_remove(self._export_probe_start_id)
             self._export_probe_start_id = None
@@ -498,7 +507,8 @@ class ClipperApplication(Adw.Application):
     def _hide_window_to_background(self, window) -> None:
         """Release GTK/Vulkan state when hiding an engine-free window."""
         active_editor = getattr(self, "editor_window", None) is not None
-        if active_editor or self._engine_manager.is_running():
+        updating = getattr(getattr(self, "_updater", None), "busy", False)
+        if active_editor or self._engine_manager.is_running() or updating:
             window.set_visible(False)
             if active_editor and not getattr(self, "_background_hold", False):
                 self.hold()
@@ -524,6 +534,8 @@ class ClipperApplication(Adw.Application):
 
     def _on_tray_save_clip(self):
         """Save the current replay buffer."""
+        if getattr(self, "_update_restart_pending", False):
+            return
         if not self._engine_client or not self._engine_client.is_connected():
             self._show_error(_("Engine not running"))
             return
@@ -542,6 +554,10 @@ class ClipperApplication(Adw.Application):
 
     def request_quit(self) -> None:
         """Route every interactive quit through the editor's dirty prompt."""
+        updater = getattr(self, "_updater", None)
+        if updater and updater.busy and not updater._checking:
+            updater.show()
+            return
         editor = getattr(self, "editor_window", None)
         if editor is not None:
             self._quit_after_editor = True
@@ -1258,6 +1274,10 @@ class ClipperApplication(Adw.Application):
 
     def open_editor(self, clip_path, completed_callback=None) -> None:
         """Probe a clip off the GTK thread and present its saved or new edit."""
+        if getattr(self, "_update_restart_pending", False):
+            if completed_callback:
+                completed_callback()
+            return
         if self.editor_window is not None:
             self.editor_window.present()
             if completed_callback:
