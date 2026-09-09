@@ -57,6 +57,9 @@ elapsed_seconds=$((SECONDS - start_seconds))
 line_count="$(wc -l <"$log_file")"
 
 if [[ "$build_status" -eq 0 ]]; then
+    if ! "$script_dir/configure_engine_clangd.sh"; then
+        echo "warning: could not refresh clangd's libobs include view" >&2
+    fi
     mapfile -t commits < <(sed -n 's/^Commit: //p' "$log_file")
     echo "Flatpak build result: PASS"
     echo "Elapsed: ${elapsed_seconds}s"
