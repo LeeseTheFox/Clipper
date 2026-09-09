@@ -52,10 +52,11 @@ This file gives coding agents the minimum repo-specific instructions needed to w
   become public changelog entries.
 - A successful release is titled `Clipper X.Y.Z` and includes a
   `Clipper-X.Y.Z-x86_64.flatpak` asset.
-- When monitoring a remote build or release workflow, wait 10 minutes between
-  status checks. Use the available wait mechanism rather than polling at short
-  intervals; after each wait, check the workflow once and repeat only if it is
-  still running.
+- When a remote build or release workflow is triggered, do not wait for
+  completion or start a long-running sleep. Confirm dispatch (and optionally
+  check its initial status once), then wrap up the response and tell the user
+  to check whether the Action build succeeds and report back if there are any
+  problems.
 
 ## Startup Benchmark
 
