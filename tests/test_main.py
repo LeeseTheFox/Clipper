@@ -213,6 +213,112 @@ def test_session_detection_distinguishes_x11_and_wayland(monkeypatch):
     assert main_module._is_x11_session() is True
 
 
+def test_version_easter_egg_opens_after_five_quick_presses(monkeypatch):
+    class GestureClickStub:
+        def __init__(self):
+            self.callback = None
+
+        def set_button(self, button):
+            assert button == 1
+
+        def connect(self, signal, callback):
+            assert signal == "pressed"
+            self.callback = callback
+
+    class VersionButtonStub:
+        def __init__(self):
+            self.controller = None
+
+        def add_controller(self, controller):
+            self.controller = controller
+
+    version_button = VersionButtonStub()
+    about = types.SimpleNamespace(
+        get_template_child=lambda _window_type, name: version_button
+        if name == "version_button"
+        else None
+    )
+    app = object.__new__(ClipperApplication)
+    openings = []
+    app._show_fruit_drop_game = lambda: openings.append(True)
+    times = iter((10.0, 10.1, 10.2, 10.3, 10.4))
+    monkeypatch.setattr(main_module.Gtk, "GestureClick", GestureClickStub, raising=False)
+    monkeypatch.setattr(main_module.time, "monotonic", lambda: next(times))
+
+    app._connect_version_easter_egg(about)
+    assert version_button.controller is not None
+    for _ in range(5):
+        version_button.controller.callback(None, 1, 0, 0)
+
+    assert openings == [True]
+
+
+def test_fruit_drop_high_score_only_saves_new_records():
+    class ScoreConfig:
+        def __init__(self):
+            self.values = {"fruit_drop_high_score": 12}
+            self.saved = []
+
+        def get(self, key, default=None):
+            return self.values.get(key, default)
+
+        def set(self, key, value):
+            self.values[key] = value
+            self.saved.append((key, value))
+
+    app = object.__new__(ClipperApplication)
+    app._config = ScoreConfig()
+    app._log = lambda _message: None
+
+    app._save_fruit_drop_high_score(12)
+    app._save_fruit_drop_high_score(31)
+
+    assert app._config.saved == [("fruit_drop_high_score", 31)]
+
+
+def test_fruit_drop_always_starts_with_a_fresh_window(monkeypatch):
+    class ExistingWindow:
+        def __init__(self):
+            self.destroyed = False
+
+        def destroy(self):
+            self.destroyed = True
+
+    class NewWindow:
+        instance = None
+
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+            self.presented = False
+            self.destroy_callback = None
+            NewWindow.instance = self
+
+        def connect(self, signal, callback):
+            assert signal == "destroy"
+            self.destroy_callback = callback
+
+        def present(self):
+            self.presented = True
+
+    module = types.ModuleType("suika_game")
+    module.SuikaGameWindow = NewWindow
+    monkeypatch.setitem(sys.modules, "suika_game", module)
+
+    app = object.__new__(ClipperApplication)
+    previous_window = ExistingWindow()
+    app._fruit_drop_window = previous_window
+    app._config = types.SimpleNamespace(get=lambda _key, default: default)
+    app.window = None
+    app._save_fruit_drop_high_score = lambda _score: None
+
+    app._show_fruit_drop_game()
+
+    assert previous_window.destroyed is True
+    assert NewWindow.instance is app._fruit_drop_window
+    assert NewWindow.instance is not None
+    assert NewWindow.instance.presented is True
+
+
 def test_presentation_state_records_each_frame_boundary_once(monkeypatch):
     app = make_status_application()
     app._presentation_marks = {"window": 0, "clips": 0}

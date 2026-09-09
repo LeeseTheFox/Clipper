@@ -74,6 +74,15 @@ def test_replay_buffer_size_defaults_to_1024_mib(tmp_path):
     assert cfg["replay_buffer_size_mb"] == 1024
 
 
+def test_fruit_drop_high_score_defaults_to_zero_and_persists(tmp_path):
+    cfg = make_config(tmp_path)
+
+    assert cfg["fruit_drop_high_score"] == 0
+    cfg.set("fruit_drop_high_score", 42)
+
+    assert make_config(tmp_path)["fruit_drop_high_score"] == 42
+
+
 def test_no_file_created_on_init(tmp_path):
     """Creating a ClipperConfig should NOT write a file by itself."""
     cfg_path = tmp_path / "config.json"

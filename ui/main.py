@@ -93,6 +93,8 @@ _OBS_CONFLICT_BODY = (
 _HOTKEY_CAPTURE_RELEASE_DELAY_MS = 500
 _EXPORT_PROBE_DELAY_SECONDS = 3
 _PRESENTATION_ACTION = "presentation-state"
+_VERSION_EASTER_EGG_CLICKS = 5
+_VERSION_EASTER_EGG_INTERVAL_SECONDS = 0.7
 
 
 def _is_x11_session() -> bool:
@@ -210,6 +212,7 @@ class ClipperApplication(Adw.Application):
         self._export_probe_start_id: int | None = None
         self._presentation_action: Gio.SimpleAction | None = None
         self._presentation_marks = {"window": 0, "clips": 0}
+        self._fruit_drop_window = None
 
     def do_activate(self):
         """Called when the application is activated"""
@@ -1986,6 +1989,62 @@ class ClipperApplication(Adw.Application):
     # About dialog
     # ------------------------------------------------------------------
 
+    def _show_fruit_drop_game(self) -> None:
+        """Present a fresh instance of the hidden fruit-drop game."""
+        if self._fruit_drop_window is not None:
+            self._fruit_drop_window.destroy()
+            self._fruit_drop_window = None
+
+        from suika_game import SuikaGameWindow
+
+        saved_score = self._config.get("fruit_drop_high_score", 0)
+        high_score = saved_score if type(saved_score) is int and saved_score >= 0 else 0
+        game_window = SuikaGameWindow(
+            transient_for=self.window,
+            high_score=high_score,
+            high_score_changed=self._save_fruit_drop_high_score,
+        )
+        self._fruit_drop_window = game_window
+        game_window.connect("destroy", self._on_fruit_drop_window_destroyed)
+        game_window.present()
+
+    def _on_fruit_drop_window_destroyed(self, window) -> None:
+        if self._fruit_drop_window is window:
+            self._fruit_drop_window = None
+
+    def _save_fruit_drop_high_score(self, score: int) -> None:
+        """Persist only genuine new high scores from the easter egg."""
+        saved_score = self._config.get("fruit_drop_high_score", 0)
+        current_score = saved_score if type(saved_score) is int and saved_score >= 0 else 0
+        if score <= current_score:
+            return
+        try:
+            self._config.set("fruit_drop_high_score", score)
+        except OSError as error:
+            self._log(f"[clipper] WARN: could not save fruit-drop score: {error}")
+
+    def _connect_version_easter_egg(self, about) -> None:
+        """Open the game after five rapid taps on libadwaita's version button."""
+        version_button = about.get_template_child(Adw.AboutWindow, "version_button")
+        if version_button is None:
+            return
+        click = Gtk.GestureClick()
+        click.set_button(1)
+        state = {"count": 0, "last_click": 0.0}
+
+        def on_pressed(_gesture, _press_count, _x, _y) -> None:
+            now = time.monotonic()
+            if now - state["last_click"] > _VERSION_EASTER_EGG_INTERVAL_SECONDS:
+                state["count"] = 0
+            state["last_click"] = now
+            state["count"] += 1
+            if state["count"] >= _VERSION_EASTER_EGG_CLICKS:
+                state["count"] = 0
+                self._show_fruit_drop_game()
+
+        click.connect("pressed", on_pressed)
+        version_button.add_controller(click)
+
     def on_about(self, action, param):
         """Show about dialog"""
         about = Adw.AboutWindow(
@@ -2003,6 +2062,7 @@ class ClipperApplication(Adw.Application):
             website_row = about.get_template_child(Adw.AboutWindow, row_name)
             if website_row is not None:
                 website_row.set_title(_("GitHub"))
+        self._connect_version_easter_egg(about)
         about.present()
 
 

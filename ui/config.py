@@ -398,6 +398,7 @@ DEFAULTS: dict[str, Any] = {
     "clip_game_metadata": {"clips": {}},
     "audio": default_audio_config(),
     "audio_assignments": [],
+    "fruit_drop_high_score": 0,
 }
 
 
@@ -479,6 +480,10 @@ class ClipperConfig:
             self._data["pending_game_capture_change"] = normalize_pending_game_capture_change(
                 self._data.get("pending_game_capture_change")
             )
+            high_score = self._data.get("fruit_drop_high_score")
+            self._data["fruit_drop_high_score"] = (
+                high_score if type(high_score) is int and high_score >= 0 else 0
+            )
         except Exception as exc:  # noqa: BLE001
             print(
                 f"clipper: warning: could not read config ({exc}); using defaults",
@@ -547,6 +552,8 @@ class ClipperConfig:
             value = normalize_whitelist(value)
         if key == "pending_game_capture_change":
             value = normalize_pending_game_capture_change(value)
+        if key == "fruit_drop_high_score":
+            value = value if type(value) is int and value >= 0 else 0
         previous = self._data.copy()
         self._data[key] = value
         try:
