@@ -324,7 +324,7 @@ msgstr ""
 #: ui/clips_view.py:1822 ui/dialogs.py:856 ui/editor_export_dialog.py:345
 #: ui/editor_export_dialog.py:636 ui/editor_export_dialog.py:664
 #: ui/editor_export_dialog.py:772 ui/editor_window.py:3990 ui/editor_wipe.py:16
-#: ui/update_controller.py:316
+#: ui/update_controller.py:372
 msgid "Cancel"
 msgstr "Cancel"
 
@@ -1409,7 +1409,7 @@ msgstr "Exporting…"
 msgid "Exported to %(name)s"
 msgstr "Exported to %(name)s"
 
-#: ui/editor_window.py:3952 ui/main.py:1967 ui/settings_view.py:1670
+#: ui/editor_window.py:3952 ui/main.py:1967 ui/settings_view.py:1672
 msgid "Unknown error"
 msgstr "Unknown error"
 
@@ -1468,7 +1468,7 @@ msgstr "Use one main key for the shortcut: %(shortcut)s"
 msgid "Choose a key too"
 msgstr "Choose a key too"
 
-#: ui/hotkeys.py:235 ui/hotkeys.py:252 ui/settings_view.py:1617
+#: ui/hotkeys.py:235 ui/hotkeys.py:252 ui/settings_view.py:1619
 #: ui/setup_window.py:649
 msgid "Not set"
 msgstr "Not set"
@@ -1651,7 +1651,7 @@ msgstr "Engine not running"
 msgid "Could not send save command to Clipper engine"
 msgstr "Could not send save command to Clipper engine"
 
-#: ui/main.py:581 ui/update_controller.py:385
+#: ui/main.py:581 ui/update_controller.py:444
 msgid "Restart Clipper?"
 msgstr "Restart Clipper?"
 
@@ -1659,11 +1659,11 @@ msgstr "Restart Clipper?"
 msgid "Clipper needs to be restarted for this change to take effect."
 msgstr "Clipper needs to be restarted for this change to take effect."
 
-#: ui/main.py:584 ui/update_controller.py:268 ui/update_controller.py:391
+#: ui/main.py:584 ui/update_controller.py:322 ui/update_controller.py:450
 msgid "Restart later"
 msgstr "Restart later"
 
-#: ui/main.py:585 ui/update_controller.py:272 ui/update_controller.py:392
+#: ui/main.py:585 ui/update_controller.py:326 ui/update_controller.py:451
 msgid "Restart now"
 msgstr "Restart now"
 
@@ -1685,7 +1685,7 @@ msgstr "Global hotkey unavailable: %(message)s"
 msgid "Acknowledge"
 msgstr "Acknowledge"
 
-#: ui/main.py:983 ui/settings_view.py:1666
+#: ui/main.py:983 ui/settings_view.py:1668
 msgid "Restarting engine…"
 msgstr "Restarting engine…"
 
@@ -1751,7 +1751,7 @@ msgstr "Could not open clip editor: %(error)s"
 msgid "Could not start Clipper engine: %(error)s"
 msgstr "Could not start Clipper engine: %(error)s"
 
-#: ui/main.py:1838 ui/settings_view.py:1669
+#: ui/main.py:1838 ui/settings_view.py:1671
 #, python-format
 msgid "Engine shutdown failed: %(error)s"
 msgstr "Engine shutdown failed: %(error)s"
@@ -1850,7 +1850,7 @@ msgstr "About Clipper"
 msgid "Quit"
 msgstr "Quit"
 
-#: ui/main_window.py:191 ui/update_controller.py:189
+#: ui/main_window.py:191 ui/update_controller.py:220
 msgid "A Clipper update is available"
 msgstr "A Clipper update is available"
 
@@ -1974,7 +1974,7 @@ msgstr "File size limit"
 msgid "Maximum size retained for each clip"
 msgstr "Maximum size retained for each clip"
 
-#: ui/settings_view.py:1154 ui/setup_window.py:343
+#: ui/settings_view.py:1154 ui/setup_window.py:343 ui/update_controller.py:335
 msgid "MiB"
 msgstr "MiB"
 
@@ -2026,7 +2026,7 @@ msgstr "Hardware acceleration device"
 msgid "Change capture target display"
 msgstr "Change capture target display"
 
-#: ui/settings_view.py:1323 ui/settings_view.py:1509 ui/setup_window.py:471
+#: ui/settings_view.py:1323 ui/settings_view.py:1511 ui/setup_window.py:471
 msgid "Opens the system display picker"
 msgstr "Opens the system display picker"
 
@@ -2050,7 +2050,7 @@ msgstr "Output folder"
 msgid "Hotkey"
 msgstr "Hotkey"
 
-#: ui/settings_view.py:1360 ui/settings_view.py:1631 ui/setup_window.py:558
+#: ui/settings_view.py:1360 ui/settings_view.py:1633 ui/setup_window.py:558
 msgid "Your desktop may ask you to approve or change this shortcut"
 msgstr "Your desktop may ask you to approve or change this shortcut"
 
@@ -2078,82 +2078,82 @@ msgstr "App"
 msgid "Startup and window behavior"
 msgstr "Startup and window behavior"
 
-#: ui/settings_view.py:1423
+#: ui/settings_view.py:1424
 msgid "Automatically check for updates"
 msgstr "Automatically check for updates"
 
-#: ui/settings_view.py:1424
-msgid "Check GitHub daily for new Clipper releases"
-msgstr "Check GitHub daily for new Clipper releases"
+#: ui/settings_view.py:1425
+msgid "Check GitHub at startup and daily for new Clipper releases"
+msgstr "Check GitHub at startup and daily for new Clipper releases"
 
-#: ui/settings_view.py:1440
+#: ui/settings_view.py:1442
 msgid "Start on boot"
 msgstr "Start on boot"
 
-#: ui/settings_view.py:1441
+#: ui/settings_view.py:1443
 msgid "Launch Clipper automatically when you log in"
 msgstr "Launch Clipper automatically when you log in"
 
-#: ui/settings_view.py:1455
+#: ui/settings_view.py:1457
 msgid "Minimize to tray instead of close"
 msgstr "Minimize to tray instead of close"
 
-#: ui/settings_view.py:1457
+#: ui/settings_view.py:1459
 msgid "Hide Clipper to the tray when the window close button is pressed"
 msgstr "Hide Clipper to the tray when the window close button is pressed"
 
-#: ui/settings_view.py:1472
+#: ui/settings_view.py:1474
 msgid "Remember window sizes"
 msgstr "Remember window sizes"
 
-#: ui/settings_view.py:1474
+#: ui/settings_view.py:1476
 msgid "Restore sizes for the main window, video editor and video player"
 msgstr "Restore sizes for the main window, video editor and video player"
 
-#: ui/settings_view.py:1496
+#: ui/settings_view.py:1498
 msgid "The system display picker is unavailable"
 msgstr "The system display picker is unavailable"
 
-#: ui/settings_view.py:1500 ui/setup_window.py:588
+#: ui/settings_view.py:1502 ui/setup_window.py:588
 msgid "Waiting for the system display picker…"
 msgstr "Waiting for the system display picker…"
 
-#: ui/settings_view.py:1504
+#: ui/settings_view.py:1506
 msgid "Could not open the system display picker."
 msgstr "Could not open the system display picker."
 
-#: ui/settings_view.py:1514
+#: ui/settings_view.py:1516
 #, python-format
 msgid "Capture display was not changed: %(message)s"
 msgstr "Capture display was not changed: %(message)s"
 
-#: ui/settings_view.py:1533
+#: ui/settings_view.py:1535
 msgid "Tray unavailable. Clipper will quit when closed."
 msgstr "Tray unavailable. Clipper will quit when closed."
 
-#: ui/settings_view.py:1567
+#: ui/settings_view.py:1569
 msgid "Could not update the start-on-boot setting"
 msgstr "Could not update the start-on-boot setting"
 
-#: ui/settings_view.py:1574
+#: ui/settings_view.py:1576
 #, python-format
 msgid "Could not update the start-on-boot setting: %(error)s"
 msgstr "Could not update the start-on-boot setting: %(error)s"
 
-#: ui/settings_view.py:1581
+#: ui/settings_view.py:1583
 msgid "Choose output folder"
 msgstr "Choose output folder"
 
-#: ui/settings_view.py:1630 ui/settings_view.py:1646 ui/setup_window.py:557
+#: ui/settings_view.py:1632 ui/settings_view.py:1648 ui/setup_window.py:557
 #: ui/setup_window.py:566
 msgid "Managed by your desktop's global shortcut settings"
 msgstr "Managed by your desktop's global shortcut settings"
 
-#: ui/settings_view.py:1679
+#: ui/settings_view.py:1681
 msgid "Engine restarted successfully"
 msgstr "Engine restarted successfully"
 
-#: ui/settings_view.py:1688
+#: ui/settings_view.py:1690
 msgid "Failed to restart engine. Please restart manually."
 msgstr "Failed to restart engine. Please restart manually."
 
@@ -2333,79 +2333,85 @@ msgstr "Hide Clipper"
 msgid "Show Clipper"
 msgstr "Show Clipper"
 
-#: ui/update_controller.py:93 ui/update_controller.py:105
+#: ui/update_controller.py:110 ui/update_controller.py:122
 msgid "Checking for updates…"
 msgstr "Checking for updates…"
 
-#: ui/update_controller.py:102
+#: ui/update_controller.py:119
 msgid "Install the Flatpak version of Clipper to use in-app updates."
 msgstr "Install the Flatpak version of Clipper to use in-app updates."
 
-#: ui/update_controller.py:138
+#: ui/update_controller.py:158
 msgid "Could not check for updates. Check your connection and try again."
 msgstr "Could not check for updates. Check your connection and try again."
 
-#: ui/update_controller.py:152
+#: ui/update_controller.py:183
 msgid "Clipper is up to date."
 msgstr "Clipper is up to date."
 
-#: ui/update_controller.py:165 ui/update_controller.py:274
+#: ui/update_controller.py:196 ui/update_controller.py:328
 msgid "Clipper update available"
 msgstr "Clipper update available"
 
-#: ui/update_controller.py:167
+#: ui/update_controller.py:198
 #, python-format
 msgid "Clipper %(version)s is ready to download."
 msgstr "Clipper %(version)s is ready to download."
 
-#: ui/update_controller.py:187 ui/update_controller.py:270
+#: ui/update_controller.py:218 ui/update_controller.py:324
 msgid "Restart Clipper to finish updating"
 msgstr "Restart Clipper to finish updating"
 
-#: ui/update_controller.py:203
+#: ui/update_controller.py:234
 msgid "Updates"
 msgstr "Updates"
 
-#: ui/update_controller.py:222
+#: ui/update_controller.py:266
+msgid "Installed"
+msgstr "Installed"
+
+#: ui/update_controller.py:267
+msgid "Available"
+msgstr "Available"
+
+#: ui/update_controller.py:269
+msgid "Download"
+msgstr "Download"
+
+#: ui/update_controller.py:274
 msgid "Release notes"
 msgstr "Release notes"
 
-#: ui/update_controller.py:234 ui/update_controller.py:268
+#: ui/update_controller.py:286 ui/update_controller.py:322
 msgid "Later"
 msgstr "Later"
 
-#: ui/update_controller.py:237 ui/update_controller.py:283
+#: ui/update_controller.py:289 ui/update_controller.py:337
 msgid "Update"
 msgstr "Update"
 
-#: ui/update_controller.py:242
+#: ui/update_controller.py:294
 msgid "Skip this version"
 msgstr "Skip this version"
 
-#: ui/update_controller.py:271
+#: ui/update_controller.py:325
 msgid "Update installed. Restart Clipper to use the new version."
 msgstr "Update installed. Restart Clipper to use the new version."
 
-#: ui/update_controller.py:276
+#: ui/update_controller.py:334
 #, python-format
-msgid ""
-"Installed: %(installed)s\n"
-"Available: %(available)s\n"
-"Download: %(size)s MiB"
-msgstr ""
-"Installed: %(installed)s\n"
-"Available: %(available)s\n"
-"Download: %(size)s MiB"
+msgid "%(size)s %(unit)s"
+msgstr "%(size)s %(unit)s"
 
-#: ui/update_controller.py:313
+#: ui/update_controller.py:369
 msgid "Downloading update…"
 msgstr "Downloading update…"
 
-#: ui/update_controller.py:347
+#: ui/update_controller.py:403
 msgid "Installing update…"
 msgstr "Installing update…"
 
-#: ui/update_controller.py:359
+#: ui/update_controller.py:414
 msgid ""
 "Could not install the update. Your current version is still available. Try "
 "again."
@@ -2413,11 +2419,16 @@ msgstr ""
 "Could not install the update. Your current version is still available. Try "
 "again."
 
-#: ui/update_controller.py:381
+#: ui/update_controller.py:419
+#, python-format
+msgid "Details: %(details)s"
+msgstr "Details: %(details)s"
+
+#: ui/update_controller.py:440
 msgid "Close the editor and wait for clip saving to finish before restarting."
 msgstr "Close the editor and wait for clip saving to finish before restarting."
 
-#: ui/update_controller.py:387
+#: ui/update_controller.py:446
 msgid ""
 "Restarting interrupts recording and clears the replay buffer. Saved clips "
 "are kept."
@@ -2425,7 +2436,7 @@ msgstr ""
 "Restarting interrupts recording and clears the replay buffer. Saved clips "
 "are kept."
 
-#: ui/update_controller.py:421
+#: ui/update_controller.py:480
 msgid "Could not restart Clipper. Quit and open it again to use the update."
 msgstr "Could not restart Clipper. Quit and open it again to use the update."
 

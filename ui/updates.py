@@ -164,6 +164,14 @@ class Installation:
         return host_command("flatpak", self.scope, operation, *args)
 
 
+class InstallError(RuntimeError):
+    """A Flatpak transaction failure with a safe detail for the update dialog."""
+
+    def __init__(self, detail: str):
+        self.detail = detail
+        super().__init__(f"Flatpak installation failed: {detail}")
+
+
 def running_installation() -> Installation:
     info = configparser.ConfigParser(interpolation=None)
     if not info.read("/.flatpak-info") or info["Application"]["name"] != APP_ID:
@@ -219,6 +227,18 @@ def download(
         partial.unlink(missing_ok=True)
 
 
+def host_cache_path(bundle: Path, cache: Path) -> Path:
+    """Translate an app-cache path in the sandbox to its host path."""
+    relative = bundle.relative_to(cache)
+    info = configparser.ConfigParser(interpolation=None)
+    if info.read("/.flatpak-info") and info["Application"].get("name") == APP_ID:
+        instance_path = info["Instance"].get("instance-path", "")
+        if instance_path:
+            return Path(instance_path) / "cache" / relative
+    # Keep native tests and development helpers usable outside a sandbox.
+    return Path.home() / ".var/app" / APP_ID / "cache" / relative
+
+
 def install(release: Release, installation: Installation, bundle: Path) -> None:
     existing_commit = host_output(
         "flatpak", installation.scope, "info", "--show-commit", release.ref
@@ -235,13 +255,15 @@ def install(release: Release, installation: Installation, bundle: Path) -> None:
         raise ValueError("Could not verify the deployed version")
     if version_tuple(deployed_release.attrib["version"]) > version_tuple(release.version):
         raise ValueError("A newer version is already installed; restart Clipper")
-    # XDG_CACHE_HOME inside Flatpak is /var/cache; resolve the equivalent host path.
+    # Resolve the host-visible equivalent of the sandbox's private cache. The
+    # authoritative instance path also covers nonstandard host home locations.
     cache = Path(os.environ.get("XDG_CACHE_HOME", str(Path.home() / ".cache")))
-    relative = bundle.relative_to(cache)
-    host_path = Path.home() / ".var/app" / APP_ID / "cache" / relative
+    host_path = host_cache_path(bundle, cache)
     try:
         subprocess.run(
-            installation.command("install", "--assumeyes", "--or-update", str(host_path)),
+            installation.command(
+                "install", "--assumeyes", "--or-update", "--bundle", str(host_path)
+            ),
             stdin=subprocess.DEVNULL,
             check=True,
             capture_output=True,
@@ -249,7 +271,19 @@ def install(release: Release, installation: Installation, bundle: Path) -> None:
             timeout=1800,
         )
     except subprocess.CalledProcessError as error:
-        raise RuntimeError(f"Flatpak installation failed: {error.stderr[-2000:]}") from error
+        # A concurrent transaction can deploy the requested commit while this
+        # Flatpak process still exits unsuccessfully. Verify before reporting a
+        # failure so the UI never calls a completed update unsuccessful.
+        try:
+            commit = host_output(
+                "flatpak", installation.scope, "info", "--show-commit", release.ref
+            )
+        except (OSError, subprocess.SubprocessError):
+            commit = ""
+        if commit != release.commit:
+            lines = [line.strip() for line in error.stderr.splitlines() if line.strip()]
+            detail = lines[-1] if lines else "Flatpak exited without an error message"
+            raise InstallError(detail[-1000:]) from error
     commit = host_output("flatpak", installation.scope, "info", "--show-commit", release.ref)
     if commit != release.commit:
         raise ValueError("Installed commit does not match the release")

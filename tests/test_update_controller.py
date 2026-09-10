@@ -49,6 +49,7 @@ def controller(monkeypatch, config=None):
     )
     app._show_toast = app.toasts.append
     monkeypatch.setattr(update_controller.GLib, "timeout_add_seconds", lambda *_args: 1)
+    monkeypatch.setattr(update_controller.GLib, "idle_add", lambda *_args: 2)
     monkeypatch.setenv("FLATPAK_ID", updates.APP_ID)
     monkeypatch.setattr(updates, "current_version", lambda: "1.0.0")
     result = update_controller.UpdateController(app)
@@ -92,6 +93,28 @@ def test_daily_schedule_survives_process_handoff(monkeypatch):
     second = controller(monkeypatch, first.config)
     second._tick()
     assert len(calls) == 1
+
+
+def test_automatic_check_runs_on_every_startup_despite_daily_deadline(monkeypatch):
+    checks = []
+    first = controller(monkeypatch, Config(update_next_check=float("inf")))
+    first.check = lambda **kwargs: checks.append(kwargs)
+    first._check_on_startup()
+    second = controller(monkeypatch, first.config)
+    second.check = lambda **kwargs: checks.append(kwargs)
+    second._check_on_startup()
+    assert checks == [
+        {"manual": False, "present": True},
+        {"manual": False, "present": True},
+    ]
+
+
+def test_preference_disables_automatic_startup_check(monkeypatch):
+    updater = controller(monkeypatch, Config(auto_check_updates=False))
+    checks = []
+    updater.check = lambda **kwargs: checks.append(kwargs)
+    updater._check_on_startup()
+    assert checks == []
 
 
 def test_preference_disables_automatic_checks_but_manual_still_works(monkeypatch):
@@ -145,6 +168,34 @@ def test_manual_check_offers_update_only_after_new_version_found(monkeypatch):
     pending[0]((updates.Installation("--user", "x86_64", "master"), (release, "", {})), None)
     assert shown == [release]
     assert "Clipper is up to date." not in updater.app.toasts
+
+
+def test_visible_startup_check_opens_available_update(monkeypatch):
+    updater = controller(monkeypatch)
+    updater.app._is_window_visible = lambda: True
+    shown = []
+    updater.show = lambda: shown.append(updater.release)
+    monkeypatch.setattr(
+        updates, "running_installation", lambda: updates.Installation("--user", "x86_64", "master")
+    )
+    release = available_release()
+    monkeypatch.setattr(updates, "discover", lambda *_args: (release, "", {}))
+    updater.check(manual=False, present=True)
+    assert shown == [release]
+
+
+def test_visible_startup_check_does_not_open_skipped_update(monkeypatch):
+    release = available_release()
+    updater = controller(monkeypatch, Config(update_skipped_version=release.version))
+    updater.app._is_window_visible = lambda: True
+    shown = []
+    updater.show = lambda: shown.append(updater.release)
+    monkeypatch.setattr(
+        updates, "running_installation", lambda: updates.Installation("--user", "x86_64", "master")
+    )
+    monkeypatch.setattr(updates, "discover", lambda *_args: (release, "", {}))
+    updater.check(manual=False, present=True)
+    assert shown == []
 
 
 def test_manual_check_joins_background_check_without_opening_dialog(monkeypatch):
@@ -285,6 +336,7 @@ def test_cancel_at_download_completion_prevents_install(monkeypatch, tmp_path, c
     updater.skip_button = Widget()
     updater.later_button = Widget()
     updater.progress = Widget()
+    updater.details_list = Widget()
     updater._render = lambda: None
     pending = []
     updater._worker = lambda work, done: pending.append((work, done))

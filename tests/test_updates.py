@@ -155,8 +155,79 @@ def test_install_preserves_scope_and_verifies_commit(release_data, monkeypatch, 
     monkeypatch.setattr(updates, "host_output", lambda *_args: next(results))
     updates.install(release, updates.Installation(scope, "x86_64", "master"), bundle)
     assert calls[0][:6] == ["flatpak-spawn", "--host", "--directory=/", "flatpak", scope, "install"]
+    assert "--bundle" in calls[0]
     assert calls[0][-1] == str(Path.home() / ".var/app" / updates.APP_ID / "cache/bundle.flatpak")
     assert not bundle.exists()
+
+
+def test_host_cache_path_uses_flatpak_instance_path(monkeypatch, tmp_path):
+    cache = tmp_path / "sandbox-cache"
+    bundle = cache / "clipper/updates/update.flatpak"
+
+    def read(info, _path):
+        info.read_dict({
+            "Application": {"name": updates.APP_ID},
+            "Instance": {"instance-path": "/host/custom/app-data"},
+        })
+        return ["/.flatpak-info"]
+
+    monkeypatch.setattr(updates.configparser.ConfigParser, "read", read)
+    assert updates.host_cache_path(bundle, cache) == Path(
+        "/host/custom/app-data/cache/clipper/updates/update.flatpak"
+    )
+
+
+def test_install_accepts_commit_deployed_despite_flatpak_error(
+    release_data, monkeypatch, tmp_path
+):
+    release = updates.parse_release(*release_data, "1.0.0", "x86_64", "master")
+    monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+    bundle = tmp_path / "bundle.flatpak"
+    bundle.write_bytes(b"test")
+    results = iter(
+        [
+            "b" * 64,
+            "/deployment",
+            '<component><releases><release version="1.0.0"/></releases></component>',
+            release.commit,
+            release.commit,
+        ]
+    )
+    monkeypatch.setattr(updates, "host_output", lambda *_args: next(results))
+
+    def fail(*_args, **_kwargs):
+        raise updates.subprocess.CalledProcessError(1, [], stderr="already installed")
+
+    monkeypatch.setattr(updates.subprocess, "run", fail)
+    updates.install(release, updates.Installation("--user", "x86_64", "master"), bundle)
+    assert not bundle.exists()
+
+
+def test_install_preserves_flatpak_failure_detail(release_data, monkeypatch, tmp_path):
+    release = updates.parse_release(*release_data, "1.0.0", "x86_64", "master")
+    monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+    bundle = tmp_path / "bundle.flatpak"
+    bundle.write_bytes(b"test")
+    results = iter(
+        [
+            "b" * 64,
+            "/deployment",
+            '<component><releases><release version="1.0.0"/></releases></component>',
+            "b" * 64,
+        ]
+    )
+    monkeypatch.setattr(updates, "host_output", lambda *_args: next(results))
+
+    def fail(*_args, **_kwargs):
+        raise updates.subprocess.CalledProcessError(
+            1, [], stderr="Installing…\nerror: Not authorized"
+        )
+
+    monkeypatch.setattr(updates.subprocess, "run", fail)
+    with pytest.raises(updates.InstallError) as caught:
+        updates.install(release, updates.Installation("--system", "x86_64", "master"), bundle)
+    assert caught.value.detail == "error: Not authorized"
+    assert bundle.exists()
 
 
 def test_install_does_not_claim_success_for_wrong_commit(release_data, monkeypatch, tmp_path):

@@ -1420,8 +1420,10 @@ class SettingsView(Gtk.Box):
         group = Adw.PreferencesGroup()
         group.set_title(_("App"))
         group.set_description(_("Startup and window behavior"))
-        update_row = Adw.SwitchRow(title=_("Automatically check for updates"),
-                                  subtitle=_("Check GitHub daily for new Clipper releases"))
+        update_row = Adw.SwitchRow(
+            title=_("Automatically check for updates"),
+            subtitle=_("Check GitHub at startup and daily for new Clipper releases"),
+        )
         update_row.set_active(
             self._config.get("auto_check_updates", True) if self._config else True
         )

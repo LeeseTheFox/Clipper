@@ -1,12 +1,13 @@
 # Application updates
 
-Clipper checks the public GitHub latest-release API after startup (30-second
-delay) and at most once per day while running. The preference disables scheduled
-checks; the main menu always offers a manual check. Manual checks show their
-progress and an up-to-date result as toasts. The compact update dialog opens
-only when an update is available or installed and awaiting restart. Check scheduling, cached
-release metadata, skipped versions, notification history and pending restart
-state survive foreground/background process handoffs.
+Clipper checks the public GitHub latest-release API once on every startup and at
+most once per day afterward while it remains running. The preference disables
+automatic checks; the main menu always offers a manual check. Manual checks show
+their progress and an up-to-date result as toasts. An automatic startup check
+opens the compact update dialog when the main window is visible, or sends a
+desktop notification when Clipper is hidden. Cached release metadata, skipped
+versions, notification history and pending restart state survive
+foreground/background process handoffs.
 
 Downloads and installation require a user action. Network work runs outside the
 GTK loop. An available update appears in a banner or, while hidden, one desktop
@@ -46,9 +47,11 @@ A dedicated signing key could be added later without changing the UI.
 
 The running sandbox's `/.flatpak-info` is matched to host Flatpak installations
 by deployment path. Updates retain the existing installation scope, architecture
-and branch. The bundle is staged in the app's private cache and installed using
-host Flatpak's `install --or-update`. The currently running deployment stays in
-use until restart.
+and branch. The bundle is staged in the app's private cache, translated through
+Flatpak's authoritative instance path, and installed using host Flatpak's
+`install --or-update --bundle`. The currently running deployment stays in use
+until restart. If Flatpak rejects the transaction, its final error detail is
+shown in the dialog and recorded in Clipper's logs.
 
 Restart requires a closed editor and no pending clip saves. Confirmation explains
 that recording stops and the replay buffer is cleared. A detached host helper

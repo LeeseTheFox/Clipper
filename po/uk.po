@@ -328,7 +328,7 @@ msgstr ""
 #: ui/clips_view.py:1822 ui/dialogs.py:856 ui/editor_export_dialog.py:345
 #: ui/editor_export_dialog.py:636 ui/editor_export_dialog.py:664
 #: ui/editor_export_dialog.py:772 ui/editor_window.py:3990 ui/editor_wipe.py:16
-#: ui/update_controller.py:316
+#: ui/update_controller.py:372
 msgid "Cancel"
 msgstr "Скасувати"
 
@@ -1422,7 +1422,7 @@ msgstr "Експорт…"
 msgid "Exported to %(name)s"
 msgstr "Експортовано до %(name)s"
 
-#: ui/editor_window.py:3952 ui/main.py:1967 ui/settings_view.py:1670
+#: ui/editor_window.py:3952 ui/main.py:1967 ui/settings_view.py:1672
 msgid "Unknown error"
 msgstr "Невідома помилка"
 
@@ -1481,7 +1481,7 @@ msgstr "Використовуй одну основну клавішу для �
 msgid "Choose a key too"
 msgstr "Також обери клавішу"
 
-#: ui/hotkeys.py:235 ui/hotkeys.py:252 ui/settings_view.py:1617
+#: ui/hotkeys.py:235 ui/hotkeys.py:252 ui/settings_view.py:1619
 #: ui/setup_window.py:649
 msgid "Not set"
 msgstr "Не встановлено"
@@ -1664,7 +1664,7 @@ msgstr "Рушій не запущено"
 msgid "Could not send save command to Clipper engine"
 msgstr "Не вдалося надіслати команду збереження рушію Clipper"
 
-#: ui/main.py:581 ui/update_controller.py:385
+#: ui/main.py:581 ui/update_controller.py:444
 msgid "Restart Clipper?"
 msgstr "Перезапустити Clipper?"
 
@@ -1672,11 +1672,11 @@ msgstr "Перезапустити Clipper?"
 msgid "Clipper needs to be restarted for this change to take effect."
 msgstr "Щоб зміна набула чинності, потрібно перезапустити Clipper."
 
-#: ui/main.py:584 ui/update_controller.py:268 ui/update_controller.py:391
+#: ui/main.py:584 ui/update_controller.py:322 ui/update_controller.py:450
 msgid "Restart later"
 msgstr "Перезапустити пізніше"
 
-#: ui/main.py:585 ui/update_controller.py:272 ui/update_controller.py:392
+#: ui/main.py:585 ui/update_controller.py:326 ui/update_controller.py:451
 msgid "Restart now"
 msgstr "Перезапустити зараз"
 
@@ -1698,7 +1698,7 @@ msgstr "Глобальне сполучення клавіш недоступн�
 msgid "Acknowledge"
 msgstr "Зрозуміло"
 
-#: ui/main.py:983 ui/settings_view.py:1666
+#: ui/main.py:983 ui/settings_view.py:1668
 msgid "Restarting engine…"
 msgstr "Перезапуск рушія…"
 
@@ -1766,7 +1766,7 @@ msgstr "Не вдалося відкрити редактор кліпів: %(er
 msgid "Could not start Clipper engine: %(error)s"
 msgstr "Не вдалося запустити рушій Clipper: %(error)s"
 
-#: ui/main.py:1838 ui/settings_view.py:1669
+#: ui/main.py:1838 ui/settings_view.py:1671
 #, python-format
 msgid "Engine shutdown failed: %(error)s"
 msgstr "Не вдалося завершити роботу рушія: %(error)s"
@@ -1865,7 +1865,7 @@ msgstr "Про Clipper"
 msgid "Quit"
 msgstr "Вийти"
 
-#: ui/main_window.py:191 ui/update_controller.py:189
+#: ui/main_window.py:191 ui/update_controller.py:220
 msgid "A Clipper update is available"
 msgstr "Доступне оновлення Clipper"
 
@@ -1989,7 +1989,7 @@ msgstr "Обмеження розміру файла"
 msgid "Maximum size retained for each clip"
 msgstr "Максимально дозволений розмір для кожного кліпу"
 
-#: ui/settings_view.py:1154 ui/setup_window.py:343
+#: ui/settings_view.py:1154 ui/setup_window.py:343 ui/update_controller.py:335
 msgid "MiB"
 msgstr "МіБ"
 
@@ -2041,7 +2041,7 @@ msgstr "Пристрій апаратного прискорення"
 msgid "Change capture target display"
 msgstr "Змінити цільовий екран захоплення"
 
-#: ui/settings_view.py:1323 ui/settings_view.py:1509 ui/setup_window.py:471
+#: ui/settings_view.py:1323 ui/settings_view.py:1511 ui/setup_window.py:471
 msgid "Opens the system display picker"
 msgstr "Відкриває системний засіб вибору екрана"
 
@@ -2065,7 +2065,7 @@ msgstr "Тека збереження"
 msgid "Hotkey"
 msgstr "Сполучення клавіш"
 
-#: ui/settings_view.py:1360 ui/settings_view.py:1631 ui/setup_window.py:558
+#: ui/settings_view.py:1360 ui/settings_view.py:1633 ui/setup_window.py:558
 msgid "Your desktop may ask you to approve or change this shortcut"
 msgstr "Система може попросити підтвердження цього сполучення клавіш"
 
@@ -2093,82 +2093,82 @@ msgstr "Застосунок"
 msgid "Startup and window behavior"
 msgstr "Запуск і поведінка вікна"
 
-#: ui/settings_view.py:1423
+#: ui/settings_view.py:1424
 msgid "Automatically check for updates"
 msgstr "Автоматично перевіряти оновлення"
 
-#: ui/settings_view.py:1424
-msgid "Check GitHub daily for new Clipper releases"
-msgstr "Щодня перевіряти нові випуски Clipper на GitHub"
+#: ui/settings_view.py:1425
+msgid "Check GitHub at startup and daily for new Clipper releases"
+msgstr "Перевіряти нові випуски Clipper на GitHub під час запуску та щодня"
 
-#: ui/settings_view.py:1440
+#: ui/settings_view.py:1442
 msgid "Start on boot"
 msgstr "Запускати під час входу в систему"
 
-#: ui/settings_view.py:1441
+#: ui/settings_view.py:1443
 msgid "Launch Clipper automatically when you log in"
 msgstr "Автоматично запускати Clipper під час входу в систему"
 
-#: ui/settings_view.py:1455
+#: ui/settings_view.py:1457
 msgid "Minimize to tray instead of close"
 msgstr "Згортати в трей замість закриття"
 
-#: ui/settings_view.py:1457
+#: ui/settings_view.py:1459
 msgid "Hide Clipper to the tray when the window close button is pressed"
 msgstr "Ховати Clipper в системний трей після натискання кнопки закриття вікна"
 
-#: ui/settings_view.py:1472
+#: ui/settings_view.py:1474
 msgid "Remember window sizes"
 msgstr "Запам’ятовувати розміри вікон"
 
-#: ui/settings_view.py:1474
+#: ui/settings_view.py:1476
 msgid "Restore sizes for the main window, video editor and video player"
 msgstr "Відновлювати розміри головного вікна, редактора та програвача"
 
-#: ui/settings_view.py:1496
+#: ui/settings_view.py:1498
 msgid "The system display picker is unavailable"
 msgstr "Системний засіб вибору екрана недоступний"
 
-#: ui/settings_view.py:1500 ui/setup_window.py:588
+#: ui/settings_view.py:1502 ui/setup_window.py:588
 msgid "Waiting for the system display picker…"
 msgstr "Очікування системного засобу вибору екрана…"
 
-#: ui/settings_view.py:1504
+#: ui/settings_view.py:1506
 msgid "Could not open the system display picker."
 msgstr "Не вдалося відкрити системний засіб вибору екрана."
 
-#: ui/settings_view.py:1514
+#: ui/settings_view.py:1516
 #, python-format
 msgid "Capture display was not changed: %(message)s"
 msgstr "Екран захоплення не змінено: %(message)s"
 
-#: ui/settings_view.py:1533
+#: ui/settings_view.py:1535
 msgid "Tray unavailable. Clipper will quit when closed."
 msgstr "Трей недоступний. Clipper завершить роботу після закриття."
 
-#: ui/settings_view.py:1567
+#: ui/settings_view.py:1569
 msgid "Could not update the start-on-boot setting"
 msgstr "Не вдалося оновити налаштування автозапуску"
 
-#: ui/settings_view.py:1574
+#: ui/settings_view.py:1576
 #, python-format
 msgid "Could not update the start-on-boot setting: %(error)s"
 msgstr "Не вдалося оновити налаштування автозапуску: %(error)s"
 
-#: ui/settings_view.py:1581
+#: ui/settings_view.py:1583
 msgid "Choose output folder"
 msgstr "Обери теку збереження"
 
-#: ui/settings_view.py:1630 ui/settings_view.py:1646 ui/setup_window.py:557
+#: ui/settings_view.py:1632 ui/settings_view.py:1648 ui/setup_window.py:557
 #: ui/setup_window.py:566
 msgid "Managed by your desktop's global shortcut settings"
 msgstr "Керується глобальними системними налаштуваннями сполучень клавіш"
 
-#: ui/settings_view.py:1679
+#: ui/settings_view.py:1681
 msgid "Engine restarted successfully"
 msgstr "Рушій успішно перезапущено"
 
-#: ui/settings_view.py:1688
+#: ui/settings_view.py:1690
 msgid "Failed to restart engine. Please restart manually."
 msgstr "Не вдалося перезапустити рушій. Перезапусти його вручну."
 
@@ -2350,81 +2350,87 @@ msgstr "Сховати Clipper"
 msgid "Show Clipper"
 msgstr "Показати Clipper"
 
-#: ui/update_controller.py:93 ui/update_controller.py:105
+#: ui/update_controller.py:110 ui/update_controller.py:122
 msgid "Checking for updates…"
 msgstr "Перевірка оновлень…"
 
-#: ui/update_controller.py:102
+#: ui/update_controller.py:119
 msgid "Install the Flatpak version of Clipper to use in-app updates."
 msgstr ""
 "Встанови Flatpak-версію Clipper, щоб користуватися оновленнями в застосунку."
 
-#: ui/update_controller.py:138
+#: ui/update_controller.py:158
 msgid "Could not check for updates. Check your connection and try again."
 msgstr "Не вдалося перевірити оновлення. Перевір з’єднання та спробуй ще раз."
 
-#: ui/update_controller.py:152
+#: ui/update_controller.py:183
 msgid "Clipper is up to date."
 msgstr "Встановлено найновішу версію Clipper."
 
-#: ui/update_controller.py:165 ui/update_controller.py:274
+#: ui/update_controller.py:196 ui/update_controller.py:328
 msgid "Clipper update available"
 msgstr "Доступне оновлення Clipper"
 
-#: ui/update_controller.py:167
+#: ui/update_controller.py:198
 #, python-format
 msgid "Clipper %(version)s is ready to download."
 msgstr "Clipper %(version)s готовий до завантаження."
 
-#: ui/update_controller.py:187 ui/update_controller.py:270
+#: ui/update_controller.py:218 ui/update_controller.py:324
 msgid "Restart Clipper to finish updating"
 msgstr "Перезапусти Clipper, щоб завершити оновлення"
 
-#: ui/update_controller.py:203
+#: ui/update_controller.py:234
 msgid "Updates"
 msgstr "Оновлення"
 
-#: ui/update_controller.py:222
+#: ui/update_controller.py:266
+msgid "Installed"
+msgstr "Встановлено"
+
+#: ui/update_controller.py:267
+msgid "Available"
+msgstr "Доступно"
+
+#: ui/update_controller.py:269
+msgid "Download"
+msgstr "Завантаження"
+
+#: ui/update_controller.py:274
 msgid "Release notes"
 msgstr "Примітки до випуску"
 
-#: ui/update_controller.py:234 ui/update_controller.py:268
+#: ui/update_controller.py:286 ui/update_controller.py:322
 msgid "Later"
 msgstr "Пізніше"
 
-#: ui/update_controller.py:237 ui/update_controller.py:283
+#: ui/update_controller.py:289 ui/update_controller.py:337
 msgid "Update"
 msgstr "Оновити"
 
-#: ui/update_controller.py:242
+#: ui/update_controller.py:294
 msgid "Skip this version"
 msgstr "Пропустити цю версію"
 
-#: ui/update_controller.py:271
+#: ui/update_controller.py:325
 msgid "Update installed. Restart Clipper to use the new version."
 msgstr ""
 "Оновлення встановлено. Перезапусти Clipper, щоб користуватися новою версією."
 
-#: ui/update_controller.py:276
+#: ui/update_controller.py:334
 #, python-format
-msgid ""
-"Installed: %(installed)s\n"
-"Available: %(available)s\n"
-"Download: %(size)s MiB"
-msgstr ""
-"Встановлено: %(installed)s\n"
-"Доступно: %(available)s\n"
-"Завантаження: %(size)s MiB"
+msgid "%(size)s %(unit)s"
+msgstr "%(size)s %(unit)s"
 
-#: ui/update_controller.py:313
+#: ui/update_controller.py:369
 msgid "Downloading update…"
 msgstr "Завантаження оновлення…"
 
-#: ui/update_controller.py:347
+#: ui/update_controller.py:403
 msgid "Installing update…"
 msgstr "Встановлення оновлення…"
 
-#: ui/update_controller.py:359
+#: ui/update_controller.py:414
 msgid ""
 "Could not install the update. Your current version is still available. Try "
 "again."
@@ -2432,12 +2438,17 @@ msgstr ""
 "Не вдалося встановити оновлення. Поточна версія залишається доступною. "
 "Спробуй ще раз."
 
-#: ui/update_controller.py:381
+#: ui/update_controller.py:419
+#, python-format
+msgid "Details: %(details)s"
+msgstr "Подробиці: %(details)s"
+
+#: ui/update_controller.py:440
 msgid "Close the editor and wait for clip saving to finish before restarting."
 msgstr ""
 "Перед перезапуском закрий редактор і дочекайся завершення збереження кліпів."
 
-#: ui/update_controller.py:387
+#: ui/update_controller.py:446
 msgid ""
 "Restarting interrupts recording and clears the replay buffer. Saved clips "
 "are kept."
@@ -2445,7 +2456,7 @@ msgstr ""
 "Перезапуск перериває запис і очищує буфер повтору. Збережені кліпи "
 "залишаються."
 
-#: ui/update_controller.py:421
+#: ui/update_controller.py:480
 msgid "Could not restart Clipper. Quit and open it again to use the update."
 msgstr ""
 "Не вдалося перезапустити Clipper. Вийди та відкрий його знову, щоб "
@@ -2558,6 +2569,16 @@ msgstr ""
 "Не вдалося завершити зміну захоплення гри.\n"
 "\n"
 "%(error)s"
+
+#, python-format
+#~ msgid ""
+#~ "Installed: %(installed)s\n"
+#~ "Available: %(available)s\n"
+#~ "Download: %(size)s MiB"
+#~ msgstr ""
+#~ "Встановлено: %(installed)s\n"
+#~ "Доступно: %(available)s\n"
+#~ "Завантаження: %(size)s MiB"
 
 #~ msgid "Click in the garden to drop fruit"
 #~ msgstr "Натисніть у садку, щоб скинути фрукт"

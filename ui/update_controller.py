@@ -23,6 +23,7 @@ class UpdateController:
         self.installed = False
         self._checking = False
         self._manual_check_requested = False
+        self._present_release_requested = False
         self._restart_confirmation = False
         cached_release = self.config.get("update_available", {})
         if cached_release:
@@ -44,10 +45,22 @@ class UpdateController:
         self.progress: Gtk.ProgressBar
         self.closed = False
         self.timer = GLib.timeout_add_seconds(30, self._tick)
+        self.startup_check = GLib.idle_add(self._check_on_startup)
         for name, callback in (("check-updates", self.check), ("view-update", self.show)):
             action = Gio.SimpleAction.new(name, None)
             action.connect("activate", lambda _a, _p, fn=callback: fn())
             app.add_action(action)
+
+    def _check_on_startup(self):
+        self.startup_check = None
+        if (
+            self.config.get("auto_check_updates", True)
+            and os.environ.get("FLATPAK_ID") == updates.APP_ID
+        ):
+            # Every fresh process checks once. The persisted deadline below is
+            # only for periodic checks while that process remains alive.
+            self.check(manual=False, present=True)
+        return False
 
     def _tick(self):
         if (
@@ -61,6 +74,9 @@ class UpdateController:
     def close(self):
         self.closed = True
         self.cancel.set()
+        if self.startup_check is not None:
+            GLib.source_remove(self.startup_check)
+            self.startup_check = None
         GLib.source_remove(self.timer)
 
     def _worker(self, work, done):
@@ -86,9 +102,10 @@ class UpdateController:
 
         threading.Thread(target=run, daemon=True, name="clipper-updates").start()
 
-    def check(self, manual=True):
+    def check(self, manual=True, present=False):
         if self._checking:
             self._manual_check_requested |= manual
+            self._present_release_requested |= present
             if manual:
                 self.app._show_toast(_("Checking for updates…"))
             return
@@ -105,6 +122,7 @@ class UpdateController:
             self.app._show_toast(_("Checking for updates…"))
         self._checking = True
         self._manual_check_requested = manual
+        self._present_release_requested = present
         # Persist before starting, so process handoffs and failures cannot poll
         # GitHub repeatedly. Manual requests still bypass this schedule.
         self.config.set("update_next_check", time.time() + updates.CHECK_INTERVAL)
@@ -120,8 +138,10 @@ class UpdateController:
 
         def done(value, error):
             requested = self._manual_check_requested
+            present_release = self._present_release_requested
             self._checking = False
             self._manual_check_requested = False
+            self._present_release_requested = False
             if error:
                 if isinstance(error, urllib.error.HTTPError):
                     retry = error.headers.get("Retry-After", "")
@@ -143,7 +163,18 @@ class UpdateController:
             self.config.set("update_etag", etag)
             self.config.set("update_release_cache", cached)
             self.refresh_banner()
-            if self.release and requested:
+            offer_startup_release = bool(
+                self.release
+                and self.config.get("update_skipped_version", "") != self.release.version
+            )
+            if self.release and (
+                requested
+                or (
+                    offer_startup_release
+                    and present_release
+                    and self.app._is_window_visible()
+                )
+            ):
                 self.show()
             elif not self.release:
                 if self.dialog:
@@ -200,12 +231,14 @@ class UpdateController:
         if self.dialog:
             self.dialog.present(parent)
             return
-        dialog = Adw.Dialog(title=_("Updates"), content_width=360)
+        dialog = Adw.Dialog(title=_("Updates"))
+        dialog.set_follows_content_size(True)
         toolbar = Adw.ToolbarView()
         toolbar.add_top_bar(Adw.HeaderBar())
         box = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL,
             spacing=12,
+            width_request=312,
             margin_top=12,
             margin_bottom=24,
             margin_start=24,
@@ -217,6 +250,25 @@ class UpdateController:
         self.status = Gtk.Label(wrap=True, justify=Gtk.Justification.CENTER)
         self.status.add_css_class("dim-label")
         box.append(self.status)
+
+        self.details_list = Gtk.ListBox(selection_mode=Gtk.SelectionMode.NONE)
+        self.details_list.add_css_class("boxed-list")
+
+        def add_detail(title):
+            row = Adw.ActionRow(title=title)
+            value = Gtk.Label(xalign=1, valign=Gtk.Align.CENTER, width_chars=8)
+            value.add_css_class("heading")
+            value.add_css_class("numeric")
+            row.add_suffix(value)
+            self.details_list.append(row)
+            return value
+
+        self.installed_value = add_detail(_("Installed"))
+        self.available_value = add_detail(_("Available"))
+        self.available_value.add_css_class("accent")
+        self.download_value = add_detail(_("Download"))
+        box.append(self.details_list)
+
         self.progress = Gtk.ProgressBar(visible=False)
         box.append(self.progress)
         self.notes_button = Gtk.Button(label=_("Release notes"), halign=Gtk.Align.CENTER)
@@ -260,6 +312,8 @@ class UpdateController:
             self.dialog.close()
             return
         self.progress.set_visible(False)
+        self.status.set_visible(True)
+        self.details_list.set_visible(False)
         self.button.set_sensitive(not self.busy)
         self.button.add_css_class("suggested-action")
         self.notes_button.set_visible(bool(self.release) and not self.installed and not self.busy)
@@ -272,13 +326,13 @@ class UpdateController:
             self.button.set_label(_("Restart now"))
         elif self.release:
             self.heading.set_label(_("Clipper update available"))
-            self.status.set_label(
-                _("Installed: %(installed)s\nAvailable: %(available)s\nDownload: %(size)s MiB")
-                % {
-                    "installed": updates.current_version(),
-                    "available": self.release.version,
-                    "size": f"{self.release.size / 1024**2:.1f}",
-                }
+            self.status.set_visible(False)
+            self.details_list.set_visible(True)
+            self.installed_value.set_label(updates.current_version())
+            self.available_value.set_label(self.release.version)
+            self.download_value.set_label(
+                _("%(size)s %(unit)s")
+                % {"size": f"{self.release.size / 1024**2:.1f}", "unit": _("MiB")}
             )
             self.button.set_label(_("Update"))
 
@@ -310,6 +364,8 @@ class UpdateController:
         self.skip_button.set_visible(False)
         self.later_button.set_visible(False)
         self.button.remove_css_class("suggested-action")
+        self.details_list.set_visible(False)
+        self.status.set_visible(True)
         self.status.set_label(_("Downloading update…"))
         self.progress.set_fraction(0)
         self.progress.set_visible(True)
@@ -354,12 +410,15 @@ class UpdateController:
                 self._render()
                 if not isinstance(error, InterruptedError):
                     self.app._log(f"Update installation failed: {error}")
-                    self.status.set_label(
-                        _(
-                            "Could not install the update. "
-                            "Your current version is still available. Try again."
-                        )
+                    message = _(
+                        "Could not install the update. "
+                        "Your current version is still available. Try again."
                     )
+                    detail = getattr(error, "detail", "")
+                    if detail:
+                        message += "\n\n" + _("Details: %(details)s") % {"details": detail}
+                    self.status.set_visible(True)
+                    self.status.set_label(message)
                 return
             self.installed = True
             self.config.set("update_installed_version", release.version)
