@@ -59,7 +59,7 @@ msgstr "Гучність мікрофона"
 msgid "Add track"
 msgstr "Додати доріжку"
 
-#: ui/audio_tracks_view.py:181 ui/audio_tracks_view.py:470
+#: ui/audio_tracks_view.py:181 ui/audio_tracks_view.py:469
 #, python-format
 msgid "Track %(number)d"
 msgstr "Доріжка %(number)d"
@@ -69,42 +69,42 @@ msgstr "Доріжка %(number)d"
 msgid "Track %(number)d volume"
 msgstr "Гучність доріжки %(number)d"
 
-#: ui/audio_tracks_view.py:236
+#: ui/audio_tracks_view.py:235
 #, python-format
 msgid "Remove track %(number)d"
 msgstr "Вилучити доріжку %(number)d"
 
-#: ui/audio_tracks_view.py:531
+#: ui/audio_tracks_view.py:530
 msgid "Off"
 msgstr "Вимкнено"
 
-#: ui/audio_tracks_view.py:540
+#: ui/audio_tracks_view.py:539
 msgid "System default"
 msgstr "За замовчуванням"
 
-#: ui/audio_tracks_view.py:658
+#: ui/audio_tracks_view.py:657
 msgid "None"
 msgstr "Немає"
 
-#: ui/audio_tracks_view.py:660
+#: ui/audio_tracks_view.py:659
 msgid "System audio"
 msgstr "Системне аудіо"
 
-#: ui/audio_tracks_view.py:665
+#: ui/audio_tracks_view.py:664
 msgid "Microphone"
 msgstr "Мікрофон"
 
-#: ui/audio_tracks_view.py:673 ui/audio_tracks_view.py:994
-#: ui/audio_tracks_view.py:1103
+#: ui/audio_tracks_view.py:672 ui/audio_tracks_view.py:993
+#: ui/audio_tracks_view.py:1102
 msgid "Whitelisted games"
 msgstr "Дозволені ігри"
 
-#: ui/audio_tracks_view.py:686 ui/audio_tracks_view.py:1003
+#: ui/audio_tracks_view.py:685 ui/audio_tracks_view.py:1002
 #, python-format
 msgid "App: %(name)s"
 msgstr "Застосунок: %(name)s"
 
-#: ui/audio_tracks_view.py:1001
+#: ui/audio_tracks_view.py:1000
 #, python-format
 msgid "Game: %(name)s"
 msgstr "Гра: %(name)s"

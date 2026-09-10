@@ -229,7 +229,6 @@ class AudioTracksView(Gtk.Box):
         row_box.append(volume_box)
 
         remove_button = Gtk.Button.new_from_icon_name(TRASH)
-        remove_button.add_css_class("flat")
         remove_button.add_css_class("destructive-action")
         remove_button.set_valign(Gtk.Align.CENTER)
         remove_button.set_tooltip_text(
