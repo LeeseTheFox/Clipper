@@ -11,7 +11,7 @@ DEFAULT_CAPTURE_MODE = CAPTURE_MODE_DISPLAY
 
 CAPTURE_MODE_OPTIONS = (
     (_("Display capture"), CAPTURE_MODE_DISPLAY),
-    (_("Game capture (advanced)"), CAPTURE_MODE_GAME),
+    (_("Game capture"), CAPTURE_MODE_GAME),
 )
 
 

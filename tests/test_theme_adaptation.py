@@ -71,9 +71,7 @@ def test_editor_css_parses_and_uses_theme_aware_surfaces():
 
 
 def test_editor_ambient_glow_expands_only_the_video_sides():
-    assert ambient_glow_bounds(640, 360) == pytest.approx(
-        (-140.8, -79.2, 921.6, 518.4)
-    )
+    assert ambient_glow_bounds(640, 360) == pytest.approx((-140.8, -79.2, 921.6, 518.4))
     assert ambient_glow_bounds(1920, 1080) == (
         -AMBIENT_GLOW_MAX_EXTENT,
         -90.0,
@@ -160,19 +158,13 @@ def test_editor_tracks_use_in_track_gain_lines_and_explicit_visual_states():
     assert "self.timeline_view.add_overlay(self.playhead_overlay)" in source
     assert "self.timeline_overlay.add_overlay(self.playhead_overlay)" not in source
 
-    track_header_rule = _EDITOR_CSS.split(".editor-track-header {", 1)[1].split(
-        "}", 1
-    )[0]
+    track_header_rule = _EDITOR_CSS.split(".editor-track-header {", 1)[1].split("}", 1)[0]
     assert "padding: 0 12px;" in track_header_rule
 
-    monitor_picture_rule = _EDITOR_CSS.split(".editor-monitor-picture {", 1)[
-        1
-    ].split("}", 1)[0]
+    monitor_picture_rule = _EDITOR_CSS.split(".editor-monitor-picture {", 1)[1].split("}", 1)[0]
     assert "border-radius: 0;" in monitor_picture_rule
 
-    separator_rule = _EDITOR_CSS.split(".editor-toolbar-separator {", 1)[1].split(
-        "}", 1
-    )[0]
+    separator_rule = _EDITOR_CSS.split(".editor-toolbar-separator {", 1)[1].split("}", 1)[0]
     assert "margin-left: 6px;" in separator_rule
     assert "margin-right: 6px;" in separator_rule
 
@@ -270,3 +262,17 @@ def test_scroll_containers_leave_clearance_for_card_shadows():
         source = (REPO_ROOT / "ui" / filename).read_text(encoding="utf-8")
         assert f"{target}.set_margin_top(6)" in source, (filename, target)
         assert f"{target}.set_margin_bottom(6)" in source, (filename, target)
+
+
+def test_clip_and_game_metadata_use_restrained_value_highlights():
+    window_source = (REPO_ROOT / "ui" / "main_window.py").read_text(encoding="utf-8")
+    clips_source = (REPO_ROOT / "ui" / "clips_view.py").read_text(encoding="utf-8")
+    games_source = (REPO_ROOT / "ui" / "whitelist_view.py").read_text(encoding="utf-8")
+
+    assert ".clipper-metadata-chip" in window_source
+    assert ".clipper-accent-chip" in window_source
+    assert 'duration_label.add_css_class("clipper-accent-chip")' in clips_source
+    assert 'game_box.add_css_class("clipper-metadata-chip")' in clips_source
+    assert 'source_box.add_css_class("clipper-metadata-chip")' in games_source
+    assert 'capture_label.add_css_class("clipper-accent-chip")' in games_source
+    assert 'add_button.add_css_class("suggested-action")' in games_source

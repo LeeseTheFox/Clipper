@@ -460,6 +460,7 @@ class WhitelistView(Gtk.Box):
         add_button.set_always_show_arrow(True)
         add_button.set_menu_model(add_menu)
         add_button.set_halign(Gtk.Align.END)
+        add_button.add_css_class("suggested-action")
 
         self.trailing_controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         self.trailing_controls.set_valign(Gtk.Align.CENTER)
@@ -609,17 +610,26 @@ class WhitelistView(Gtk.Box):
         capture_box.set_halign(Gtk.Align.START)
         capture_box.set_valign(Gtk.Align.CENTER)
 
+        source_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        source_box.set_valign(Gtk.Align.CENTER)
+        source_box.add_css_class("clipper-metadata-chip")
+
         source_icon_name = STEAM if "appid" in game_data else PROCESS
         source_icon = self._new_action_icon(source_icon_name)
-        capture_box.append(source_icon)
+        source_box.append(source_icon)
 
         source = _("Steam") if "appid" in game_data else _("Manual")
+        source_label = Gtk.Label(label=source)
+        source_label.add_css_class("caption")
+        source_box.append(source_label)
+        capture_box.append(source_box)
+
         method = capture_mode_label(capture_mode_for_entry(game_data))
-        capture_label = Gtk.Label(label=f"{source} • {method}")
+        capture_label = Gtk.Label(label=method)
         capture_label.set_halign(Gtk.Align.START)
         capture_label.set_xalign(0)
         capture_label.add_css_class("caption")
-        capture_label.add_css_class("dim-label")
+        capture_label.add_css_class("clipper-accent-chip")
         capture_box.append(capture_label)
         info_box.append(capture_box)
 

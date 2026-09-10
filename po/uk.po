@@ -19,13 +19,13 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-#: ui/audio_tracks_view.py:24 ui/audio_tracks_view.py:144
-msgid "Separate tracks"
-msgstr "Окремі доріжки"
+#: ui/audio_tracks_view.py:23
+msgid "Each audio track includes only its selected source"
+msgstr "Кожна аудіодоріжка містить лише вибране для неї джерело"
 
 #: ui/audio_tracks_view.py:24
-msgid "Single mixed track"
-msgstr "Одна зведена доріжка"
+msgid "All audio sources are combined into a single track"
+msgstr "Усі джерела звуку об’єднуються в одну аудіодоріжку"
 
 #: ui/audio_tracks_view.py:71
 msgid "Engine restart required for audio changes"
@@ -43,68 +43,68 @@ msgstr "Захоплення"
 msgid "Choose the default audio behavior"
 msgstr "Обери типову поведінку аудіо"
 
-#: ui/audio_tracks_view.py:110
-msgid "Mode"
-msgstr "Режим"
+#: ui/audio_tracks_view.py:110 ui/audio_tracks_view.py:147
+msgid "Separate tracks"
+msgstr "Окремі доріжки"
 
 #: ui/audio_tracks_view.py:116
 msgid "Microphone device"
 msgstr "Пристрій мікрофона"
 
-#: ui/audio_tracks_view.py:124
+#: ui/audio_tracks_view.py:125
 msgid "Microphone volume"
 msgstr "Гучність мікрофона"
 
-#: ui/audio_tracks_view.py:174 ui/audio_tracks_view.py:466
+#: ui/audio_tracks_view.py:163
+msgid "Add track"
+msgstr "Додати доріжку"
+
+#: ui/audio_tracks_view.py:181 ui/audio_tracks_view.py:470
 #, python-format
 msgid "Track %(number)d"
 msgstr "Доріжка %(number)d"
 
-#: ui/audio_tracks_view.py:204
+#: ui/audio_tracks_view.py:220
 #, python-format
 msgid "Track %(number)d volume"
 msgstr "Гучність доріжки %(number)d"
 
-#: ui/audio_tracks_view.py:217
+#: ui/audio_tracks_view.py:236
 #, python-format
 msgid "Remove track %(number)d"
 msgstr "Вилучити доріжку %(number)d"
 
-#: ui/audio_tracks_view.py:244
-msgid "Add track"
-msgstr "Додати доріжку"
-
-#: ui/audio_tracks_view.py:527
+#: ui/audio_tracks_view.py:531
 msgid "Off"
 msgstr "Вимкнено"
 
-#: ui/audio_tracks_view.py:536
+#: ui/audio_tracks_view.py:540
 msgid "System default"
 msgstr "За замовчуванням"
 
-#: ui/audio_tracks_view.py:654
+#: ui/audio_tracks_view.py:658
 msgid "None"
 msgstr "Немає"
 
-#: ui/audio_tracks_view.py:656
+#: ui/audio_tracks_view.py:660
 msgid "System audio"
 msgstr "Системне аудіо"
 
-#: ui/audio_tracks_view.py:661
+#: ui/audio_tracks_view.py:665
 msgid "Microphone"
 msgstr "Мікрофон"
 
-#: ui/audio_tracks_view.py:669 ui/audio_tracks_view.py:990
-#: ui/audio_tracks_view.py:1099
+#: ui/audio_tracks_view.py:673 ui/audio_tracks_view.py:994
+#: ui/audio_tracks_view.py:1103
 msgid "Whitelisted games"
 msgstr "Дозволені ігри"
 
-#: ui/audio_tracks_view.py:682 ui/audio_tracks_view.py:999
+#: ui/audio_tracks_view.py:686 ui/audio_tracks_view.py:1003
 #, python-format
 msgid "App: %(name)s"
 msgstr "Застосунок: %(name)s"
 
-#: ui/audio_tracks_view.py:997
+#: ui/audio_tracks_view.py:1001
 #, python-format
 msgid "Game: %(name)s"
 msgstr "Гра: %(name)s"
@@ -166,59 +166,55 @@ msgstr "Записувати кліпи в Linux"
 msgid "Display capture"
 msgstr "Захоплення екрана"
 
-#: ui/capture_modes.py:14
-msgid "Game capture (advanced)"
-msgstr "Захоплення гри (для досвідчених)"
-
-#: ui/capture_modes.py:20
+#: ui/capture_modes.py:14 ui/capture_modes.py:20
 msgid "Game capture"
 msgstr "Захоплення гри"
 
-#: ui/clips_view.py:242
+#: ui/clips_view.py:243
 msgid "Search clips by name"
 msgstr "Пошук кліпів за назвою"
 
-#: ui/clips_view.py:259
+#: ui/clips_view.py:260
 msgid "Newest"
 msgstr "Спочатку нові"
 
-#: ui/clips_view.py:260
+#: ui/clips_view.py:261
 msgid "Oldest"
 msgstr "Спочатку старі"
 
-#: ui/clips_view.py:261
+#: ui/clips_view.py:262
 msgid "A-Z"
 msgstr "А–Я"
 
-#: ui/clips_view.py:264
+#: ui/clips_view.py:265
 msgid "Sort clips"
 msgstr "Сортувати кліпи"
 
-#: ui/clips_view.py:270
+#: ui/clips_view.py:271
 msgid "Open clips folder"
 msgstr "Відкрити теку з кліпами"
 
-#: ui/clips_view.py:506
+#: ui/clips_view.py:507
 msgid "Edit clip from scratch"
 msgstr "Редагувати кліп з нуля"
 
-#: ui/clips_view.py:509
+#: ui/clips_view.py:510
 msgid "Edit clip"
 msgstr "Редагувати кліп"
 
-#: ui/clips_view.py:514
+#: ui/clips_view.py:515
 msgid "Permanently delete the clip"
 msgstr "Видалити кліп назавжди"
 
-#: ui/clips_view.py:517
+#: ui/clips_view.py:518
 msgid "Move clip to trash"
 msgstr "Перемістити кліп до смітника"
 
-#: ui/clips_view.py:1086
+#: ui/clips_view.py:1095
 msgid "No clips yet"
 msgstr "Кліпів ще немає"
 
-#: ui/clips_view.py:1088
+#: ui/clips_view.py:1097
 msgid ""
 "Recorded clips will appear here.\n"
 "Press your save hotkey to capture a clip."
@@ -226,23 +222,23 @@ msgstr ""
 "Тут з’являтимуться записані кліпи.\n"
 "Натисни гарячу клавішу збереження, щоб захопити кліп."
 
-#: ui/clips_view.py:1096
+#: ui/clips_view.py:1105
 msgid "No matching clips"
 msgstr "Немає відповідних кліпів"
 
-#: ui/clips_view.py:1097
+#: ui/clips_view.py:1106
 msgid "No clip names match the current search."
 msgstr "Немає назв кліпів, що відповідають поточному пошуку."
 
-#: ui/clips_view.py:1103
+#: ui/clips_view.py:1112
 msgid "Loading clips…"
 msgstr "Завантаження кліпів…"
 
-#: ui/clips_view.py:1229
+#: ui/clips_view.py:1238
 msgid "Just now"
 msgstr "Щойно"
 
-#: ui/clips_view.py:1233
+#: ui/clips_view.py:1242
 #, python-format
 msgid "%(count)d minute ago"
 msgid_plural "%(count)d minutes ago"
@@ -250,7 +246,7 @@ msgstr[0] "%(count)d хвилину тому"
 msgstr[1] "%(count)d хвилини тому"
 msgstr[2] "%(count)d хвилин тому"
 
-#: ui/clips_view.py:1237
+#: ui/clips_view.py:1246
 #, python-format
 msgid "%(count)d hour ago"
 msgid_plural "%(count)d hours ago"
@@ -258,11 +254,11 @@ msgstr[0] "%(count)d годину тому"
 msgstr[1] "%(count)d години тому"
 msgstr[2] "%(count)d годин тому"
 
-#: ui/clips_view.py:1241
+#: ui/clips_view.py:1250
 msgid "Yesterday"
 msgstr "Учора"
 
-#: ui/clips_view.py:1244
+#: ui/clips_view.py:1253
 #, python-format
 msgid "%(count)d day ago"
 msgid_plural "%(count)d days ago"
@@ -270,53 +266,53 @@ msgstr[0] "%(count)d день тому"
 msgstr[1] "%(count)d дні тому"
 msgstr[2] "%(count)d днів тому"
 
-#: ui/clips_view.py:1250
+#: ui/clips_view.py:1259
 msgid "B"
 msgstr "Б"
 
-#: ui/clips_view.py:1250
+#: ui/clips_view.py:1259
 msgid "GB"
 msgstr "ГБ"
 
-#: ui/clips_view.py:1250
+#: ui/clips_view.py:1259
 msgid "KB"
 msgstr "КБ"
 
-#: ui/clips_view.py:1250
+#: ui/clips_view.py:1259
 msgid "MB"
 msgstr "МБ"
 
-#: ui/clips_view.py:1252
+#: ui/clips_view.py:1261
 #, python-format
 msgid "%(size).1f %(unit)s"
 msgstr "%(size).1f %(unit)s"
 
-#: ui/clips_view.py:1254
+#: ui/clips_view.py:1263
 #, python-format
 msgid "%(size).1f TB"
 msgstr "%(size).1f ТБ"
 
-#: ui/clips_view.py:1367
+#: ui/clips_view.py:1376
 msgid "Play clip"
 msgstr "Відтворити кліп"
 
-#: ui/clips_view.py:1454
+#: ui/clips_view.py:1467
 msgid "Reveal in file manager"
 msgstr "Показати у файловому менеджері"
 
-#: ui/clips_view.py:1530 ui/editor_window.py:3822
+#: ui/clips_view.py:1544 ui/editor_window.py:3822
 msgid "Could not wipe saved edits"
 msgstr "Не вдалося видалити збережені правки"
 
-#: ui/clips_view.py:1672
+#: ui/clips_view.py:1687
 msgid "Could not play clip"
 msgstr "Не вдалося відтворити кліп"
 
-#: ui/clips_view.py:1817
+#: ui/clips_view.py:1832
 msgid "Move clip to trash?"
 msgstr "Перемістити кліп до смітника?"
 
-#: ui/clips_view.py:1819
+#: ui/clips_view.py:1834
 #, python-format
 msgid ""
 "'%(name)s' will be moved to the trash.\n"
@@ -325,30 +321,30 @@ msgstr ""
 "«%(name)s» буде переміщено до смітника.\n"
 "Цю дію можна скасувати."
 
-#: ui/clips_view.py:1822 ui/dialogs.py:856 ui/editor_export_dialog.py:345
+#: ui/clips_view.py:1837 ui/dialogs.py:856 ui/editor_export_dialog.py:345
 #: ui/editor_export_dialog.py:636 ui/editor_export_dialog.py:664
 #: ui/editor_export_dialog.py:772 ui/editor_window.py:3990 ui/editor_wipe.py:16
 #: ui/update_controller.py:372
 msgid "Cancel"
 msgstr "Скасувати"
 
-#: ui/clips_view.py:1823
+#: ui/clips_view.py:1838
 msgid "Move to trash"
 msgstr "Перемістити до смітника"
 
-#: ui/clips_view.py:1878
+#: ui/clips_view.py:1893
 msgid "Clip deleted"
 msgstr "Кліп видалено"
 
-#: ui/clips_view.py:1878
+#: ui/clips_view.py:1893
 msgid "Clip moved to trash"
 msgstr "Кліп переміщено до смітника"
 
-#: ui/clips_view.py:1885
+#: ui/clips_view.py:1900
 msgid "Could not delete clip"
 msgstr "Не вдалося видалити кліп"
 
-#: ui/clips_view.py:1887
+#: ui/clips_view.py:1902
 msgid "Could not move clip to trash"
 msgstr "Не вдалося перемістити кліп до смітника"
 
@@ -2531,35 +2527,35 @@ msgstr "Додати гру зі Steam"
 msgid "Add new"
 msgstr "Додати"
 
-#: ui/whitelist_view.py:572
+#: ui/whitelist_view.py:573
 #, python-format
 msgid "%(name)s is already in the whitelist."
 msgstr "%(name)s уже є у списку дозволених ігор."
 
-#: ui/whitelist_view.py:616
+#: ui/whitelist_view.py:621
 msgid "Manual"
 msgstr "Вручну"
 
-#: ui/whitelist_view.py:616
+#: ui/whitelist_view.py:621
 msgid "Steam"
 msgstr "Steam"
 
-#: ui/whitelist_view.py:641
+#: ui/whitelist_view.py:651
 #, python-format
 msgid "Remove %(name)s"
 msgstr "Вилучити %(name)s"
 
-#: ui/whitelist_view.py:718 ui/whitelist_view.py:869
+#: ui/whitelist_view.py:728 ui/whitelist_view.py:879
 #, python-format
 msgid "Added %(name)s"
 msgstr "Додано: %(name)s"
 
-#: ui/whitelist_view.py:734 ui/whitelist_view.py:869
+#: ui/whitelist_view.py:744 ui/whitelist_view.py:879
 #, python-format
 msgid "Removed %(name)s"
 msgstr "Вилучено: %(name)s"
 
-#: ui/whitelist_view.py:857
+#: ui/whitelist_view.py:867
 #, python-format
 msgid ""
 "Could not finish the Game capture change.\n"
@@ -2569,6 +2565,15 @@ msgstr ""
 "Не вдалося завершити зміну захоплення гри.\n"
 "\n"
 "%(error)s"
+
+#~ msgid "Game capture (advanced)"
+#~ msgstr "Захоплення гри (для досвідчених)"
+
+#~ msgid "Single mixed track"
+#~ msgstr "Одна зведена доріжка"
+
+#~ msgid "Mode"
+#~ msgstr "Режим"
 
 #, python-format
 #~ msgid ""

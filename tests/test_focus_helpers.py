@@ -185,7 +185,7 @@ def test_id_dropdown_can_limit_and_ellipsize_display_labels():
     focus_helpers = _load_focus_helpers()
 
     dropdown = focus_helpers.new_id_dropdown(
-        (("Game capture (advanced)", "game_capture"),),
+        (("Game capture", "game_capture"),),
         max_width_chars=18,
         width_request=180,
     )

@@ -19,13 +19,13 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-#: ui/audio_tracks_view.py:24 ui/audio_tracks_view.py:144
-msgid "Separate tracks"
-msgstr "Раздельные дорожки"
+#: ui/audio_tracks_view.py:23
+msgid "Each audio track includes only its selected source"
+msgstr "Каждая аудиодорожка содержит только выбранный для неё источник"
 
 #: ui/audio_tracks_view.py:24
-msgid "Single mixed track"
-msgstr "Одна смешанная дорожка"
+msgid "All audio sources are combined into a single track"
+msgstr "Все источники звука объединяются в одну аудиодорожку"
 
 #: ui/audio_tracks_view.py:71
 msgid "Engine restart required for audio changes"
@@ -43,68 +43,68 @@ msgstr "Захват"
 msgid "Choose the default audio behavior"
 msgstr "Выбери поведение звука по умолчанию"
 
-#: ui/audio_tracks_view.py:110
-msgid "Mode"
-msgstr "Режим"
+#: ui/audio_tracks_view.py:110 ui/audio_tracks_view.py:147
+msgid "Separate tracks"
+msgstr "Раздельные дорожки"
 
 #: ui/audio_tracks_view.py:116
 msgid "Microphone device"
 msgstr "Устройство микрофона"
 
-#: ui/audio_tracks_view.py:124
+#: ui/audio_tracks_view.py:125
 msgid "Microphone volume"
 msgstr "Громкость микрофона"
 
-#: ui/audio_tracks_view.py:174 ui/audio_tracks_view.py:466
+#: ui/audio_tracks_view.py:163
+msgid "Add track"
+msgstr "Добавить дорожку"
+
+#: ui/audio_tracks_view.py:181 ui/audio_tracks_view.py:470
 #, python-format
 msgid "Track %(number)d"
 msgstr "Дорожка %(number)d"
 
-#: ui/audio_tracks_view.py:204
+#: ui/audio_tracks_view.py:220
 #, python-format
 msgid "Track %(number)d volume"
 msgstr "Громкость дорожки %(number)d"
 
-#: ui/audio_tracks_view.py:217
+#: ui/audio_tracks_view.py:236
 #, python-format
 msgid "Remove track %(number)d"
 msgstr "Удалить дорожку %(number)d"
 
-#: ui/audio_tracks_view.py:244
-msgid "Add track"
-msgstr "Добавить дорожку"
-
-#: ui/audio_tracks_view.py:527
+#: ui/audio_tracks_view.py:531
 msgid "Off"
 msgstr "Выкл."
 
-#: ui/audio_tracks_view.py:536
+#: ui/audio_tracks_view.py:540
 msgid "System default"
 msgstr "По умолчанию"
 
-#: ui/audio_tracks_view.py:654
+#: ui/audio_tracks_view.py:658
 msgid "None"
 msgstr "Нет"
 
-#: ui/audio_tracks_view.py:656
+#: ui/audio_tracks_view.py:660
 msgid "System audio"
 msgstr "Системный звук"
 
-#: ui/audio_tracks_view.py:661
+#: ui/audio_tracks_view.py:665
 msgid "Microphone"
 msgstr "Микрофон"
 
-#: ui/audio_tracks_view.py:669 ui/audio_tracks_view.py:990
-#: ui/audio_tracks_view.py:1099
+#: ui/audio_tracks_view.py:673 ui/audio_tracks_view.py:994
+#: ui/audio_tracks_view.py:1103
 msgid "Whitelisted games"
 msgstr "Разрешённые игры"
 
-#: ui/audio_tracks_view.py:682 ui/audio_tracks_view.py:999
+#: ui/audio_tracks_view.py:686 ui/audio_tracks_view.py:1003
 #, python-format
 msgid "App: %(name)s"
 msgstr "Приложение: %(name)s"
 
-#: ui/audio_tracks_view.py:997
+#: ui/audio_tracks_view.py:1001
 #, python-format
 msgid "Game: %(name)s"
 msgstr "Игра: %(name)s"
@@ -166,59 +166,55 @@ msgstr "Записывать клипы в Linux"
 msgid "Display capture"
 msgstr "Захват экрана"
 
-#: ui/capture_modes.py:14
-msgid "Game capture (advanced)"
-msgstr "Захват игры (для опытных)"
-
-#: ui/capture_modes.py:20
+#: ui/capture_modes.py:14 ui/capture_modes.py:20
 msgid "Game capture"
 msgstr "Захват игры"
 
-#: ui/clips_view.py:242
+#: ui/clips_view.py:243
 msgid "Search clips by name"
 msgstr "Поиск клипов по имени"
 
-#: ui/clips_view.py:259
+#: ui/clips_view.py:260
 msgid "Newest"
 msgstr "Сначала новые"
 
-#: ui/clips_view.py:260
+#: ui/clips_view.py:261
 msgid "Oldest"
 msgstr "Сначала старые"
 
-#: ui/clips_view.py:261
+#: ui/clips_view.py:262
 msgid "A-Z"
 msgstr "А–Я"
 
-#: ui/clips_view.py:264
+#: ui/clips_view.py:265
 msgid "Sort clips"
 msgstr "Сортировать клипы"
 
-#: ui/clips_view.py:270
+#: ui/clips_view.py:271
 msgid "Open clips folder"
 msgstr "Открыть папку с клипами"
 
-#: ui/clips_view.py:506
+#: ui/clips_view.py:507
 msgid "Edit clip from scratch"
 msgstr "Редактировать клип с нуля"
 
-#: ui/clips_view.py:509
+#: ui/clips_view.py:510
 msgid "Edit clip"
 msgstr "Редактировать клип"
 
-#: ui/clips_view.py:514
+#: ui/clips_view.py:515
 msgid "Permanently delete the clip"
 msgstr "Удалить клип безвозвратно"
 
-#: ui/clips_view.py:517
+#: ui/clips_view.py:518
 msgid "Move clip to trash"
 msgstr "Переместить клип в корзину"
 
-#: ui/clips_view.py:1086
+#: ui/clips_view.py:1095
 msgid "No clips yet"
 msgstr "Клипов пока нет"
 
-#: ui/clips_view.py:1088
+#: ui/clips_view.py:1097
 msgid ""
 "Recorded clips will appear here.\n"
 "Press your save hotkey to capture a clip."
@@ -226,23 +222,23 @@ msgstr ""
 "Записанные клипы появятся здесь.\n"
 "Нажми горячую клавишу сохранения, чтобы записать клип."
 
-#: ui/clips_view.py:1096
+#: ui/clips_view.py:1105
 msgid "No matching clips"
 msgstr "Нет подходящих клипов"
 
-#: ui/clips_view.py:1097
+#: ui/clips_view.py:1106
 msgid "No clip names match the current search."
 msgstr "Названия клипов не соответствуют текущему запросу."
 
-#: ui/clips_view.py:1103
+#: ui/clips_view.py:1112
 msgid "Loading clips…"
 msgstr "Загрузка клипов…"
 
-#: ui/clips_view.py:1229
+#: ui/clips_view.py:1238
 msgid "Just now"
 msgstr "Только что"
 
-#: ui/clips_view.py:1233
+#: ui/clips_view.py:1242
 #, python-format
 msgid "%(count)d minute ago"
 msgid_plural "%(count)d minutes ago"
@@ -250,7 +246,7 @@ msgstr[0] "%(count)d минуту назад"
 msgstr[1] "%(count)d минуты назад"
 msgstr[2] "%(count)d минут назад"
 
-#: ui/clips_view.py:1237
+#: ui/clips_view.py:1246
 #, python-format
 msgid "%(count)d hour ago"
 msgid_plural "%(count)d hours ago"
@@ -258,11 +254,11 @@ msgstr[0] "%(count)d час назад"
 msgstr[1] "%(count)d часа назад"
 msgstr[2] "%(count)d часов назад"
 
-#: ui/clips_view.py:1241
+#: ui/clips_view.py:1250
 msgid "Yesterday"
 msgstr "Вчера"
 
-#: ui/clips_view.py:1244
+#: ui/clips_view.py:1253
 #, python-format
 msgid "%(count)d day ago"
 msgid_plural "%(count)d days ago"
@@ -270,53 +266,53 @@ msgstr[0] "%(count)d день назад"
 msgstr[1] "%(count)d дня назад"
 msgstr[2] "%(count)d дней назад"
 
-#: ui/clips_view.py:1250
+#: ui/clips_view.py:1259
 msgid "B"
 msgstr "Б"
 
-#: ui/clips_view.py:1250
+#: ui/clips_view.py:1259
 msgid "GB"
 msgstr "ГБ"
 
-#: ui/clips_view.py:1250
+#: ui/clips_view.py:1259
 msgid "KB"
 msgstr "КБ"
 
-#: ui/clips_view.py:1250
+#: ui/clips_view.py:1259
 msgid "MB"
 msgstr "МБ"
 
-#: ui/clips_view.py:1252
+#: ui/clips_view.py:1261
 #, python-format
 msgid "%(size).1f %(unit)s"
 msgstr "%(size).1f %(unit)s"
 
-#: ui/clips_view.py:1254
+#: ui/clips_view.py:1263
 #, python-format
 msgid "%(size).1f TB"
 msgstr "%(size).1f ТБ"
 
-#: ui/clips_view.py:1367
+#: ui/clips_view.py:1376
 msgid "Play clip"
 msgstr "Воспроизвести клип"
 
-#: ui/clips_view.py:1454
+#: ui/clips_view.py:1467
 msgid "Reveal in file manager"
 msgstr "Показать в файловом менеджере"
 
-#: ui/clips_view.py:1530 ui/editor_window.py:3822
+#: ui/clips_view.py:1544 ui/editor_window.py:3822
 msgid "Could not wipe saved edits"
 msgstr "Не удалось удалить сохранённые правки"
 
-#: ui/clips_view.py:1672
+#: ui/clips_view.py:1687
 msgid "Could not play clip"
 msgstr "Не удалось воспроизвести клип"
 
-#: ui/clips_view.py:1817
+#: ui/clips_view.py:1832
 msgid "Move clip to trash?"
 msgstr "Переместить клип в корзину?"
 
-#: ui/clips_view.py:1819
+#: ui/clips_view.py:1834
 #, python-format
 msgid ""
 "'%(name)s' will be moved to the trash.\n"
@@ -325,30 +321,30 @@ msgstr ""
 "«%(name)s» будет перемещён в корзину.\n"
 "Это действие можно отменить."
 
-#: ui/clips_view.py:1822 ui/dialogs.py:856 ui/editor_export_dialog.py:345
+#: ui/clips_view.py:1837 ui/dialogs.py:856 ui/editor_export_dialog.py:345
 #: ui/editor_export_dialog.py:636 ui/editor_export_dialog.py:664
 #: ui/editor_export_dialog.py:772 ui/editor_window.py:3990 ui/editor_wipe.py:16
 #: ui/update_controller.py:372
 msgid "Cancel"
 msgstr "Отмена"
 
-#: ui/clips_view.py:1823
+#: ui/clips_view.py:1838
 msgid "Move to trash"
 msgstr "В корзину"
 
-#: ui/clips_view.py:1878
+#: ui/clips_view.py:1893
 msgid "Clip deleted"
 msgstr "Клип удалён"
 
-#: ui/clips_view.py:1878
+#: ui/clips_view.py:1893
 msgid "Clip moved to trash"
 msgstr "Клип перемещён в корзину"
 
-#: ui/clips_view.py:1885
+#: ui/clips_view.py:1900
 msgid "Could not delete clip"
 msgstr "Не удалось удалить клип"
 
-#: ui/clips_view.py:1887
+#: ui/clips_view.py:1902
 msgid "Could not move clip to trash"
 msgstr "Не удалось переместить клип в корзину"
 
@@ -2536,35 +2532,35 @@ msgstr "Добавить игру из Steam"
 msgid "Add new"
 msgstr "Добавить"
 
-#: ui/whitelist_view.py:572
+#: ui/whitelist_view.py:573
 #, python-format
 msgid "%(name)s is already in the whitelist."
 msgstr "%(name)s уже находится в списке разрешённых игр."
 
-#: ui/whitelist_view.py:616
+#: ui/whitelist_view.py:621
 msgid "Manual"
 msgstr "Вручную"
 
-#: ui/whitelist_view.py:616
+#: ui/whitelist_view.py:621
 msgid "Steam"
 msgstr "Steam"
 
-#: ui/whitelist_view.py:641
+#: ui/whitelist_view.py:651
 #, python-format
 msgid "Remove %(name)s"
 msgstr "Удалить %(name)s"
 
-#: ui/whitelist_view.py:718 ui/whitelist_view.py:869
+#: ui/whitelist_view.py:728 ui/whitelist_view.py:879
 #, python-format
 msgid "Added %(name)s"
 msgstr "Добавлено: %(name)s"
 
-#: ui/whitelist_view.py:734 ui/whitelist_view.py:869
+#: ui/whitelist_view.py:744 ui/whitelist_view.py:879
 #, python-format
 msgid "Removed %(name)s"
 msgstr "Удалено: %(name)s"
 
-#: ui/whitelist_view.py:857
+#: ui/whitelist_view.py:867
 #, python-format
 msgid ""
 "Could not finish the Game capture change.\n"
@@ -2574,6 +2570,15 @@ msgstr ""
 "Не удалось завершить изменение захвата игры.\n"
 "\n"
 "%(error)s"
+
+#~ msgid "Game capture (advanced)"
+#~ msgstr "Захват игры (для опытных)"
+
+#~ msgid "Single mixed track"
+#~ msgstr "Одна смешанная дорожка"
+
+#~ msgid "Mode"
+#~ msgstr "Режим"
 
 #, python-format
 #~ msgid ""

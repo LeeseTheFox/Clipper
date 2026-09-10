@@ -636,6 +636,51 @@ class MainWindow(Adw.ApplicationWindow):
                 color: @error_color;
             }
 
+            .clipper-metadata-chip,
+            .clipper-accent-chip {
+                border-radius: 999px;
+                padding: 2px 7px;
+            }
+
+            .clipper-metadata-chip {
+                background-color: alpha(currentColor, 0.07);
+                border: 1px solid alpha(currentColor, 0.10);
+            }
+
+            .clipper-accent-chip {
+                color: @accent_color;
+                background-color: alpha(@accent_color, 0.12);
+                border: 1px solid alpha(@accent_color, 0.18);
+                font-weight: 600;
+            }
+
+            .clipper-audio-source > button {
+                background: transparent;
+                box-shadow: none;
+                font-weight: 600;
+            }
+
+            .clipper-audio-source > button:hover {
+                background-color: alpha(currentColor, 0.07);
+            }
+
+            .clipper-audio-volume {
+                background-color: alpha(currentColor, 0.04);
+                border-radius: 9px;
+                padding: 0 8px;
+            }
+
+            .clipper-audio-volume scale value {
+                font-variant-numeric: tabular-nums;
+            }
+
+            @media (prefers-contrast: more) {
+                .clipper-metadata-chip,
+                .clipper-accent-chip {
+                    border-color: currentColor;
+                }
+            }
+
             .recording-preview-popover {
                 opacity: 1;
                 transition: opacity 160ms ease-out;

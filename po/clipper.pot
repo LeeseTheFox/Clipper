@@ -18,12 +18,12 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
-#: ui/audio_tracks_view.py:24 ui/audio_tracks_view.py:144
-msgid "Separate tracks"
+#: ui/audio_tracks_view.py:23
+msgid "Each audio track includes only its selected source"
 msgstr ""
 
 #: ui/audio_tracks_view.py:24
-msgid "Single mixed track"
+msgid "All audio sources are combined into a single track"
 msgstr ""
 
 #: ui/audio_tracks_view.py:71
@@ -42,68 +42,68 @@ msgstr ""
 msgid "Choose the default audio behavior"
 msgstr ""
 
-#: ui/audio_tracks_view.py:110
-msgid "Mode"
+#: ui/audio_tracks_view.py:110 ui/audio_tracks_view.py:147
+msgid "Separate tracks"
 msgstr ""
 
 #: ui/audio_tracks_view.py:116
 msgid "Microphone device"
 msgstr ""
 
-#: ui/audio_tracks_view.py:124
+#: ui/audio_tracks_view.py:125
 msgid "Microphone volume"
 msgstr ""
 
-#: ui/audio_tracks_view.py:174 ui/audio_tracks_view.py:466
+#: ui/audio_tracks_view.py:163
+msgid "Add track"
+msgstr ""
+
+#: ui/audio_tracks_view.py:181 ui/audio_tracks_view.py:470
 #, python-format
 msgid "Track %(number)d"
 msgstr ""
 
-#: ui/audio_tracks_view.py:204
+#: ui/audio_tracks_view.py:220
 #, python-format
 msgid "Track %(number)d volume"
 msgstr ""
 
-#: ui/audio_tracks_view.py:217
+#: ui/audio_tracks_view.py:236
 #, python-format
 msgid "Remove track %(number)d"
 msgstr ""
 
-#: ui/audio_tracks_view.py:244
-msgid "Add track"
-msgstr ""
-
-#: ui/audio_tracks_view.py:527
+#: ui/audio_tracks_view.py:531
 msgid "Off"
 msgstr ""
 
-#: ui/audio_tracks_view.py:536
+#: ui/audio_tracks_view.py:540
 msgid "System default"
 msgstr ""
 
-#: ui/audio_tracks_view.py:654
+#: ui/audio_tracks_view.py:658
 msgid "None"
 msgstr ""
 
-#: ui/audio_tracks_view.py:656
+#: ui/audio_tracks_view.py:660
 msgid "System audio"
 msgstr ""
 
-#: ui/audio_tracks_view.py:661
+#: ui/audio_tracks_view.py:665
 msgid "Microphone"
 msgstr ""
 
-#: ui/audio_tracks_view.py:669 ui/audio_tracks_view.py:990
-#: ui/audio_tracks_view.py:1099
+#: ui/audio_tracks_view.py:673 ui/audio_tracks_view.py:994
+#: ui/audio_tracks_view.py:1103
 msgid "Whitelisted games"
 msgstr ""
 
-#: ui/audio_tracks_view.py:682 ui/audio_tracks_view.py:999
+#: ui/audio_tracks_view.py:686 ui/audio_tracks_view.py:1003
 #, python-format
 msgid "App: %(name)s"
 msgstr ""
 
-#: ui/audio_tracks_view.py:997
+#: ui/audio_tracks_view.py:1001
 #, python-format
 msgid "Game: %(name)s"
 msgstr ""
@@ -164,182 +164,178 @@ msgstr ""
 msgid "Display capture"
 msgstr ""
 
-#: ui/capture_modes.py:14
-msgid "Game capture (advanced)"
-msgstr ""
-
-#: ui/capture_modes.py:20
+#: ui/capture_modes.py:14 ui/capture_modes.py:20
 msgid "Game capture"
 msgstr ""
 
-#: ui/clips_view.py:242
+#: ui/clips_view.py:243
 msgid "Search clips by name"
 msgstr ""
 
-#: ui/clips_view.py:259
+#: ui/clips_view.py:260
 msgid "Newest"
 msgstr ""
 
-#: ui/clips_view.py:260
+#: ui/clips_view.py:261
 msgid "Oldest"
 msgstr ""
 
-#: ui/clips_view.py:261
+#: ui/clips_view.py:262
 msgid "A-Z"
 msgstr ""
 
-#: ui/clips_view.py:264
+#: ui/clips_view.py:265
 msgid "Sort clips"
 msgstr ""
 
-#: ui/clips_view.py:270
+#: ui/clips_view.py:271
 msgid "Open clips folder"
 msgstr ""
 
-#: ui/clips_view.py:506
+#: ui/clips_view.py:507
 msgid "Edit clip from scratch"
 msgstr ""
 
-#: ui/clips_view.py:509
+#: ui/clips_view.py:510
 msgid "Edit clip"
 msgstr ""
 
-#: ui/clips_view.py:514
+#: ui/clips_view.py:515
 msgid "Permanently delete the clip"
 msgstr ""
 
-#: ui/clips_view.py:517
+#: ui/clips_view.py:518
 msgid "Move clip to trash"
 msgstr ""
 
-#: ui/clips_view.py:1086
+#: ui/clips_view.py:1095
 msgid "No clips yet"
 msgstr ""
 
-#: ui/clips_view.py:1088
+#: ui/clips_view.py:1097
 msgid ""
 "Recorded clips will appear here.\n"
 "Press your save hotkey to capture a clip."
 msgstr ""
 
-#: ui/clips_view.py:1096
+#: ui/clips_view.py:1105
 msgid "No matching clips"
 msgstr ""
 
-#: ui/clips_view.py:1097
+#: ui/clips_view.py:1106
 msgid "No clip names match the current search."
 msgstr ""
 
-#: ui/clips_view.py:1103
+#: ui/clips_view.py:1112
 msgid "Loading clips…"
 msgstr ""
 
-#: ui/clips_view.py:1229
+#: ui/clips_view.py:1238
 msgid "Just now"
 msgstr ""
 
-#: ui/clips_view.py:1233
+#: ui/clips_view.py:1242
 #, python-format
 msgid "%(count)d minute ago"
 msgid_plural "%(count)d minutes ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: ui/clips_view.py:1237
+#: ui/clips_view.py:1246
 #, python-format
 msgid "%(count)d hour ago"
 msgid_plural "%(count)d hours ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: ui/clips_view.py:1241
+#: ui/clips_view.py:1250
 msgid "Yesterday"
 msgstr ""
 
-#: ui/clips_view.py:1244
+#: ui/clips_view.py:1253
 #, python-format
 msgid "%(count)d day ago"
 msgid_plural "%(count)d days ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: ui/clips_view.py:1250
+#: ui/clips_view.py:1259
 msgid "B"
 msgstr ""
 
-#: ui/clips_view.py:1250
+#: ui/clips_view.py:1259
 msgid "GB"
 msgstr ""
 
-#: ui/clips_view.py:1250
+#: ui/clips_view.py:1259
 msgid "KB"
 msgstr ""
 
-#: ui/clips_view.py:1250
+#: ui/clips_view.py:1259
 msgid "MB"
 msgstr ""
 
-#: ui/clips_view.py:1252
+#: ui/clips_view.py:1261
 #, python-format
 msgid "%(size).1f %(unit)s"
 msgstr ""
 
-#: ui/clips_view.py:1254
+#: ui/clips_view.py:1263
 #, python-format
 msgid "%(size).1f TB"
 msgstr ""
 
-#: ui/clips_view.py:1367
+#: ui/clips_view.py:1376
 msgid "Play clip"
 msgstr ""
 
-#: ui/clips_view.py:1454
+#: ui/clips_view.py:1467
 msgid "Reveal in file manager"
 msgstr ""
 
-#: ui/clips_view.py:1530 ui/editor_window.py:3822
+#: ui/clips_view.py:1544 ui/editor_window.py:3822
 msgid "Could not wipe saved edits"
 msgstr ""
 
-#: ui/clips_view.py:1672
+#: ui/clips_view.py:1687
 msgid "Could not play clip"
 msgstr ""
 
-#: ui/clips_view.py:1817
+#: ui/clips_view.py:1832
 msgid "Move clip to trash?"
 msgstr ""
 
-#: ui/clips_view.py:1819
+#: ui/clips_view.py:1834
 #, python-format
 msgid ""
 "'%(name)s' will be moved to the trash.\n"
 "This can be reversed."
 msgstr ""
 
-#: ui/clips_view.py:1822 ui/dialogs.py:856 ui/editor_export_dialog.py:345
+#: ui/clips_view.py:1837 ui/dialogs.py:856 ui/editor_export_dialog.py:345
 #: ui/editor_export_dialog.py:636 ui/editor_export_dialog.py:664
 #: ui/editor_export_dialog.py:772 ui/editor_window.py:3990 ui/editor_wipe.py:16
 #: ui/update_controller.py:372
 msgid "Cancel"
 msgstr ""
 
-#: ui/clips_view.py:1823
+#: ui/clips_view.py:1838
 msgid "Move to trash"
 msgstr ""
 
-#: ui/clips_view.py:1878
+#: ui/clips_view.py:1893
 msgid "Clip deleted"
 msgstr ""
 
-#: ui/clips_view.py:1878
+#: ui/clips_view.py:1893
 msgid "Clip moved to trash"
 msgstr ""
 
-#: ui/clips_view.py:1885
+#: ui/clips_view.py:1900
 msgid "Could not delete clip"
 msgstr ""
 
-#: ui/clips_view.py:1887
+#: ui/clips_view.py:1902
 msgid "Could not move clip to trash"
 msgstr ""
 
@@ -2468,35 +2464,35 @@ msgstr ""
 msgid "Add new"
 msgstr ""
 
-#: ui/whitelist_view.py:572
+#: ui/whitelist_view.py:573
 #, python-format
 msgid "%(name)s is already in the whitelist."
 msgstr ""
 
-#: ui/whitelist_view.py:616
+#: ui/whitelist_view.py:621
 msgid "Manual"
 msgstr ""
 
-#: ui/whitelist_view.py:616
+#: ui/whitelist_view.py:621
 msgid "Steam"
 msgstr ""
 
-#: ui/whitelist_view.py:641
+#: ui/whitelist_view.py:651
 #, python-format
 msgid "Remove %(name)s"
 msgstr ""
 
-#: ui/whitelist_view.py:718 ui/whitelist_view.py:869
+#: ui/whitelist_view.py:728 ui/whitelist_view.py:879
 #, python-format
 msgid "Added %(name)s"
 msgstr ""
 
-#: ui/whitelist_view.py:734 ui/whitelist_view.py:869
+#: ui/whitelist_view.py:744 ui/whitelist_view.py:879
 #, python-format
 msgid "Removed %(name)s"
 msgstr ""
 
-#: ui/whitelist_view.py:857
+#: ui/whitelist_view.py:867
 #, python-format
 msgid ""
 "Could not finish the Game capture change.\n"

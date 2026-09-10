@@ -1422,13 +1422,17 @@ class ClipsView(Gtk.Box):
         # applied without rebuilding the row or disturbing the scroll position.
         duration = clip_data.get("duration") or ""
         duration_label = Gtk.Label(label=duration)
-        duration_label.add_css_class("dim-label")
+        duration_label.add_css_class("caption")
+        duration_label.add_css_class("clipper-accent-chip")
         duration_label.set_valign(Gtk.Align.CENTER)
         duration_label.set_visible(bool(duration))
         row_box.append(duration_label)
         self._media_widgets[str(clip_data["path"])] = (thumbnail, duration_label)
 
         # Action buttons
+        action_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        action_box.set_valign(Gtk.Align.CENTER)
+
         edit_button = Gtk.Button.new_from_icon_name(CLAPPERBOARD_EDIT)
         edit_button.set_valign(Gtk.Align.CENTER)
         self._edit_buttons.add(edit_button)
@@ -1447,13 +1451,13 @@ class ClipsView(Gtk.Box):
             "clicked",
             lambda button: self.on_edit_clip_clicked(button, clip_data),
         )
-        row_box.append(edit_button)
+        action_box.append(edit_button)
 
         reveal_button = Gtk.Button.new_from_icon_name(FOLDER_OPEN)
         reveal_button.set_valign(Gtk.Align.CENTER)
         reveal_button.set_tooltip_text(_("Reveal in file manager"))
         reveal_button.connect("clicked", lambda b: self.on_reveal_clip(clip_data))
-        row_box.append(reveal_button)
+        action_box.append(reveal_button)
 
         delete_button = Gtk.Button.new_from_icon_name(TRASH)
         delete_button.set_valign(Gtk.Align.CENTER)
@@ -1474,7 +1478,8 @@ class ClipsView(Gtk.Box):
             "clicked",
             lambda b: self.on_delete_clip_clicked(b, clip_data, row_box),
         )
-        row_box.append(delete_button)
+        action_box.append(delete_button)
+        row_box.append(action_box)
 
         return row_box
 
@@ -1542,6 +1547,7 @@ class ClipsView(Gtk.Box):
         game_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         game_box.set_halign(Gtk.Align.START)
         game_box.set_valign(Gtk.Align.CENTER)
+        game_box.add_css_class("clipper-metadata-chip")
 
         icon = self._new_game_icon(game_data, 18)
         game_box.append(icon)

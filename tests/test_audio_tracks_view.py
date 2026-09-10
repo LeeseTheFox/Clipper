@@ -239,6 +239,38 @@ class ConfigStub:
         self.saved.append((key, value))
 
 
+def test_mode_switch_changes_routing_without_discarding_tracks():
+    view, _dropdown = _make_view()
+    tracks = view._audio["tracks"]
+    track_visibility = []
+    mic_visibility = []
+    subtitles = []
+    saved_modes = []
+    view._mode_row = types.SimpleNamespace(set_subtitle=subtitles.append)
+    view._tracks_box = types.SimpleNamespace(set_visible=track_visibility.append)
+    view._mic_volume_row = types.SimpleNamespace(set_visible=mic_visibility.append)
+    view._save_audio = lambda: saved_modes.append(view._audio["mode"])
+
+    for active in (False, True):
+        view._on_mode_changed(
+            types.SimpleNamespace(get_active=lambda active=active: active), None
+        )
+
+    assert saved_modes == ["single_mix", "split_tracks"]
+    assert track_visibility == [False, True]
+    assert mic_visibility == [True, False]
+    assert subtitles == [
+        audio_tracks_module._SINGLE_TRACK_SUBTITLE,
+        audio_tracks_module._SPLIT_TRACKS_SUBTITLE,
+    ]
+    assert view._audio["tracks"] is tracks
+
+    view._suppress_signals = True
+    view._on_mode_changed(types.SimpleNamespace(get_active=lambda: False), None)
+    assert view._audio["mode"] == "split_tracks"
+    assert len(saved_modes) == 2
+
+
 def _make_view(
     engine_response=None,
     *,

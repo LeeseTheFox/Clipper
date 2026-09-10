@@ -17,11 +17,11 @@ from audio_source_watcher import AudioSourceWatcher
 from config import AUDIO_MAX_TRACKS, normalize_audio_config
 from engine_client import STATE_CONNECTED
 from gi.repository import Adw, GLib, Gtk, Pango
-from icon_names import ADD, TRASH
+from icon_names import ADD, AUDIO, MICROPHONE, TRASH, VOLUME
 from text_helpers import configure_single_line_ellipsis, set_single_line_label_text
 
-_MODE_VALUES = ["single_mix", "split_tracks"]
-_MODE_LABELS = [_("Single mixed track"), _("Separate tracks")]
+_SPLIT_TRACKS_SUBTITLE = _("Each audio track includes only its selected source")
+_SINGLE_TRACK_SUBTITLE = _("All audio sources are combined into a single track")
 
 
 class AudioTracksView(Gtk.Box):
@@ -86,7 +86,7 @@ class AudioTracksView(Gtk.Box):
         scrolled.set_vexpand(True)
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
 
-        settings_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=24)
+        settings_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18)
         settings_box.set_margin_start(6)
         settings_box.set_margin_end(6)
         settings_box.set_margin_top(6)
@@ -106,14 +106,15 @@ class AudioTracksView(Gtk.Box):
         group.set_title(_("Capture"))
         group.set_description(_("Choose the default audio behavior"))
 
-        self._mode_row = Adw.ComboRow()
-        self._mode_row.set_title(_("Mode"))
-        self._mode_row.set_model(Gtk.StringList.new(_MODE_LABELS))
-        self._mode_row.connect("notify::selected", self._on_mode_changed)
+        self._mode_row = Adw.SwitchRow()
+        self._mode_row.set_title(_("Separate tracks"))
+        self._mode_row.add_prefix(Gtk.Image.new_from_icon_name(AUDIO))
+        self._mode_row.connect("notify::active", self._on_mode_changed)
         group.add(self._mode_row)
 
         self._mic_row = Adw.ComboRow()
         self._mic_row.set_title(_("Microphone device"))
+        self._mic_row.add_prefix(Gtk.Image.new_from_icon_name(MICROPHONE))
         self._mic_row.set_model(
             Gtk.StringList.new([option["label"] for option in self._microphone_options()])
         )
@@ -122,12 +123,14 @@ class AudioTracksView(Gtk.Box):
 
         self._mic_volume_row = Adw.ActionRow()
         self._mic_volume_row.set_title(_("Microphone volume"))
+        self._mic_volume_row.add_prefix(Gtk.Image.new_from_icon_name(VOLUME))
         self._mic_volume_scale = Gtk.Scale.new_with_range(
             Gtk.Orientation.HORIZONTAL, 0, 200, 5
         )
         self._configure_volume_scale(self._mic_volume_scale)
         self._mic_volume_scale.set_size_request(220, -1)
         self._mic_volume_scale.set_draw_value(True)
+        self._mic_volume_scale.set_format_value_func(lambda _scale, value: f"{value:.0f}%")
         self._mic_volume_scale.set_value_pos(Gtk.PositionType.RIGHT)
         self._mic_volume_scale.connect("value-changed", self._on_mic_volume_changed)
         self._mic_volume_row.add_suffix(self._mic_volume_scale)
@@ -156,7 +159,11 @@ class AudioTracksView(Gtk.Box):
             tracks_list.append(row)
 
         if len(visible_indexes) < AUDIO_MAX_TRACKS:
-            tracks_list.append(self._create_add_track_row())
+            add_button = Gtk.Button()
+            add_button.set_child(Adw.ButtonContent(icon_name=ADD, label=_("Add track")))
+            add_button.set_valign(Gtk.Align.CENTER)
+            add_button.connect("clicked", self._on_add_track)
+            group.set_header_suffix(add_button)
         group.add(tracks_list)
         self._tracks_box.append(group)
         self._tracks_box.set_visible(self._audio["mode"] == "split_tracks")
@@ -168,16 +175,17 @@ class AudioTracksView(Gtk.Box):
         row_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
         row_box.set_margin_start(12)
         row_box.set_margin_end(12)
-        row_box.set_margin_top(8)
-        row_box.set_margin_bottom(8)
+        row_box.set_margin_top(12)
+        row_box.set_margin_bottom(12)
 
         track_label = Gtk.Label(label=_("Track %(number)d") % {"number": track["track"]})
         track_label.set_xalign(0)
-        track_label.set_width_chars(7)
         track_label.set_valign(Gtk.Align.CENTER)
+        track_label.add_css_class("clipper-metadata-chip")
         row_box.append(track_label)
 
         source_dropdown = Gtk.DropDown()
+        source_dropdown.add_css_class("clipper-audio-source")
         source_dropdown.set_model(
             Gtk.StringList.new([option["label"] for option in self._source_options])
         )
@@ -194,10 +202,18 @@ class AudioTracksView(Gtk.Box):
         )
         row_box.append(source_dropdown)
 
+        volume_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
+        volume_box.set_valign(Gtk.Align.CENTER)
+        volume_box.add_css_class("clipper-audio-volume")
+        volume_icon = Gtk.Image.new_from_icon_name(VOLUME)
+        volume_icon.add_css_class("dim-label")
+        volume_box.append(volume_icon)
+
         volume_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 200, 5)
         self._configure_volume_scale(volume_scale)
         volume_scale.set_size_request(180, -1)
         volume_scale.set_draw_value(True)
+        volume_scale.set_format_value_func(lambda _scale, value: f"{value:.0f}%")
         volume_scale.set_value_pos(Gtk.PositionType.RIGHT)
         volume_scale.set_valign(Gtk.Align.CENTER)
         volume_scale.set_tooltip_text(
@@ -209,9 +225,12 @@ class AudioTracksView(Gtk.Box):
                 idx, scale.get_value() / 100.0
             ),
         )
-        row_box.append(volume_scale)
+        volume_box.append(volume_scale)
+        row_box.append(volume_box)
 
         remove_button = Gtk.Button.new_from_icon_name(TRASH)
+        remove_button.add_css_class("flat")
+        remove_button.add_css_class("destructive-action")
         remove_button.set_valign(Gtk.Align.CENTER)
         remove_button.set_tooltip_text(
             _("Remove track %(number)d") % {"number": track["track"]}
@@ -231,31 +250,6 @@ class AudioTracksView(Gtk.Box):
             "remove": remove_button,
         }
         return row, widgets
-
-    def _create_add_track_row(self):
-        row = Gtk.ListBoxRow()
-        row.set_activatable(False)
-        row.set_selectable(False)
-
-        button_content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        button_content.set_halign(Gtk.Align.CENTER)
-
-        icon = Gtk.Image.new_from_icon_name(ADD)
-        label = Gtk.Label(label=_("Add track"))
-        button_content.append(icon)
-        button_content.append(label)
-
-        add_button = Gtk.Button()
-        add_button.set_child(button_content)
-        add_button.set_halign(Gtk.Align.FILL)
-        add_button.set_margin_start(12)
-        add_button.set_margin_end(12)
-        add_button.set_margin_top(8)
-        add_button.set_margin_bottom(8)
-        add_button.connect("clicked", self._on_add_track)
-
-        row.set_child(add_button)
-        return row
 
     def _create_dropdown_label_factory(self):
         factory = Gtk.SignalListItemFactory()
@@ -324,7 +318,8 @@ class AudioTracksView(Gtk.Box):
     def _load_from_config(self):
         self._suppress_signals = True
         try:
-            self._mode_row.set_selected(_MODE_VALUES.index(self._audio["mode"]))
+            self._mode_row.set_active(self._audio["mode"] == "split_tracks")
+            self._update_mode_subtitle()
             mic = self._audio["microphone"]
             self._mic_row.set_selected(self._microphone_index_for_config())
             self._mic_volume_scale.set_value(float(mic.get("volume", 1.0)) * 100.0)
@@ -414,12 +409,21 @@ class AudioTracksView(Gtk.Box):
         self._request_audio_sources()
 
     def _on_mode_changed(self, row, _unused):
-        selected = row.get_selected()
-        if 0 <= selected < len(_MODE_VALUES):
-            self._audio["mode"] = _MODE_VALUES[selected]
-            self._tracks_box.set_visible(self._audio["mode"] == "split_tracks")
-            self._mic_volume_row.set_visible(self._audio["mode"] == "single_mix")
-            self._save_audio()
+        if self._suppress_signals:
+            return
+        self._audio["mode"] = "split_tracks" if row.get_active() else "single_mix"
+        self._update_mode_subtitle()
+        self._tracks_box.set_visible(self._audio["mode"] == "split_tracks")
+        self._mic_volume_row.set_visible(self._audio["mode"] == "single_mix")
+        self._save_audio()
+
+    def _update_mode_subtitle(self):
+        subtitle = (
+            _SPLIT_TRACKS_SUBTITLE
+            if self._audio["mode"] == "split_tracks"
+            else _SINGLE_TRACK_SUBTITLE
+        )
+        self._mode_row.set_subtitle(subtitle)
 
     def _configure_volume_scale(self, scale):
         adjustment = scale.get_adjustment()
