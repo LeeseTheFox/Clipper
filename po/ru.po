@@ -324,7 +324,7 @@ msgstr ""
 #: ui/clips_view.py:1837 ui/dialogs.py:856 ui/editor_export_dialog.py:345
 #: ui/editor_export_dialog.py:636 ui/editor_export_dialog.py:664
 #: ui/editor_export_dialog.py:772 ui/editor_window.py:3990 ui/editor_wipe.py:16
-#: ui/update_controller.py:372
+#: ui/update_controller.py:377
 msgid "Cancel"
 msgstr "Отмена"
 
@@ -1663,7 +1663,7 @@ msgstr "Движок не запущен"
 msgid "Could not send save command to Clipper engine"
 msgstr "Не удалось отправить команду сохранения движку Clipper"
 
-#: ui/main.py:581 ui/update_controller.py:444
+#: ui/main.py:581 ui/update_controller.py:449
 msgid "Restart Clipper?"
 msgstr "Перезапустить Clipper?"
 
@@ -1671,11 +1671,11 @@ msgstr "Перезапустить Clipper?"
 msgid "Clipper needs to be restarted for this change to take effect."
 msgstr "Чтобы это изменение вступило в силу, необходимо перезапустить Clipper."
 
-#: ui/main.py:584 ui/update_controller.py:322 ui/update_controller.py:450
+#: ui/main.py:584 ui/update_controller.py:327 ui/update_controller.py:455
 msgid "Restart later"
 msgstr "Перезапустить позже"
 
-#: ui/main.py:585 ui/update_controller.py:326 ui/update_controller.py:451
+#: ui/main.py:585 ui/update_controller.py:331 ui/update_controller.py:456
 msgid "Restart now"
 msgstr "Перезапустить сейчас"
 
@@ -1988,7 +1988,7 @@ msgstr "Ограничение размера файла"
 msgid "Maximum size retained for each clip"
 msgstr "Максимальный размер каждого сохраняемого клипа"
 
-#: ui/settings_view.py:1154 ui/setup_window.py:343 ui/update_controller.py:335
+#: ui/settings_view.py:1154 ui/setup_window.py:343 ui/update_controller.py:340
 msgid "MiB"
 msgstr "МиБ"
 
@@ -2367,7 +2367,7 @@ msgstr ""
 msgid "Clipper is up to date."
 msgstr "Установлена последняя версия Clipper."
 
-#: ui/update_controller.py:196 ui/update_controller.py:328
+#: ui/update_controller.py:196 ui/update_controller.py:333
 msgid "Clipper update available"
 msgstr "Доступно обновление Clipper"
 
@@ -2376,7 +2376,7 @@ msgstr "Доступно обновление Clipper"
 msgid "Clipper %(version)s is ready to download."
 msgstr "Clipper %(version)s готов к загрузке."
 
-#: ui/update_controller.py:218 ui/update_controller.py:324
+#: ui/update_controller.py:218 ui/update_controller.py:329
 msgid "Restart Clipper to finish updating"
 msgstr "Перезапусти Clipper, чтобы завершить обновление"
 
@@ -2384,54 +2384,54 @@ msgstr "Перезапусти Clipper, чтобы завершить обнов
 msgid "Updates"
 msgstr "Обновления"
 
-#: ui/update_controller.py:266
+#: ui/update_controller.py:271
 msgid "Installed"
 msgstr "Установлено"
 
-#: ui/update_controller.py:267
+#: ui/update_controller.py:272
 msgid "Available"
 msgstr "Доступно"
 
-#: ui/update_controller.py:269
+#: ui/update_controller.py:274
 msgid "Download"
 msgstr "Загрузка"
 
-#: ui/update_controller.py:274
+#: ui/update_controller.py:279
 msgid "Release notes"
 msgstr "Примечания к выпуску"
 
-#: ui/update_controller.py:286 ui/update_controller.py:322
+#: ui/update_controller.py:291 ui/update_controller.py:327
 msgid "Later"
 msgstr "Позже"
 
-#: ui/update_controller.py:289 ui/update_controller.py:337
+#: ui/update_controller.py:294 ui/update_controller.py:342
 msgid "Update"
 msgstr "Обновить"
 
-#: ui/update_controller.py:294
+#: ui/update_controller.py:299
 msgid "Skip this version"
 msgstr "Пропустить эту версию"
 
-#: ui/update_controller.py:325
+#: ui/update_controller.py:330
 msgid "Update installed. Restart Clipper to use the new version."
 msgstr ""
 "Обновление установлено. Перезапусти Clipper, чтобы пользоваться новой "
 "версией."
 
-#: ui/update_controller.py:334
+#: ui/update_controller.py:339
 #, python-format
 msgid "%(size)s %(unit)s"
 msgstr "%(size)s %(unit)s"
 
-#: ui/update_controller.py:369
+#: ui/update_controller.py:374
 msgid "Downloading update…"
 msgstr "Загрузка обновления…"
 
-#: ui/update_controller.py:403
+#: ui/update_controller.py:408
 msgid "Installing update…"
 msgstr "Установка обновления…"
 
-#: ui/update_controller.py:414
+#: ui/update_controller.py:419
 msgid ""
 "Could not install the update. Your current version is still available. Try "
 "again."
@@ -2439,17 +2439,17 @@ msgstr ""
 "Не удалось установить обновление. Текущая версия остаётся доступной. "
 "Попробуй ещё раз."
 
-#: ui/update_controller.py:419
+#: ui/update_controller.py:424
 #, python-format
 msgid "Details: %(details)s"
 msgstr "Подробности: %(details)s"
 
-#: ui/update_controller.py:440
+#: ui/update_controller.py:445
 msgid "Close the editor and wait for clip saving to finish before restarting."
 msgstr ""
 "Перед перезапуском закрой редактор и дождись завершения сохранения клипов."
 
-#: ui/update_controller.py:446
+#: ui/update_controller.py:451
 msgid ""
 "Restarting interrupts recording and clears the replay buffer. Saved clips "
 "are kept."
@@ -2457,7 +2457,7 @@ msgstr ""
 "Перезапуск прерывает запись и очищает буфер повтора. Сохранённые клипы "
 "остаются."
 
-#: ui/update_controller.py:480
+#: ui/update_controller.py:485
 msgid "Could not restart Clipper. Quit and open it again to use the update."
 msgstr ""
 "Не удалось перезапустить Clipper. Выйди и открой его снова, чтобы "

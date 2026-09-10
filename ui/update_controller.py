@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import updates
-from gi.repository import Adw, Gio, GLib, Gtk
+from gi.repository import Adw, Gio, GLib, Gtk, Pango
 from i18n import _
 
 
@@ -247,7 +247,12 @@ class UpdateController:
         self.heading = Gtk.Label(wrap=True, justify=Gtk.Justification.CENTER)
         self.heading.add_css_class("title-2")
         box.append(self.heading)
-        self.status = Gtk.Label(wrap=True, justify=Gtk.Justification.CENTER)
+        self.status = Gtk.Label(
+            wrap=True,
+            wrap_mode=Pango.WrapMode.WORD_CHAR,
+            max_width_chars=36,
+            justify=Gtk.Justification.CENTER,
+        )
         self.status.add_css_class("dim-label")
         box.append(self.status)
 

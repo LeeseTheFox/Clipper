@@ -50,7 +50,13 @@ by deployment path. Updates retain the existing installation scope, architecture
 and branch. The bundle is staged in the app's private cache, translated through
 Flatpak's authoritative instance path, and installed using host Flatpak's
 `install --or-update --bundle`. The currently running deployment stays in use
-until restart. If Flatpak rejects the transaction, its final error detail is
+until restart. System and named system installations authorize the exact Flatpak
+command through host `pkexec`, allowing the desktop to request administrator
+authentication before installation. This is necessary because Flatpak's
+`--assumeyes` also disables transaction authentication prompts. Per-user updates
+run without elevation; authorization failures never switch installation scope.
+Long error details wrap within the compact update dialog.
+If Flatpak rejects the transaction, its final error detail is
 shown in the dialog and recorded in Clipper's logs.
 
 Restart requires a closed editor and no pending clip saves. Confirmation explains

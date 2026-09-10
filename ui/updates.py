@@ -259,11 +259,17 @@ def install(release: Release, installation: Installation, bundle: Path) -> None:
     # authoritative instance path also covers nonstandard host home locations.
     cache = Path(os.environ.get("XDG_CACHE_HOME", str(Path.home() / ".cache")))
     host_path = host_cache_path(bundle, cache)
+    args = ("flatpak", installation.scope, "install", "--assumeyes",
+            "--or-update", "--bundle", str(host_path))
+    command = host_command(*args)
+    if installation.scope != "--user":
+        # Flatpak's --assumeyes also sets the transaction's no-interaction
+        # flag, preventing polkit from asking for system-install permission.
+        # Authorize this exact host command first; keep user installs unprivileged.
+        command = host_command("pkexec", *args)
     try:
         subprocess.run(
-            installation.command(
-                "install", "--assumeyes", "--or-update", "--bundle", str(host_path)
-            ),
+            command,
             stdin=subprocess.DEVNULL,
             check=True,
             capture_output=True,

@@ -154,7 +154,13 @@ def test_install_preserves_scope_and_verifies_commit(release_data, monkeypatch, 
     )
     monkeypatch.setattr(updates, "host_output", lambda *_args: next(results))
     updates.install(release, updates.Installation(scope, "x86_64", "master"), bundle)
-    assert calls[0][:6] == ["flatpak-spawn", "--host", "--directory=/", "flatpak", scope, "install"]
+    prefix = ["flatpak-spawn", "--host", "--directory=/"]
+    if scope != "--user":
+        prefix.append("pkexec")
+    assert calls[0] == [
+        *prefix, "flatpak", scope, "install", "--assumeyes", "--or-update",
+        "--bundle", str(Path.home() / ".var/app" / updates.APP_ID / "cache/bundle.flatpak"),
+    ]
     assert "--bundle" in calls[0]
     assert calls[0][-1] == str(Path.home() / ".var/app" / updates.APP_ID / "cache/bundle.flatpak")
     assert not bundle.exists()
@@ -217,7 +223,11 @@ def test_install_accepts_commit_deployed_despite_flatpak_error(
     assert not bundle.exists()
 
 
-def test_install_preserves_flatpak_failure_detail(release_data, monkeypatch, tmp_path):
+@pytest.mark.parametrize("scope", ["--user", "--system", "--installation=custom"])
+@pytest.mark.parametrize("exit_code", [1, 126, 127])
+def test_install_preserves_flatpak_failure_detail(
+    release_data, monkeypatch, tmp_path, scope, exit_code
+):
     release = updates.parse_release(*release_data, "1.0.0", "x86_64", "master")
     monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
     bundle = tmp_path / "bundle.flatpak"
@@ -232,16 +242,20 @@ def test_install_preserves_flatpak_failure_detail(release_data, monkeypatch, tmp
     )
     monkeypatch.setattr(updates, "host_output", lambda *_args: next(results))
 
-    def fail(*_args, **_kwargs):
+    calls = []
+
+    def fail(*args, **_kwargs):
+        calls.append(args)
         raise updates.subprocess.CalledProcessError(
-            1, [], stderr="Installing…\nerror: Not authorized"
+            exit_code, [], stderr="Installing…\nerror: Not authorized"
         )
 
     monkeypatch.setattr(updates.subprocess, "run", fail)
     with pytest.raises(updates.InstallError) as caught:
-        updates.install(release, updates.Installation("--system", "x86_64", "master"), bundle)
+        updates.install(release, updates.Installation(scope, "x86_64", "master"), bundle)
     assert caught.value.detail == "error: Not authorized"
     assert bundle.exists()
+    assert len(calls) == 1  # No automatic retry or fallback to another installation.
 
 
 def test_install_does_not_claim_success_for_wrong_commit(release_data, monkeypatch, tmp_path):

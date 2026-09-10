@@ -81,6 +81,54 @@ def available_release():
     )
 
 
+@pytest.mark.parametrize("detail", [
+    "Failed to install bundle io.github.leesethefox.Clipper: "
+    "Flatpak system operation InstallBundle not allowed for user",
+    "/very/long/path/" + "a" * 1000,
+])
+def test_update_error_does_not_widen_dialog(monkeypatch, tmp_path, detail):
+    from gi.repository import Gdk
+
+    if Gdk.Display.get_default() is None:
+        pytest.skip("GTK display required for layout measurements")
+    updater = controller(monkeypatch)
+    updater.release = available_release()
+    updater.app.do_activate = lambda: None
+    updater.app.editor_window = None
+    updater.app.setup_window = None
+    updater.app.withdraw_notification = lambda *_args: None
+    monkeypatch.setattr(update_controller.Adw.Dialog, "present", lambda *_args: None)
+    update_controller.UpdateController.show(updater)
+    content = updater.dialog.get_child()
+    orientation = update_controller.Gtk.Orientation.HORIZONTAL
+    before = content.measure(orientation, -1).natural
+    monkeypatch.setattr(
+        updates, "running_installation",
+        lambda: updates.Installation("--system", "x86_64", "master"),
+    )
+    monkeypatch.setattr(updates, "download", lambda *_args: tmp_path / "update.flatpak")
+
+    def fail(*_args):
+        raise updates.InstallError(detail)
+
+    monkeypatch.setattr(updates, "install", fail)
+    updater._update()
+    after = content.measure(orientation, -1).natural
+    assert after <= before
+    assert detail in updater.status.get_label()
+    assert not updater.installed
+    assert "update_installed_version" not in updater.config
+    assert updater.dialog.get_can_close()
+    assert updater.button.get_sensitive()
+    assert updater.button.get_label() == "Update"
+
+    # A rejected/cancelled authorization leaves the dialog usable for retry.
+    monkeypatch.setattr(updates, "install", lambda *_args: None)
+    updater._update()
+    assert updater.installed
+    assert updater.config["update_installed_version"] == updater.release.version
+
+
 def test_daily_schedule_survives_process_handoff(monkeypatch):
     first = controller(monkeypatch)
     monkeypatch.setattr(
