@@ -148,31 +148,77 @@ def load_or_create_history(source: Source, env=None) -> EditorHistory:
     return load_draft_history(source.path, source, env) or EditorHistory(EditorProject.new(source))
 
 
+def _project_data_with_source_path(project_data: dict, new_path: str | Path) -> dict:
+    """Copy serialized project data with its source path replaced."""
+    source_data = project_data.get("source")
+    if not isinstance(source_data, dict):
+        raise TypeError("The editor project has no valid source")
+    updated_source = dict(source_data)
+    updated_source["path"] = str(Path(new_path))
+    updated_project = dict(project_data)
+    updated_project["source"] = updated_source
+    return updated_project
+
+
+def _history_data_with_source_path(history_data: Any, new_path: str | Path) -> Any:
+    """Update source paths in every valid serialized history snapshot."""
+    if not isinstance(history_data, dict):
+        return history_data
+
+    updated_history = dict(history_data)
+    for stack_name in ("undo_stack", "redo_stack"):
+        stack = history_data.get(stack_name)
+        if not isinstance(stack, list):
+            continue
+        updated_stack = []
+        for command_data in stack:
+            if not isinstance(command_data, dict):
+                updated_stack.append(command_data)
+                continue
+            updated_command = dict(command_data)
+            for snapshot_name in ("before", "after"):
+                snapshot = command_data.get(snapshot_name)
+                if isinstance(snapshot, dict) and isinstance(snapshot.get("source"), dict):
+                    updated_command[snapshot_name] = _project_data_with_source_path(
+                        snapshot, new_path
+                    )
+            updated_stack.append(updated_command)
+        updated_history[stack_name] = updated_stack
+    return updated_history
+
+
 def rename_editor_data(old_path: str | Path, new_path: str | Path, env=None) -> bool:
     """Move a saved editor draft when its source clip is renamed."""
     old_location = draft_path(old_path, env)
     if not old_location.exists():
         return True
 
+    new_location = draft_path(new_path, env)
+    wrote_new_location = False
     try:
         with old_location.open(encoding="utf-8") as source_file:
             raw: Any = json.load(source_file)
         project_data: Any = raw.get("project", raw) if isinstance(raw, dict) else None
-        source_data: Any = project_data.get("source") if isinstance(project_data, dict) else None
-        if not isinstance(source_data, dict):
+        if not isinstance(project_data, dict):
             return False
-        source_data = dict(source_data)
-        source_data["path"] = str(Path(new_path))
-        project_data = dict(project_data)
-        project_data["source"] = source_data
+        project_data = _project_data_with_source_path(project_data, new_path)
         updated: dict[str, Any] = dict(raw)
         if "project" in updated:
             updated["project"] = project_data
+            updated["history"] = _history_data_with_source_path(
+                updated.get("history"), new_path
+            )
         else:
             updated = project_data
-        _atomic_json(draft_path(new_path, env), updated)
+        _atomic_json(new_location, updated)
+        wrote_new_location = True
         old_location.unlink()
     except (OSError, json.JSONDecodeError, TypeError, ValueError):
+        if wrote_new_location:
+            try:
+                new_location.unlink(missing_ok=True)
+            except OSError:
+                pass
         return False
 
     # Render caches are keyed by the source fingerprint, which includes its

@@ -26,19 +26,31 @@ def test_atomic_save_load_and_stale_rejection(tmp_path):
         load_draft(source.path, changed, env)
 
 
-def test_renaming_source_moves_draft_and_updates_source_path(tmp_path):
+def test_renaming_source_moves_draft_and_preserves_history(tmp_path):
     env = {"XDG_DATA_HOME": str(tmp_path / "data")}
     old_path = tmp_path / "clip.mkv"
     new_path = tmp_path / "renamed.mkv"
     source = Source(str(old_path), 1, 2, 10, 0)
-    project = EditorProject.new(source)
-    save_draft(project, env)
+    history = EditorHistory(EditorProject.new(source))
+    first_segment = history.project.segments[0].id
+    history.mutate("first split", lambda project: project.split(first_segment, 5))
+    split_segment = history.project.segments[0].id
+    history.mutate("second split", lambda project: project.split(split_segment, 2))
+    history.undo()
+    save_draft(history.project, env, history=history)
 
     assert rename_editor_data(old_path, new_path, env)
     assert not draft_path(old_path, env).exists()
-    restored = load_draft(new_path, env=env)
+    restored = load_draft_history(new_path, env=env)
     assert restored is not None
-    assert restored.source.path == str(new_path)
+    assert restored.project.source.path == str(new_path)
+    assert restored.can_undo
+    assert restored.can_redo
+    restored.redo()
+    assert len(restored.project.segments) == 3
+    restored.undo()
+    restored.undo()
+    assert len(restored.project.segments) == 1
 
 
 def test_malformed_draft(tmp_path):
