@@ -93,6 +93,22 @@ def _install_thumbnail_css():
     provider = Gtk.CssProvider()
     provider.load_from_data(
         b"""
+        text.clipper-clip-name {
+            min-height: 0;
+            min-width: 0;
+            padding: 0;
+            margin: 0;
+            border: none;
+            background: transparent;
+            box-shadow: none;
+            caret-color: currentColor;
+        }
+
+        text.clipper-clip-name selection {
+            background-color: var(--accent-bg-color);
+            color: var(--accent-fg-color);
+        }
+
         .clipper-thumbnail {
             min-width: 144px;
             min-height: 81px;
@@ -296,8 +312,9 @@ class ClipsView(Gtk.Box):
         self.clips_list.set_margin_end(6)
         self.clips_list.set_margin_top(6)
         self.clips_list.set_margin_bottom(6)
-        # Disable focus to prevent scroll jumping when rows are deleted.
-        self.clips_list.set_can_focus(False)
+        # Keep the list itself out of the focus chain without disabling focus
+        # for its descendants, including the inline clip-name editor.
+        self.clips_list.set_focusable(False)
         self.scrolled.set_child(self.clips_list)
 
         # Empty state placeholder
@@ -364,7 +381,7 @@ class ClipsView(Gtk.Box):
                 )
                 clip_info = {
                     "path": clip_path,
-                    "name": clip_path.name,
+                    "name": self._clip_display_name(clip_path),
                     "mtime": stat.st_mtime,
                     "mtime_ns": stat.st_mtime_ns,
                     "size_bytes": stat.st_size,
@@ -433,6 +450,9 @@ class ClipsView(Gtk.Box):
         self.clips_list.set_model(self._clip_selection_model)
 
     def _on_clip_item_setup(self, _factory, list_item):
+        # Focusing a recycled row can scroll it between the two clicks of a
+        # double-click. Its controls must remain independently focusable.
+        list_item.set_focusable(False)
         list_item.set_child(self._new_clip_item_placeholder())
 
     def _new_clip_item_placeholder(self):
@@ -546,6 +566,177 @@ class ClipsView(Gtk.Box):
     def _clip_name_key(self, clip):
         """Return a case-insensitive name key for sorting clips."""
         return clip.get("name", "").casefold()
+
+    def _clip_display_name(self, path):
+        names = self.config.get("clip_display_names", {})
+        name = names.get(str(path)) if isinstance(names, dict) else None
+        return name if isinstance(name, str) and name else Path(path).stem
+
+    def _save_clip_name(self, clip_data, name):
+        """Rename the source file and update the in-memory clip indexes."""
+        if (
+            not name.strip()
+            or name in (".", "..")
+            or any(c in name for c in ("/", "\0", "\n", "\r"))
+        ):
+            self._show_toast(_("Enter a valid clip name"))
+            return False
+        old_path = Path(clip_data["path"])
+        new_path = old_path.with_name(f"{name}{old_path.suffix}")
+        if new_path != old_path:
+            if new_path.exists():
+                self._show_toast(_("A clip with that name already exists"))
+                return False
+            try:
+                old_path.rename(new_path)
+            except OSError:
+                self._show_toast(_("Could not rename clip"))
+                return False
+            try:
+                from editor_drafts import rename_editor_data
+
+                rename_editor_data(old_path, new_path)
+            except Exception as error:  # noqa: BLE001
+                # A draft is optional; the renamed source remains usable even
+                # if an older draft cannot be moved.
+                print(f"Could not move saved edit for renamed clip: {error}")
+
+            old_key = str(old_path)
+            new_key = str(new_path)
+            clip_data["path"] = new_path
+            self._clips_by_path.pop(old_key, None)
+            self._clips_by_path[new_key] = clip_data
+            if old_key in self._clip_identities:
+                self._clip_identities[new_key] = self._clip_identities.pop(old_key)
+            if old_key in self._media_metadata:
+                self._media_metadata[new_key] = self._media_metadata.pop(old_key)
+            if old_key in self._media_widgets:
+                self._media_widgets[new_key] = self._media_widgets.pop(old_key)
+            if old_key in self._bound_clip_paths:
+                self._bound_clip_paths.discard(old_key)
+                self._bound_clip_paths.add(new_key)
+
+            game_metadata = self.config.get(CLIP_GAME_METADATA_CONFIG_KEY, {})
+            game_clips = game_metadata.get("clips") if isinstance(game_metadata, dict) else None
+            if isinstance(game_clips, dict) and old_key in game_clips:
+                game_clips = dict(game_clips)
+                game_entry = game_clips.pop(old_key)
+                if isinstance(game_entry, dict):
+                    game_entry = dict(game_entry)
+                    game_entry["path"] = new_key
+                    game_clips[new_key] = game_entry
+                    try:
+                        self.config.set(CLIP_GAME_METADATA_CONFIG_KEY, {"clips": game_clips})
+                    except OSError:
+                        self._show_toast(_("Could not update clip metadata"))
+
+        names = self.config.get("clip_display_names", {})
+        names = dict(names) if isinstance(names, dict) else {}
+        names.pop(str(old_path), None)
+        names[str(new_path)] = name
+        try:
+            self.config.set("clip_display_names", names)
+        except OSError:
+            # The file has already been renamed; its stem still provides the
+            # requested name if this optional display-name cache cannot save.
+            self._show_toast(_("Could not save clip name"))
+        clip_data["name"] = name
+        if new_path != old_path:
+            self._schedule_media_cache_save()
+        return True
+
+    def _create_clip_name(self, clip_data):
+        """Keep the existing label until a double-click starts inline editing."""
+        stack = Gtk.Stack()
+        stack.set_hexpand(True)
+        stack.set_hhomogeneous(False)
+        stack.set_vhomogeneous(False)
+        label = Gtk.Label(label=clip_data["name"])
+        label.set_halign(Gtk.Align.START)
+        label.set_hexpand(True)
+        label.set_xalign(0)
+        label.add_css_class("heading")
+        configure_single_line_ellipsis(label, mode=ELLIPSIZE_END, max_width_chars=40)
+        stack.add_named(label, "label")
+        entry = Gtk.Text()
+        entry.add_css_class("heading")
+        entry.add_css_class("clipper-clip-name")
+        entry.set_hexpand(True)
+        entry.set_width_chars(1)
+        stack.add_named(entry, "entry")
+        editing = False
+        click_root = None
+
+        def clicked_outside(_gesture, _count, x, y):
+            if click_root is None:
+                return
+            picked = click_root.pick(x, y, Gtk.PickFlags.DEFAULT)
+            if picked is None or (picked != entry and not picked.is_ancestor(entry)):
+                finish(None)
+
+        outside = Gtk.GestureClick()
+        outside.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        outside.connect("pressed", clicked_outside)
+
+        def finish(_controller):
+            nonlocal editing, click_root
+            if not editing:
+                return
+            editing = False
+            if click_root is not None:
+                click_root.remove_controller(outside)
+                click_root = None
+            name = entry.get_text()
+            if name != clip_data["name"]:
+                old_path = clip_data["path"]
+                self._save_clip_name(clip_data, name)
+                if clip_data["path"] != old_path:
+                    GLib.idle_add(self._render_clips)
+            label.set_label(clip_data["name"])
+            stack.set_visible_child_name("label")
+
+        def pressed(gesture, count, _x, _y):
+            nonlocal editing, click_root
+            if count != 2:
+                return
+            gesture.set_state(Gtk.EventSequenceState.CLAIMED)
+            entry.set_text(clip_data["name"])
+            editing = True
+            stack.set_visible_child_name("entry")
+            # Finish the pointer event before focusing: ListView otherwise
+            # takes focus back for its row while processing the same click.
+            GLib.idle_add(focus_editor)
+            click_root = stack.get_root()
+            if click_root is not None:
+                click_root.add_controller(outside)
+
+        def focus_editor():
+            if editing:
+                entry.grab_focus()
+                entry.set_position(-1)
+            return False
+
+        gesture = Gtk.GestureClick()
+        gesture.set_button(1)
+        gesture.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        gesture.connect("pressed", pressed)
+        label.add_controller(gesture)
+        entry.connect("activate", finish)
+        key_controller = Gtk.EventControllerKey()
+
+        def on_key_pressed(_controller, keyval, _keycode, _state):
+            if keyval == Gdk.KEY_Escape:
+                finish(None)
+                return True
+            return False
+
+        key_controller.connect("key-pressed", on_key_pressed)
+        entry.add_controller(key_controller)
+        focus = Gtk.EventControllerFocus()
+        focus.connect("leave", finish)
+        entry.add_controller(focus)
+        stack.connect("unmap", finish)
+        return stack
 
     def _load_clip_game_metadata_cache(self):
         value = self.config.get(CLIP_GAME_METADATA_CONFIG_KEY, {})
@@ -1399,13 +1590,7 @@ class ClipsView(Gtk.Box):
         info_box.set_valign(Gtk.Align.CENTER)
         info_box.set_hexpand(True)
 
-        name_label = Gtk.Label(label=clip_data["name"])
-        name_label.set_halign(Gtk.Align.START)
-        name_label.set_hexpand(True)
-        name_label.set_xalign(0)
-        name_label.add_css_class("heading")
-        configure_single_line_ellipsis(name_label, mode=ELLIPSIZE_END, max_width_chars=40)
-        info_box.append(name_label)
+        info_box.append(self._create_clip_name(clip_data))
 
         game_box = self._create_clip_game_box(clip_data.get("game"))
         if game_box is not None:

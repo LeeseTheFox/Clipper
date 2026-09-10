@@ -8,6 +8,7 @@ import os
 import shutil
 import tempfile
 from pathlib import Path
+from typing import Any
 
 from editor_history import EditorHistory, HistoryValidationError
 from editor_model import EditorProject, ProjectValidationError, Source
@@ -145,6 +146,48 @@ def load_or_create(source: Source, env=None) -> EditorProject:
 
 def load_or_create_history(source: Source, env=None) -> EditorHistory:
     return load_draft_history(source.path, source, env) or EditorHistory(EditorProject.new(source))
+
+
+def rename_editor_data(old_path: str | Path, new_path: str | Path, env=None) -> bool:
+    """Move a saved editor draft when its source clip is renamed."""
+    old_location = draft_path(old_path, env)
+    if not old_location.exists():
+        return True
+
+    try:
+        with old_location.open(encoding="utf-8") as source_file:
+            raw: Any = json.load(source_file)
+        project_data: Any = raw.get("project", raw) if isinstance(raw, dict) else None
+        source_data: Any = project_data.get("source") if isinstance(project_data, dict) else None
+        if not isinstance(source_data, dict):
+            return False
+        source_data = dict(source_data)
+        source_data["path"] = str(Path(new_path))
+        project_data = dict(project_data)
+        project_data["source"] = source_data
+        updated: dict[str, Any] = dict(raw)
+        if "project" in updated:
+            updated["project"] = project_data
+        else:
+            updated = project_data
+        _atomic_json(draft_path(new_path, env), updated)
+        old_location.unlink()
+    except (OSError, json.JSONDecodeError, TypeError, ValueError):
+        return False
+
+    # Render caches are keyed by the source fingerprint, which includes its
+    # path. Move the cache when the draft provided enough source information.
+    try:
+        old_project = EditorProject.from_dict(raw.get("project", raw))
+        new_project = EditorProject.from_dict(project_data)
+        old_cache = cache_path(old_project.source, env)
+        new_cache = cache_path(new_project.source, env)
+        if old_cache.exists() and not new_cache.exists():
+            new_cache.parent.mkdir(parents=True, exist_ok=True)
+            old_cache.rename(new_cache)
+    except (OSError, KeyError, TypeError, ValueError, ProjectValidationError):
+        pass
+    return True
 
 
 def delete_editor_data(path: str | Path, source: Source | None = None, env=None) -> bool:

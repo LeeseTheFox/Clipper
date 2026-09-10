@@ -170,51 +170,71 @@ msgstr "Захват экрана"
 msgid "Game capture"
 msgstr "Захват игры"
 
-#: ui/clips_view.py:243
+#: ui/clips_view.py:259
 msgid "Search clips by name"
 msgstr "Поиск клипов по имени"
 
-#: ui/clips_view.py:260
+#: ui/clips_view.py:276
 msgid "Newest"
 msgstr "Сначала новые"
 
-#: ui/clips_view.py:261
+#: ui/clips_view.py:277
 msgid "Oldest"
 msgstr "Сначала старые"
 
-#: ui/clips_view.py:262
+#: ui/clips_view.py:278
 msgid "A-Z"
 msgstr "А–Я"
 
-#: ui/clips_view.py:265
+#: ui/clips_view.py:281
 msgid "Sort clips"
 msgstr "Сортировать клипы"
 
-#: ui/clips_view.py:271
+#: ui/clips_view.py:287
 msgid "Open clips folder"
 msgstr "Открыть папку с клипами"
 
-#: ui/clips_view.py:507
+#: ui/clips_view.py:527
 msgid "Edit clip from scratch"
 msgstr "Редактировать клип с нуля"
 
-#: ui/clips_view.py:510
+#: ui/clips_view.py:530
 msgid "Edit clip"
 msgstr "Редактировать клип"
 
-#: ui/clips_view.py:515
+#: ui/clips_view.py:535
 msgid "Permanently delete the clip"
 msgstr "Удалить клип безвозвратно"
 
-#: ui/clips_view.py:518
+#: ui/clips_view.py:538
 msgid "Move clip to trash"
 msgstr "Переместить клип в корзину"
 
-#: ui/clips_view.py:1095
+#: ui/clips_view.py:582
+msgid "Enter a valid clip name"
+msgstr "Введи допустимое название клипа"
+
+#: ui/clips_view.py:588
+msgid "A clip with that name already exists"
+msgstr "Клип с таким названием уже существует"
+
+#: ui/clips_view.py:593
+msgid "Could not rename clip"
+msgstr "Не удалось переименовать клип"
+
+#: ui/clips_view.py:631
+msgid "Could not update clip metadata"
+msgstr "Не удалось обновить метаданные клипа"
+
+#: ui/clips_view.py:642
+msgid "Could not save clip name"
+msgstr "Не удалось сохранить название клипа"
+
+#: ui/clips_view.py:1286
 msgid "No clips yet"
 msgstr "Клипов пока нет"
 
-#: ui/clips_view.py:1097
+#: ui/clips_view.py:1288
 msgid ""
 "Recorded clips will appear here.\n"
 "Press your save hotkey to capture a clip."
@@ -222,23 +242,23 @@ msgstr ""
 "Записанные клипы появятся здесь.\n"
 "Нажми горячую клавишу сохранения, чтобы записать клип."
 
-#: ui/clips_view.py:1105
+#: ui/clips_view.py:1296
 msgid "No matching clips"
 msgstr "Нет подходящих клипов"
 
-#: ui/clips_view.py:1106
+#: ui/clips_view.py:1297
 msgid "No clip names match the current search."
 msgstr "Названия клипов не соответствуют текущему запросу."
 
-#: ui/clips_view.py:1112
+#: ui/clips_view.py:1303
 msgid "Loading clips…"
 msgstr "Загрузка клипов…"
 
-#: ui/clips_view.py:1238
+#: ui/clips_view.py:1429
 msgid "Just now"
 msgstr "Только что"
 
-#: ui/clips_view.py:1242
+#: ui/clips_view.py:1433
 #, python-format
 msgid "%(count)d minute ago"
 msgid_plural "%(count)d minutes ago"
@@ -246,7 +266,7 @@ msgstr[0] "%(count)d минуту назад"
 msgstr[1] "%(count)d минуты назад"
 msgstr[2] "%(count)d минут назад"
 
-#: ui/clips_view.py:1246
+#: ui/clips_view.py:1437
 #, python-format
 msgid "%(count)d hour ago"
 msgid_plural "%(count)d hours ago"
@@ -254,11 +274,11 @@ msgstr[0] "%(count)d час назад"
 msgstr[1] "%(count)d часа назад"
 msgstr[2] "%(count)d часов назад"
 
-#: ui/clips_view.py:1250
+#: ui/clips_view.py:1441
 msgid "Yesterday"
 msgstr "Вчера"
 
-#: ui/clips_view.py:1253
+#: ui/clips_view.py:1444
 #, python-format
 msgid "%(count)d day ago"
 msgid_plural "%(count)d days ago"
@@ -266,53 +286,53 @@ msgstr[0] "%(count)d день назад"
 msgstr[1] "%(count)d дня назад"
 msgstr[2] "%(count)d дней назад"
 
-#: ui/clips_view.py:1259
+#: ui/clips_view.py:1450
 msgid "B"
 msgstr "Б"
 
-#: ui/clips_view.py:1259
+#: ui/clips_view.py:1450
 msgid "GB"
 msgstr "ГБ"
 
-#: ui/clips_view.py:1259
+#: ui/clips_view.py:1450
 msgid "KB"
 msgstr "КБ"
 
-#: ui/clips_view.py:1259
+#: ui/clips_view.py:1450
 msgid "MB"
 msgstr "МБ"
 
-#: ui/clips_view.py:1261
+#: ui/clips_view.py:1452
 #, python-format
 msgid "%(size).1f %(unit)s"
 msgstr "%(size).1f %(unit)s"
 
-#: ui/clips_view.py:1263
+#: ui/clips_view.py:1454
 #, python-format
 msgid "%(size).1f TB"
 msgstr "%(size).1f ТБ"
 
-#: ui/clips_view.py:1376
+#: ui/clips_view.py:1567
 msgid "Play clip"
 msgstr "Воспроизвести клип"
 
-#: ui/clips_view.py:1467
+#: ui/clips_view.py:1652
 msgid "Reveal in file manager"
 msgstr "Показать в файловом менеджере"
 
-#: ui/clips_view.py:1544 ui/editor_window.py:3822
+#: ui/clips_view.py:1729 ui/editor_window.py:3822
 msgid "Could not wipe saved edits"
 msgstr "Не удалось удалить сохранённые правки"
 
-#: ui/clips_view.py:1687
+#: ui/clips_view.py:1872
 msgid "Could not play clip"
 msgstr "Не удалось воспроизвести клип"
 
-#: ui/clips_view.py:1832
+#: ui/clips_view.py:2017
 msgid "Move clip to trash?"
 msgstr "Переместить клип в корзину?"
 
-#: ui/clips_view.py:1834
+#: ui/clips_view.py:2019
 #, python-format
 msgid ""
 "'%(name)s' will be moved to the trash.\n"
@@ -321,30 +341,30 @@ msgstr ""
 "«%(name)s» будет перемещён в корзину.\n"
 "Это действие можно отменить."
 
-#: ui/clips_view.py:1837 ui/dialogs.py:856 ui/editor_export_dialog.py:345
+#: ui/clips_view.py:2022 ui/dialogs.py:856 ui/editor_export_dialog.py:345
 #: ui/editor_export_dialog.py:636 ui/editor_export_dialog.py:664
 #: ui/editor_export_dialog.py:772 ui/editor_window.py:3990 ui/editor_wipe.py:16
 #: ui/update_controller.py:377
 msgid "Cancel"
 msgstr "Отмена"
 
-#: ui/clips_view.py:1838
+#: ui/clips_view.py:2023
 msgid "Move to trash"
 msgstr "В корзину"
 
-#: ui/clips_view.py:1893
+#: ui/clips_view.py:2078
 msgid "Clip deleted"
 msgstr "Клип удалён"
 
-#: ui/clips_view.py:1893
+#: ui/clips_view.py:2078
 msgid "Clip moved to trash"
 msgstr "Клип перемещён в корзину"
 
-#: ui/clips_view.py:1900
+#: ui/clips_view.py:2085
 msgid "Could not delete clip"
 msgstr "Не удалось удалить клип"
 
-#: ui/clips_view.py:1902
+#: ui/clips_view.py:2087
 msgid "Could not move clip to trash"
 msgstr "Не удалось переместить клип в корзину"
 
@@ -1419,7 +1439,7 @@ msgstr "Экспорт…"
 msgid "Exported to %(name)s"
 msgstr "Экспортировано в %(name)s"
 
-#: ui/editor_window.py:3952 ui/main.py:1967 ui/settings_view.py:1672
+#: ui/editor_window.py:3952 ui/main.py:1975 ui/settings_view.py:1672
 msgid "Unknown error"
 msgstr "Неизвестная ошибка"
 
@@ -1735,67 +1755,67 @@ msgstr "Не удалось отключить автоматический за
 msgid "PipeWire restore token cleared"
 msgstr "Токен восстановления PipeWire очищен"
 
-#: ui/main.py:1267
+#: ui/main.py:1275
 msgid "Clip captured"
 msgstr "Клип записан"
 
-#: ui/main.py:1268
+#: ui/main.py:1276
 msgid "Your clip has been saved."
 msgstr "Клип сохранён."
 
-#: ui/main.py:1274
+#: ui/main.py:1282
 msgid ""
 "Could not write the clip. Check the save folder and available disk space."
 msgstr ""
 "Не удалось записать клип. Проверь папку сохранения и свободное место на "
 "диске."
 
-#: ui/main.py:1276
+#: ui/main.py:1284
 #, python-format
 msgid "Failed to save clip: %(error)s"
 msgstr "Не удалось сохранить клип: %(error)s"
 
-#: ui/main.py:1311
+#: ui/main.py:1319
 #, python-format
 msgid "Could not open clip editor: %(error)s"
 msgstr "Не удалось открыть редактор клипа: %(error)s"
 
-#: ui/main.py:1779
+#: ui/main.py:1787
 #, python-format
 msgid "Could not start Clipper engine: %(error)s"
 msgstr "Не удалось запустить движок Clipper: %(error)s"
 
-#: ui/main.py:1838 ui/settings_view.py:1671
+#: ui/main.py:1846 ui/settings_view.py:1671
 #, python-format
 msgid "Engine shutdown failed: %(error)s"
 msgstr "Не удалось остановить движок: %(error)s"
 
-#: ui/main.py:1877 ui/main.py:1913
+#: ui/main.py:1885 ui/main.py:1921
 msgid "Display selection was cancelled."
 msgstr "Выбор экрана отменён."
 
-#: ui/main.py:1882
+#: ui/main.py:1890
 msgid "Capture display selected successfully."
 msgstr "Экран для захвата успешно выбран."
 
-#: ui/main.py:1886
+#: ui/main.py:1894
 msgid "No display was selected before the picker timed out."
 msgstr "До истечения времени ожидания средство выбора не выбрало экран."
 
-#: ui/main.py:1966
+#: ui/main.py:1974
 #, python-format
 msgid "Display capture sync failed: %(error)s"
 msgstr "Ошибка синхронизации захвата экрана: %(error)s"
 
-#: ui/main.py:2054
+#: ui/main.py:2062
 msgid "🦊 Leese"
 msgstr "🦊 Leese"
 
-#: ui/main.py:2058
+#: ui/main.py:2066
 msgid "© 2026 Leese"
 msgstr "© 2026 Leese"
 
-#: ui/main.py:2064
+#: ui/main.py:2072
 msgid "GitHub"
 msgstr "GitHub"
 

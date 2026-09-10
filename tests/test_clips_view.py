@@ -465,6 +465,158 @@ def _make_view():
     return view
 
 
+def test_clip_display_name_hides_only_final_extension():
+    view = _make_view()
+    assert view._clip_display_name(Path("/clips/My.clip.mkv")) == "My.clip"
+
+
+def test_clip_rename_updates_filename_and_indexes(tmp_path):
+    view = _make_view()
+    path = tmp_path / "clip.mkv"
+    path.write_bytes(b"video")
+    clip = {"path": path, "name": "clip"}
+    assert view._save_clip_name(clip, "Мій кліп 🎮.final")
+    renamed_path = tmp_path / "Мій кліп 🎮.final.mkv"
+    assert clip["path"] == renamed_path
+    assert not path.exists()
+    assert renamed_path.read_bytes() == b"video"
+    reloaded = _make_view()
+    reloaded.config = ConfigStub(view.config.data.copy())
+    assert reloaded._clip_display_name(renamed_path) == "Мій кліп 🎮.final"
+    assert clip["name"] == "Мій кліп 🎮.final"
+    view.clips_data = [clip]
+    view.search_query = "Мій"
+    assert view._visible_clips() == [clip]
+
+
+def test_clip_rename_rejects_existing_filename(tmp_path):
+    view = _make_view()
+    path = tmp_path / "clip.mkv"
+    target = tmp_path / "other.mkv"
+    path.write_bytes(b"video")
+    target.write_bytes(b"other")
+    clip = {"path": path, "name": "clip"}
+    assert not view._save_clip_name(clip, "other")
+    assert clip["path"] == path
+    assert path.read_bytes() == b"video"
+    assert target.read_bytes() == b"other"
+
+
+def test_invalid_clip_names_do_not_replace_saved_name():
+    view = _make_view()
+    clip = {"path": Path("/clips/clip.mkv"), "name": "clip"}
+    for name in ("", "  ", ".", "..", "a/b", "a\0b", "a\nb"):
+        assert not view._save_clip_name(clip, name)
+    assert clip["name"] == "clip"
+    assert not view.config.set_calls
+
+
+def test_clip_name_metadata_save_failure_keeps_renamed_file(tmp_path):
+    view = _make_view()
+    path = tmp_path / "clip.mkv"
+    path.write_bytes(b"video")
+    clip = {"path": path, "name": "clip"}
+
+    def fail(*_args):
+        raise OSError("disk full")
+
+    view.config.set = fail
+    assert view._save_clip_name(clip, "new title")
+    assert clip["name"] == "new title"
+    assert clip["path"] == tmp_path / "new title.mkv"
+
+
+def test_inline_name_focus_waits_until_pointer_dispatch_finishes(monkeypatch, tmp_path):
+    from unittest.mock import MagicMock
+
+    widgets = {}
+    for name in ("Stack", "Label", "Text", "EventControllerFocus", "EventControllerKey"):
+        widgets[name] = MagicMock()
+        monkeypatch.setattr(
+            clips_module.Gtk, name, MagicMock(return_value=widgets[name]), raising=False
+        )
+    outside, gesture = MagicMock(), MagicMock()
+    monkeypatch.setattr(
+        clips_module.Gtk, "GestureClick", MagicMock(side_effect=[outside, gesture])
+    )
+    for name in ("PropagationPhase", "EventSequenceState"):
+        monkeypatch.setattr(clips_module.Gtk, name, MagicMock(), raising=False)
+    pending = []
+    monkeypatch.setattr(clips_module.GLib, "idle_add", lambda callback: pending.append(callback))
+    view = _make_view()
+    path = tmp_path / "clip.mkv"
+    path.write_bytes(b"video")
+    clip = {"path": path, "name": "clip"}
+    view._create_clip_name(clip)
+    pressed = gesture.connect.call_args.args[1]
+    pressed(gesture, 1, 0, 0)
+    assert not pending
+    pressed(gesture, 2, 0, 0)
+    widgets["Text"].grab_focus.assert_not_called()
+    assert len(pending) == 1
+    assert pending.pop()() is False
+    widgets["Text"].grab_focus.assert_called_once()
+    widgets["Text"].set_position.assert_called_once_with(-1)
+    widgets["Text"].get_text.return_value = "Edited clip"
+    activated = widgets["Text"].connect.call_args.args[1]
+    activated(widgets["Text"])
+    assert clip["name"] == "Edited clip"
+    widgets["Stack"].set_visible_child_name.assert_called_with("label")
+
+
+def test_inline_name_escape_saves_and_closes_editor(monkeypatch, tmp_path):
+    from unittest.mock import MagicMock
+
+    widgets = {}
+    for name in ("Stack", "Label", "Text", "EventControllerFocus", "EventControllerKey"):
+        widgets[name] = MagicMock()
+        monkeypatch.setattr(
+            clips_module.Gtk, name, MagicMock(return_value=widgets[name]), raising=False
+        )
+    outside, gesture = MagicMock(), MagicMock()
+    monkeypatch.setattr(clips_module.Gtk, "GestureClick", MagicMock(side_effect=[outside, gesture]))
+    monkeypatch.setattr(clips_module.Gtk, "PropagationPhase", MagicMock(), raising=False)
+    monkeypatch.setattr(clips_module.Gtk, "EventSequenceState", MagicMock(), raising=False)
+    monkeypatch.setattr(clips_module.GLib, "idle_add", lambda callback: callback())
+    monkeypatch.setattr(clips_module.Gdk, "KEY_Escape", 65307, raising=False)
+    view = _make_view()
+    path = tmp_path / "clip.mkv"
+    path.write_bytes(b"video")
+    clip = {"path": path, "name": "clip"}
+    view._create_clip_name(clip)
+    pressed = gesture.connect.call_args.args[1]
+    pressed(gesture, 2, 0, 0)
+    widgets["Text"].get_text.return_value = "Edited clip"
+    key_handler = widgets["EventControllerKey"].connect.call_args.args[1]
+    assert key_handler(widgets["EventControllerKey"], 65307, 0, 0)
+    assert clip["name"] == "Edited clip"
+    widgets["Stack"].set_visible_child_name.assert_called_with("label")
+
+
+def test_clip_list_allows_its_inline_editor_to_receive_focus(monkeypatch):
+    from unittest.mock import MagicMock
+
+    gtk = MagicMock()
+    monkeypatch.setattr(clips_module, "Gtk", gtk)
+    monkeypatch.setattr(clips_module, "_install_thumbnail_css", lambda: None)
+    monkeypatch.setattr(clips_module, "new_id_dropdown", MagicMock())
+    view = _make_view()
+    view.append = MagicMock()
+    view.create_empty_state = MagicMock()
+    view.create_no_results_state = MagicMock()
+    view.create_loading_state = MagicMock()
+    view.setup_ui()
+
+    # can-focus=False disables the entire subtree, so even a successful
+    # double-click cannot put keyboard focus in the name editor.
+    view.clips_list.set_can_focus.assert_not_called()
+    view.clips_list.set_focusable.assert_called_once_with(False)
+    item = MagicMock()
+    view._on_clip_item_setup(None, item)
+    item.set_focusable.assert_called_once_with(False)
+    item.set_child.assert_called_once()
+
+
 def test_initial_clip_load_does_not_run_media_tools(monkeypatch, tmp_path):
     clip_path = tmp_path / "clip.mkv"
     clip_path.write_bytes(b"clip")

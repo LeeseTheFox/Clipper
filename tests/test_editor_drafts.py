@@ -7,6 +7,7 @@ from editor_drafts import (
     draft_path,
     load_draft,
     load_draft_history,
+    rename_editor_data,
     save_draft,
 )
 from editor_history import EditorHistory
@@ -23,6 +24,21 @@ def test_atomic_save_load_and_stale_rejection(tmp_path):
     changed = Source(source.path, 2, 2, 10, 0)
     with pytest.raises(StaleDraftError):
         load_draft(source.path, changed, env)
+
+
+def test_renaming_source_moves_draft_and_updates_source_path(tmp_path):
+    env = {"XDG_DATA_HOME": str(tmp_path / "data")}
+    old_path = tmp_path / "clip.mkv"
+    new_path = tmp_path / "renamed.mkv"
+    source = Source(str(old_path), 1, 2, 10, 0)
+    project = EditorProject.new(source)
+    save_draft(project, env)
+
+    assert rename_editor_data(old_path, new_path, env)
+    assert not draft_path(old_path, env).exists()
+    restored = load_draft(new_path, env=env)
+    assert restored is not None
+    assert restored.source.path == str(new_path)
 
 
 def test_malformed_draft(tmp_path):

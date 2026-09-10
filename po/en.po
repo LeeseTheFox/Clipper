@@ -169,51 +169,71 @@ msgstr "Display capture"
 msgid "Game capture"
 msgstr "Game capture"
 
-#: ui/clips_view.py:243
+#: ui/clips_view.py:259
 msgid "Search clips by name"
 msgstr "Search clips by name"
 
-#: ui/clips_view.py:260
+#: ui/clips_view.py:276
 msgid "Newest"
 msgstr "Newest"
 
-#: ui/clips_view.py:261
+#: ui/clips_view.py:277
 msgid "Oldest"
 msgstr "Oldest"
 
-#: ui/clips_view.py:262
+#: ui/clips_view.py:278
 msgid "A-Z"
 msgstr "A-Z"
 
-#: ui/clips_view.py:265
+#: ui/clips_view.py:281
 msgid "Sort clips"
 msgstr "Sort clips"
 
-#: ui/clips_view.py:271
+#: ui/clips_view.py:287
 msgid "Open clips folder"
 msgstr "Open clips folder"
 
-#: ui/clips_view.py:507
+#: ui/clips_view.py:527
 msgid "Edit clip from scratch"
 msgstr "Edit clip from scratch"
 
-#: ui/clips_view.py:510
+#: ui/clips_view.py:530
 msgid "Edit clip"
 msgstr "Edit clip"
 
-#: ui/clips_view.py:515
+#: ui/clips_view.py:535
 msgid "Permanently delete the clip"
 msgstr "Permanently delete the clip"
 
-#: ui/clips_view.py:518
+#: ui/clips_view.py:538
 msgid "Move clip to trash"
 msgstr "Move clip to trash"
 
-#: ui/clips_view.py:1095
+#: ui/clips_view.py:582
+msgid "Enter a valid clip name"
+msgstr "Enter a valid clip name"
+
+#: ui/clips_view.py:588
+msgid "A clip with that name already exists"
+msgstr "A clip with that name already exists"
+
+#: ui/clips_view.py:593
+msgid "Could not rename clip"
+msgstr "Could not rename clip"
+
+#: ui/clips_view.py:631
+msgid "Could not update clip metadata"
+msgstr "Could not update clip metadata"
+
+#: ui/clips_view.py:642
+msgid "Could not save clip name"
+msgstr "Could not save clip name"
+
+#: ui/clips_view.py:1286
 msgid "No clips yet"
 msgstr "No clips yet"
 
-#: ui/clips_view.py:1097
+#: ui/clips_view.py:1288
 msgid ""
 "Recorded clips will appear here.\n"
 "Press your save hotkey to capture a clip."
@@ -221,94 +241,94 @@ msgstr ""
 "Recorded clips will appear here.\n"
 "Press your save hotkey to capture a clip."
 
-#: ui/clips_view.py:1105
+#: ui/clips_view.py:1296
 msgid "No matching clips"
 msgstr "No matching clips"
 
-#: ui/clips_view.py:1106
+#: ui/clips_view.py:1297
 msgid "No clip names match the current search."
 msgstr "No clip names match the current search."
 
-#: ui/clips_view.py:1112
+#: ui/clips_view.py:1303
 msgid "Loading clips…"
 msgstr "Loading clips…"
 
-#: ui/clips_view.py:1238
+#: ui/clips_view.py:1429
 msgid "Just now"
 msgstr "Just now"
 
-#: ui/clips_view.py:1242
+#: ui/clips_view.py:1433
 #, python-format
 msgid "%(count)d minute ago"
 msgid_plural "%(count)d minutes ago"
 msgstr[0] "%(count)d minute ago"
 msgstr[1] "%(count)d minutes ago"
 
-#: ui/clips_view.py:1246
+#: ui/clips_view.py:1437
 #, python-format
 msgid "%(count)d hour ago"
 msgid_plural "%(count)d hours ago"
 msgstr[0] "%(count)d hour ago"
 msgstr[1] "%(count)d hours ago"
 
-#: ui/clips_view.py:1250
+#: ui/clips_view.py:1441
 msgid "Yesterday"
 msgstr "Yesterday"
 
-#: ui/clips_view.py:1253
+#: ui/clips_view.py:1444
 #, python-format
 msgid "%(count)d day ago"
 msgid_plural "%(count)d days ago"
 msgstr[0] "%(count)d day ago"
 msgstr[1] "%(count)d days ago"
 
-#: ui/clips_view.py:1259
+#: ui/clips_view.py:1450
 msgid "B"
 msgstr "B"
 
-#: ui/clips_view.py:1259
+#: ui/clips_view.py:1450
 msgid "GB"
 msgstr "GB"
 
-#: ui/clips_view.py:1259
+#: ui/clips_view.py:1450
 msgid "KB"
 msgstr "KB"
 
-#: ui/clips_view.py:1259
+#: ui/clips_view.py:1450
 msgid "MB"
 msgstr "MB"
 
-#: ui/clips_view.py:1261
+#: ui/clips_view.py:1452
 #, python-format
 msgid "%(size).1f %(unit)s"
 msgstr "%(size).1f %(unit)s"
 
-#: ui/clips_view.py:1263
+#: ui/clips_view.py:1454
 #, python-format
 msgid "%(size).1f TB"
 msgstr "%(size).1f TB"
 
-#: ui/clips_view.py:1376
+#: ui/clips_view.py:1567
 msgid "Play clip"
 msgstr "Play clip"
 
-#: ui/clips_view.py:1467
+#: ui/clips_view.py:1652
 msgid "Reveal in file manager"
 msgstr "Reveal in file manager"
 
-#: ui/clips_view.py:1544 ui/editor_window.py:3822
+#: ui/clips_view.py:1729 ui/editor_window.py:3822
 msgid "Could not wipe saved edits"
 msgstr "Could not wipe saved edits"
 
-#: ui/clips_view.py:1687
+#: ui/clips_view.py:1872
 msgid "Could not play clip"
 msgstr "Could not play clip"
 
-#: ui/clips_view.py:1832
+#: ui/clips_view.py:2017
 msgid "Move clip to trash?"
 msgstr "Move clip to trash?"
 
-#: ui/clips_view.py:1834
+#: ui/clips_view.py:2019
 #, python-format
 msgid ""
 "'%(name)s' will be moved to the trash.\n"
@@ -317,30 +337,30 @@ msgstr ""
 "'%(name)s' will be moved to the trash.\n"
 "This can be reversed."
 
-#: ui/clips_view.py:1837 ui/dialogs.py:856 ui/editor_export_dialog.py:345
+#: ui/clips_view.py:2022 ui/dialogs.py:856 ui/editor_export_dialog.py:345
 #: ui/editor_export_dialog.py:636 ui/editor_export_dialog.py:664
 #: ui/editor_export_dialog.py:772 ui/editor_window.py:3990 ui/editor_wipe.py:16
 #: ui/update_controller.py:377
 msgid "Cancel"
 msgstr "Cancel"
 
-#: ui/clips_view.py:1838
+#: ui/clips_view.py:2023
 msgid "Move to trash"
 msgstr "Move to trash"
 
-#: ui/clips_view.py:1893
+#: ui/clips_view.py:2078
 msgid "Clip deleted"
 msgstr "Clip deleted"
 
-#: ui/clips_view.py:1893
+#: ui/clips_view.py:2078
 msgid "Clip moved to trash"
 msgstr "Clip moved to trash"
 
-#: ui/clips_view.py:1900
+#: ui/clips_view.py:2085
 msgid "Could not delete clip"
 msgstr "Could not delete clip"
 
-#: ui/clips_view.py:1902
+#: ui/clips_view.py:2087
 msgid "Could not move clip to trash"
 msgstr "Could not move clip to trash"
 
@@ -1405,7 +1425,7 @@ msgstr "Exporting…"
 msgid "Exported to %(name)s"
 msgstr "Exported to %(name)s"
 
-#: ui/editor_window.py:3952 ui/main.py:1967 ui/settings_view.py:1672
+#: ui/editor_window.py:3952 ui/main.py:1975 ui/settings_view.py:1672
 msgid "Unknown error"
 msgstr "Unknown error"
 
@@ -1718,66 +1738,66 @@ msgstr "Could not disable automatic startup"
 msgid "PipeWire restore token cleared"
 msgstr "PipeWire restore token cleared"
 
-#: ui/main.py:1267
+#: ui/main.py:1275
 msgid "Clip captured"
 msgstr "Clip captured"
 
-#: ui/main.py:1268
+#: ui/main.py:1276
 msgid "Your clip has been saved."
 msgstr "Your clip has been saved."
 
-#: ui/main.py:1274
+#: ui/main.py:1282
 msgid ""
 "Could not write the clip. Check the save folder and available disk space."
 msgstr ""
 "Could not write the clip. Check the save folder and available disk space."
 
-#: ui/main.py:1276
+#: ui/main.py:1284
 #, python-format
 msgid "Failed to save clip: %(error)s"
 msgstr "Failed to save clip: %(error)s"
 
-#: ui/main.py:1311
+#: ui/main.py:1319
 #, python-format
 msgid "Could not open clip editor: %(error)s"
 msgstr "Could not open clip editor: %(error)s"
 
-#: ui/main.py:1779
+#: ui/main.py:1787
 #, python-format
 msgid "Could not start Clipper engine: %(error)s"
 msgstr "Could not start Clipper engine: %(error)s"
 
-#: ui/main.py:1838 ui/settings_view.py:1671
+#: ui/main.py:1846 ui/settings_view.py:1671
 #, python-format
 msgid "Engine shutdown failed: %(error)s"
 msgstr "Engine shutdown failed: %(error)s"
 
-#: ui/main.py:1877 ui/main.py:1913
+#: ui/main.py:1885 ui/main.py:1921
 msgid "Display selection was cancelled."
 msgstr "Display selection was cancelled."
 
-#: ui/main.py:1882
+#: ui/main.py:1890
 msgid "Capture display selected successfully."
 msgstr "Capture display selected successfully."
 
-#: ui/main.py:1886
+#: ui/main.py:1894
 msgid "No display was selected before the picker timed out."
 msgstr "No display was selected before the picker timed out."
 
-#: ui/main.py:1966
+#: ui/main.py:1974
 #, python-format
 msgid "Display capture sync failed: %(error)s"
 msgstr "Display capture sync failed: %(error)s"
 
-#: ui/main.py:2054
+#: ui/main.py:2062
 msgid "🦊 Leese"
 msgstr "🦊 Leese"
 
-#: ui/main.py:2058
+#: ui/main.py:2066
 msgid "© 2026 Leese"
 msgstr "© 2026 Leese"
 
-#: ui/main.py:2064
+#: ui/main.py:2072
 msgid "GitHub"
 msgstr "GitHub"
 
