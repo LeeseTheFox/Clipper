@@ -1256,6 +1256,14 @@ class ClipperApplication(Adw.Application):
         """Handle completion of a replay-buffer save."""
         if response.get("ok"):
             self._log("Clip saved successfully")
+            # The engine completion event is the authoritative signal that the
+            # file is ready.  Refresh directly instead of relying only on a
+            # directory-monitor event, which can be missed by sandboxed mounts.
+            window = getattr(self, "window", None)
+            clips_view = getattr(window, "clips_view", None)
+            refresh = getattr(clips_view, "refresh", None)
+            if callable(refresh):
+                refresh()
             if self._config.get("play_sound_on_clip_saved", False):
                 player = getattr(self, "_clip_sound_player", None)
                 if player is None:

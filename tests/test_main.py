@@ -1511,6 +1511,38 @@ def test_clip_saved_shows_notification_when_enabled():
     assert notifications == [("clip-captured", "Clip captured", "Your clip has been saved.")]
 
 
+def test_clip_saved_refreshes_open_clips_view():
+    app = object.__new__(ClipperApplication)
+    app._config = ConfigStub(False, notify_on_clip_saved=False)
+    refreshed = []
+    app.window = types.SimpleNamespace(
+        clips_view=types.SimpleNamespace(refresh=lambda: refreshed.append(True))
+    )
+
+    app._on_clip_saved({"ok": True})
+
+    assert refreshed == [True]
+
+
+def test_clip_saved_without_window_does_not_require_refresh():
+    app = object.__new__(ClipperApplication)
+    app._config = ConfigStub(False, notify_on_clip_saved=False)
+
+    app._on_clip_saved({"ok": True})
+
+
+def test_failed_clip_does_not_refresh_clips_view():
+    app = make_status_application()
+    refreshed = []
+    app.window = types.SimpleNamespace(
+        clips_view=types.SimpleNamespace(refresh=lambda: refreshed.append(True))
+    )
+
+    app._on_clip_saved({"ok": False, "error": "Save failed"})
+
+    assert refreshed == []
+
+
 def test_update_restart_blocks_new_saves_and_editor_loading():
     app = object.__new__(ClipperApplication)
     app._update_restart_pending = True
