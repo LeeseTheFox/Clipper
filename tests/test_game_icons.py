@@ -135,16 +135,27 @@ def test_cached_icon_path_for_executable_uses_existing_png_cache(tmp_path, monke
     assert cached_icon_path_for_executable(executable) == str(cache_path)
 
 
-def test_icon_path_for_game_ignores_stale_ico_path(tmp_path, monkeypatch):
+def test_icon_path_for_game_ignores_steam_ico_and_uses_executable(tmp_path, monkeypatch):
     icon = tmp_path / "icon.ico"
     executable = tmp_path / "Game.exe"
     icon.write_bytes(b"icon")
     executable.write_bytes(b"MZ")
     monkeypatch.setattr(game_icons, "icon_path_for_executable", lambda path: f"{path}.png")
 
-    assert icon_path_for_game({"icon_path": str(icon), "executable_path": str(executable)}) == (
-        f"{executable}.png"
-    )
+    assert icon_path_for_game(
+        {"icon_path": str(icon), "executable_path": str(executable)}
+    ) == f"{executable}.png"
+
+
+def test_icon_path_for_game_replaces_missing_ico_from_executable(tmp_path, monkeypatch):
+    icon = tmp_path / "missing.ico"
+    executable = tmp_path / "Game.exe"
+    executable.write_bytes(b"MZ")
+    monkeypatch.setattr(game_icons, "icon_path_for_executable", lambda path: f"{path}.png")
+
+    assert icon_path_for_game(
+        {"icon_path": str(icon), "executable_path": str(executable)}
+    ) == f"{executable}.png"
 
 
 def test_icon_path_for_executable_skips_native_binary(tmp_path, monkeypatch):

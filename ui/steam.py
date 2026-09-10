@@ -642,7 +642,11 @@ def get_game_icon_path(appid: str, steam_root: Path | None = None) -> str:
 
     grid_dir = steam_root / "userdata"
     try:
-        user_grid_icons = sorted(grid_dir.glob(f"*/config/grid/{appid}_icon.*"))
+        user_grid_icons = sorted(
+            path
+            for path in grid_dir.glob(f"*/config/grid/{appid}_icon.*")
+            if path.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp"}
+        )
     except OSError:
         user_grid_icons = []
 

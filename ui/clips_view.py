@@ -25,6 +25,7 @@ try:
 except (ImportError, ValueError):
     GdkWayland = None
 
+import steam
 from config import ClipperConfig
 from focus_helpers import dropdown_active_id, new_id_dropdown
 from game_icons import cached_icon_path_for_game, submit_icon_resolution
@@ -598,15 +599,21 @@ class ClipsView(Gtk.Box):
         }
 
     def _game_data_for_clip(self, clip_path, stat, metadata, whitelist_games):
+        token = self._game_token_from_clip_filename(clip_path)
+        whitelist_game = whitelist_games.get(token.casefold()) if token else None
+
         cached = metadata.get(str(clip_path))
         if self._clip_game_metadata_entry_matches(cached, stat):
-            return self._compact_game_data(cached["game"])
+            game_data = self._compact_game_data(cached["game"])
+            if whitelist_game and not cached_icon_path_for_game(game_data):
+                # Preserve historical clip metadata, but let the current
+                # whitelist fill artwork that was previously unavailable.
+                game_data = self._compact_game_data({**game_data, **whitelist_game})
+            return game_data
 
-        token = self._game_token_from_clip_filename(clip_path)
         if not token:
             return None
 
-        whitelist_game = whitelist_games.get(token.casefold())
         if whitelist_game:
             return self._compact_game_data(whitelist_game)
 
@@ -679,6 +686,8 @@ class ClipsView(Gtk.Box):
         if isinstance(icon_path_value, str) and icon_path_value:
             compact["icon_path"] = icon_path_value
         icon_path = cached_icon_path_for_game(compact)
+        if not icon_path and compact.get("appid"):
+            icon_path = steam.get_game_icon_path(compact["appid"])
         if icon_path:
             compact["icon_path"] = icon_path
         else:

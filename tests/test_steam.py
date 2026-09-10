@@ -299,6 +299,18 @@ def test_get_game_icon_path_prefers_custom_grid_icon(tmp_path):
     assert get_game_icon_path("730", steam_root) == str(custom_icon)
 
 
+def test_get_game_icon_path_skips_ico_when_jpeg_artwork_exists(tmp_path):
+    steam_root = tmp_path / "steam"
+    custom_icon = steam_root / "userdata" / "123" / "config" / "grid" / "730_icon.ico"
+    app_icon = steam_root / "appcache" / "librarycache" / "730" / "abcdef.jpg"
+    custom_icon.parent.mkdir(parents=True)
+    app_icon.parent.mkdir(parents=True)
+    custom_icon.write_bytes(b"ico")
+    app_icon.write_bytes(b"jpg")
+
+    assert get_game_icon_path("730", steam_root) == str(app_icon)
+
+
 def test_get_game_icon_path_prefers_app_icon_jpeg_over_library_artwork(tmp_path):
     steam_root = tmp_path / "steam"
     icon = steam_root / "appcache" / "librarycache" / "730" / "abcdef.jpg"

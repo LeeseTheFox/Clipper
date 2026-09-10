@@ -1245,6 +1245,60 @@ def test_game_data_for_clip_uses_cached_deleted_game(tmp_path):
     }
 
 
+def test_game_data_for_clip_refreshes_cached_artwork_from_whitelist(tmp_path, monkeypatch):
+    icon_path = tmp_path / "steam-icon.jpg"
+    icon_path.write_bytes(b"jpg")
+    clip_path = tmp_path / "THE_FINALS_2026-09-02_19-54-21.mkv"
+    clip_path.write_bytes(b"clip")
+    stat = clip_path.stat()
+    cached = {
+        str(clip_path): {
+            "path": str(clip_path),
+            "mtime_ns": stat.st_mtime_ns,
+            "size": stat.st_size,
+            "game": {
+                "name": "THE FINALS",
+                "install_path": "/old/location",
+                "appid": "2073850",
+            },
+        }
+    }
+    whitelist = {
+        "the_finals": {
+            "name": "THE FINALS",
+            "install_path": "/current/location",
+            "appid": "2073850",
+            "icon_path": str(icon_path),
+        }
+    }
+    view = _make_view()
+    monkeypatch.setattr(clips_module.steam, "get_game_icon_path", lambda _appid: "")
+
+    assert view._game_data_for_clip(clip_path, stat, cached, whitelist) == {
+        "name": "THE FINALS",
+        "install_path": "/current/location",
+        "appid": "2073850",
+        "icon_path": str(icon_path),
+    }
+
+
+def test_compact_game_data_uses_steam_artwork_for_an_appid(tmp_path, monkeypatch):
+    icon_path = tmp_path / "steam-icon.jpg"
+    icon_path.write_bytes(b"jpg")
+    monkeypatch.setattr(
+        clips_module.steam,
+        "get_game_icon_path",
+        lambda appid: str(icon_path) if appid == "2073850" else "",
+    )
+    view = _make_view()
+
+    assert view._compact_game_data({"name": "THE FINALS", "appid": "2073850"}) == {
+        "name": "THE FINALS",
+        "appid": "2073850",
+        "icon_path": str(icon_path),
+    }
+
+
 def test_game_data_for_clip_handles_old_clips_without_game_data(tmp_path):
     clip_path = tmp_path / "2026-07-02_12-30-00.mkv"
     clip_path.write_bytes(b"clip")
