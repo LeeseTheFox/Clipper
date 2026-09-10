@@ -177,6 +177,20 @@ def test_host_cache_path_uses_flatpak_instance_path(monkeypatch, tmp_path):
     )
 
 
+def test_host_cache_path_ignores_non_application_flatpak_info(monkeypatch, tmp_path):
+    cache = tmp_path / "sandbox-cache"
+    bundle = cache / "clipper/updates/update.flatpak"
+
+    def read(info, _path):
+        info.read_dict({"Runtime": {"runtime": "org.gnome.Sdk/x86_64/50"}})
+        return ["/.flatpak-info"]
+
+    monkeypatch.setattr(updates.configparser.ConfigParser, "read", read)
+    assert updates.host_cache_path(bundle, cache) == Path.home() / (
+        f".var/app/{updates.APP_ID}/cache/clipper/updates/update.flatpak"
+    )
+
+
 def test_install_accepts_commit_deployed_despite_flatpak_error(
     release_data, monkeypatch, tmp_path
 ):

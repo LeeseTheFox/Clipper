@@ -231,7 +231,7 @@ def host_cache_path(bundle: Path, cache: Path) -> Path:
     """Translate an app-cache path in the sandbox to its host path."""
     relative = bundle.relative_to(cache)
     info = configparser.ConfigParser(interpolation=None)
-    if info.read("/.flatpak-info") and info["Application"].get("name") == APP_ID:
+    if info.read("/.flatpak-info") and info.get("Application", "name", fallback="") == APP_ID:
         instance_path = info["Instance"].get("instance-path", "")
         if instance_path:
             return Path(instance_path) / "cache" / relative
