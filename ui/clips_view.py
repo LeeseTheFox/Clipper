@@ -595,11 +595,21 @@ class ClipsView(Gtk.Box):
             try:
                 from editor_drafts import rename_editor_data
 
-                rename_editor_data(old_path, new_path)
+                editor_data_moved = rename_editor_data(old_path, new_path)
             except Exception as error:  # noqa: BLE001
-                # A draft is optional; the renamed source remains usable even
-                # if an older draft cannot be moved.
                 print(f"Could not move saved edit for renamed clip: {error}")
+                editor_data_moved = False
+            if not editor_data_moved:
+                try:
+                    new_path.rename(old_path)
+                except OSError as rollback_error:
+                    print(f"Could not roll back clip rename: {rollback_error}")
+                    self._show_toast(
+                        _("Clip renamed, but saved edits could not be moved")
+                    )
+                else:
+                    self._show_toast(_("Could not rename clip"))
+                    return False
 
             old_key = str(old_path)
             new_key = str(new_path)

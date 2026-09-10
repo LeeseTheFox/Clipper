@@ -526,6 +526,26 @@ def test_clip_name_metadata_save_failure_keeps_renamed_file(tmp_path):
     assert clip["path"] == tmp_path / "new title.mkv"
 
 
+def test_clip_rename_rolls_back_when_saved_edits_cannot_move(monkeypatch, tmp_path):
+    import editor_drafts
+
+    view = _make_view()
+    path = tmp_path / "clip.mkv"
+    path.write_bytes(b"video")
+    clip = {"path": path, "name": "clip"}
+    toasts = []
+    view._show_toast = toasts.append
+    monkeypatch.setattr(editor_drafts, "rename_editor_data", lambda *_args: False)
+
+    assert not view._save_clip_name(clip, "renamed")
+
+    assert path.read_bytes() == b"video"
+    assert not (tmp_path / "renamed.mkv").exists()
+    assert clip == {"path": path, "name": "clip"}
+    assert not view.config.set_calls
+    assert toasts == ["Could not rename clip"]
+
+
 def test_inline_name_focus_waits_until_pointer_dispatch_finishes(monkeypatch, tmp_path):
     from unittest.mock import MagicMock
 
