@@ -44,7 +44,7 @@ Clipper keeps the latest stretch of gameplay ready in the background; press
 your global hotkey—or use the tray menu—to save it.
 
 <p align="center">
-  <img src="assets/screenshots/en/games.png" alt="Games configured with different capture methods in Clipper" width="850">
+  <img src="assets/screenshots/en/games-dark.png" alt="Games configured with different capture methods in Clipper" width="850">
 </p>
 
 ### A video editor made for quick cleanup
@@ -55,7 +55,7 @@ changes at any time. Export with your choice of format, codecs, resolution, and
 quality to balance video quality and file size.
 
 <p align="center">
-  <img src="assets/screenshots/en/editor.png" alt="Clipper video editor with a gameplay preview and multi-track timeline" width="850">
+  <img src="assets/screenshots/en/editor-dark.png" alt="Clipper video editor with a gameplay preview and multi-track timeline" width="850">
 </p>
 
 ### Keep every voice and app on its own track
@@ -65,7 +65,7 @@ games, and supported applications to separate tracks. Set each level once in
 Clipper and keep the flexibility to rebalance or mute sources while editing.
 
 <p align="center">
-  <img src="assets/screenshots/en/audio.png" alt="Separate audio tracks for games, microphone, and applications in Clipper" width="850">
+  <img src="assets/screenshots/en/audio-dark.png" alt="Separate audio tracks for games, microphone, and applications in Clipper" width="850">
 </p>
 
 ### Your clips stay easy to find
@@ -75,7 +75,7 @@ durations, and file sizes. Play a clip, reveal it in your file manager, open it
 in the editor, or remove it without digging through folders.
 
 <p align="center">
-  <img src="assets/screenshots/en/clips.png" alt="Clipper's searchable clip library" width="850">
+  <img src="assets/screenshots/en/clips-dark.png" alt="Clipper's searchable clip library" width="850">
 </p>
 
 ## ⚙️ Powered by OBS
