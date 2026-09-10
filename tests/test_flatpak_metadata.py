@@ -219,6 +219,8 @@ def test_flatpak_builds_complete_multiarch_payload_from_one_pinned_source():
     assert "build_game_capture_payload.py" in manifest
     assert "glibc-2.17-317.el7.x86_64.rpm" in manifest
     assert "glibc-2.17-317.el7.i686.rpm" in manifest
+    assert "https://vault.centos.org/7.9.2009/" in manifest
+    assert "archive.kernel.org/centos-vault" not in manifest
     assert "validate_game_capture_payload.py /app --self-test" in manifest
 
     assert 'PAYLOAD_VERSION = "obs-vkcapture-1.5.6-clipper.1"' in builder

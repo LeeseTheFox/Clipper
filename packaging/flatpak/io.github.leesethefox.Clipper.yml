@@ -194,35 +194,35 @@ modules:
       - type: file
         path: ../../tools/build_game_capture_payload.py
       - type: file
-        url: https://archive.kernel.org/centos-vault/7.9.2009/os/x86_64/Packages/glibc-2.17-317.el7.x86_64.rpm
+        url: https://vault.centos.org/7.9.2009/os/x86_64/Packages/glibc-2.17-317.el7.x86_64.rpm
         sha256: 49eb081de1ddd13f5440abdbb3b42cdd01d11b74d624793ae1b80a1cf432551b
         dest: sysroot-rpms
       - type: file
-        url: https://archive.kernel.org/centos-vault/7.9.2009/os/x86_64/Packages/glibc-2.17-317.el7.i686.rpm
+        url: https://vault.centos.org/7.9.2009/os/x86_64/Packages/glibc-2.17-317.el7.i686.rpm
         sha256: e4df5a58d0f90095d141e1835d93bb4822824a49e24db3d00d712c1bc6683686
         dest: sysroot-rpms
       - type: file
-        url: https://archive.kernel.org/centos-vault/7.9.2009/os/x86_64/Packages/glibc-devel-2.17-317.el7.x86_64.rpm
+        url: https://vault.centos.org/7.9.2009/os/x86_64/Packages/glibc-devel-2.17-317.el7.x86_64.rpm
         sha256: 57e04523b12c9aa5a0632cbfa2ff13e33f1ecec5e6bd0b609a77d9c24cebf8c4
         dest: sysroot-rpms
       - type: file
-        url: https://archive.kernel.org/centos-vault/7.9.2009/os/x86_64/Packages/glibc-devel-2.17-317.el7.i686.rpm
+        url: https://vault.centos.org/7.9.2009/os/x86_64/Packages/glibc-devel-2.17-317.el7.i686.rpm
         sha256: e3bebba3a5737523364d480b7992bcd7faea3be46818ba587c6881f0a393e0aa
         dest: sysroot-rpms
       - type: file
-        url: https://archive.kernel.org/centos-vault/7.9.2009/os/x86_64/Packages/glibc-headers-2.17-317.el7.x86_64.rpm
+        url: https://vault.centos.org/7.9.2009/os/x86_64/Packages/glibc-headers-2.17-317.el7.x86_64.rpm
         sha256: b7e4e19b362cbd73e09e6ee5eff3d70dbeb7cc2c702a927b8f646f324d4ec4a3
         dest: sysroot-rpms
       - type: file
-        url: https://archive.kernel.org/centos-vault/7.9.2009/os/x86_64/Packages/kernel-headers-3.10.0-1160.el7.x86_64.rpm
+        url: https://vault.centos.org/7.9.2009/os/x86_64/Packages/kernel-headers-3.10.0-1160.el7.x86_64.rpm
         sha256: 81b4e4f401d2402736ceba4627eaafd5b615c2cc45aa4d4f941ea79562045139
         dest: sysroot-rpms
       - type: file
-        url: https://archive.kernel.org/centos-vault/7.9.2009/os/x86_64/Packages/libgcc-4.8.5-44.el7.x86_64.rpm
+        url: https://vault.centos.org/7.9.2009/os/x86_64/Packages/libgcc-4.8.5-44.el7.x86_64.rpm
         sha256: cb1967fba485ad3da345e33018c0e8b367359f251c6b1a8847a4976579d74ffa
         dest: sysroot-rpms
       - type: file
-        url: https://archive.kernel.org/centos-vault/7.9.2009/os/x86_64/Packages/libgcc-4.8.5-44.el7.i686.rpm
+        url: https://vault.centos.org/7.9.2009/os/x86_64/Packages/libgcc-4.8.5-44.el7.i686.rpm
         sha256: ca7f63386ed014a1b1e1f31b1532b72dfa54c666560f85dbb6b67857831676d5
         dest: sysroot-rpms
 
