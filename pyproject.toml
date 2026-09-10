@@ -1,6 +1,6 @@
 [project]
 name = "clipper"
-version = "1.0.3"
+version = "1.0.4"
 description = "Game clip recorder for Linux"
 requires-python = ">=3.10"
 dependencies = [
