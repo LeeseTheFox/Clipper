@@ -175,6 +175,9 @@ AUDIO_SOURCE_KINDS = (
 AUDIO_BACKENDS = ("pulse", "pipewire")
 MIN_AUDIO_VOLUME = 0.0
 MAX_AUDIO_VOLUME = 2.0
+MIN_CLIP_SOUND_VOLUME = 0.0
+MAX_CLIP_SOUND_VOLUME = 2.0
+DEFAULT_CLIP_SOUND_VOLUME = 1.0
 VIDEO_RATE_CONTROLS = ("cqp", "cbr", "vbr")
 OUTPUT_FORMATS = ("mkv", "mp4", "mov", "ts")
 REPLAY_BUFFER_SIZE_DEFAULT_MB = 1024
@@ -216,6 +219,15 @@ def _clamp_audio_volume(value, default: float = 1.0) -> float:
     except (TypeError, ValueError):
         volume = default
     return max(MIN_AUDIO_VOLUME, min(MAX_AUDIO_VOLUME, volume))
+
+
+def normalize_clip_sound_volume(value) -> float:
+    """Return a valid capture-feedback gain between silence and 200%."""
+    try:
+        volume = float(value)
+    except (TypeError, ValueError):
+        volume = DEFAULT_CLIP_SOUND_VOLUME
+    return max(MIN_CLIP_SOUND_VOLUME, min(MAX_CLIP_SOUND_VOLUME, volume))
 
 
 def _clean_string(value, default: str = "") -> str:
@@ -387,6 +399,7 @@ DEFAULTS: dict[str, Any] = {
     "save_hotkey_portal_label": "",
     "notify_on_clip_saved": True,
     "play_sound_on_clip_saved": False,
+    "clip_sound_volume": DEFAULT_CLIP_SOUND_VOLUME,
     "start_on_boot": False,
     "autostart_background_mode_configured": False,
     "setup_completed": False,
@@ -476,6 +489,9 @@ class ClipperConfig:
                 )
                 self._data["format"] = DEFAULTS["format"]
             self._data["audio"] = normalize_audio_config(self._data.get("audio"))
+            self._data["clip_sound_volume"] = normalize_clip_sound_volume(
+                self._data.get("clip_sound_volume")
+            )
             self._data["whitelist"] = normalize_whitelist(self._data.get("whitelist"))
             self._data["pending_game_capture_change"] = normalize_pending_game_capture_change(
                 self._data.get("pending_game_capture_change")
@@ -548,6 +564,8 @@ class ClipperConfig:
             raise ValueError(f"format must be one of: {', '.join(OUTPUT_FORMATS)}")
         if key == "audio":
             value = normalize_audio_config(value)
+        if key == "clip_sound_volume":
+            value = normalize_clip_sound_volume(value)
         if key == "whitelist":
             value = normalize_whitelist(value)
         if key == "pending_game_capture_change":

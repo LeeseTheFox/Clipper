@@ -32,7 +32,7 @@ from capture_modes import (
     DEFAULT_CAPTURE_MODE,
     capture_mode_for_entry,
 )
-from config import ClipperConfig
+from config import ClipperConfig, normalize_clip_sound_volume
 from display_auth import normalize_display_auth_env
 from engine_client import EngineClient
 from engine_manager import RESTART_EXIT_CODE, EngineProcessManager
@@ -1269,7 +1269,10 @@ class ClipperApplication(Adw.Application):
                 if player is None:
                     player = ClipSoundPlayer()
                     self._clip_sound_player = player
-                if not player.play():
+                volume = normalize_clip_sound_volume(
+                    self._config.get("clip_sound_volume", 1.0)
+                )
+                if not player.play(volume):
                     self._log("Could not play clip saved sound")
             if self._config.get("notify_on_clip_saved", True):
                 notification = Gio.Notification.new(_("Clip captured"))

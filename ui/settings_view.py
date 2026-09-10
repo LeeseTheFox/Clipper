@@ -9,6 +9,9 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
 from config import (
+    DEFAULT_CLIP_SOUND_VOLUME,
+    MAX_CLIP_SOUND_VOLUME,
+    MIN_CLIP_SOUND_VOLUME,
     OUTPUT_FORMATS,
     REPLAY_BUFFER_SIZE_DEFAULT_MB,
     REPLAY_BUFFER_SIZE_MAX_MB,
@@ -599,6 +602,12 @@ class SettingsView(Gtk.Box):
             self._play_sound_on_clip_saved_switch.set_active(
                 self._config.get("play_sound_on_clip_saved", False)
             )
+            self._clip_sound_volume_scale.set_value(
+                self._config.get("clip_sound_volume", DEFAULT_CLIP_SOUND_VOLUME)
+            )
+            self._clip_sound_volume_scale.set_sensitive(
+                self._play_sound_on_clip_saved_switch.get_active()
+            )
         finally:
             self._suppress_signals = False
 
@@ -1064,6 +1073,20 @@ class SettingsView(Gtk.Box):
         if key == "quality_cqp":
             value = _slider_value_to_cqp(self._quality_scale.get_value())
             self._save_key_if_changed("quality_cqp", value, _CQP_DEFAULT)
+        elif key == "clip_sound_volume":
+            value = round(self._clip_sound_volume_scale.get_value(), 2)
+            self._save_key_if_changed(
+                "clip_sound_volume", value, DEFAULT_CLIP_SOUND_VOLUME
+            )
+
+    def _on_clip_sound_enabled_changed(self, switch, _param):
+        enabled = switch.get_active()
+        self._clip_sound_volume_scale.set_sensitive(enabled)
+        self._save_key("play_sound_on_clip_saved", enabled)
+
+    @staticmethod
+    def _format_clip_sound_volume(_scale, value, _user_data=None):
+        return f"{round(value * 100):d}%"
 
     def _format_quality_scale_value(self, _scale, value, _user_data=None):
         return str(_slider_value_to_cqp(value))
@@ -1406,8 +1429,32 @@ class SettingsView(Gtk.Box):
         self._play_sound_on_clip_saved_switch.set_valign(Gtk.Align.CENTER)
         self._play_sound_on_clip_saved_switch.connect(
             "notify::active",
-            lambda w, _: self._save_key("play_sound_on_clip_saved", w.get_active()),
+            self._on_clip_sound_enabled_changed,
         )
+        self._clip_sound_volume_scale = Gtk.Scale.new_with_range(
+            Gtk.Orientation.HORIZONTAL,
+            MIN_CLIP_SOUND_VOLUME,
+            MAX_CLIP_SOUND_VOLUME,
+            0.05,
+        )
+        self._clip_sound_volume_scale.set_value(DEFAULT_CLIP_SOUND_VOLUME)
+        self._clip_sound_volume_scale.set_draw_value(True)
+        self._clip_sound_volume_scale.set_value_pos(Gtk.PositionType.RIGHT)
+        self._clip_sound_volume_scale.set_size_request(150, -1)
+        self._clip_sound_volume_scale.set_valign(Gtk.Align.CENTER)
+        self._clip_sound_volume_scale.set_sensitive(False)
+        self._clip_sound_volume_scale.get_adjustment().set_page_increment(0.1)
+        self._clip_sound_volume_scale.set_format_value_func(
+            self._format_clip_sound_volume
+        )
+        self._clip_sound_volume_scale.update_property(
+            [Gtk.AccessibleProperty.LABEL], [_("Volume")]
+        )
+        self._clip_sound_volume_scale.set_tooltip_text(_("Volume"))
+        self._connect_deferred_scale(
+            self._clip_sound_volume_scale, "clip_sound_volume"
+        )
+        sound_row.add_suffix(self._clip_sound_volume_scale)
         sound_row.add_suffix(self._play_sound_on_clip_saved_switch)
         sound_row.set_activatable_widget(self._play_sound_on_clip_saved_switch)
 

@@ -280,11 +280,22 @@ def test_clip_capture_notification_default_and_round_trip(tmp_path):
 def test_clip_capture_sound_default_and_round_trip(tmp_path):
     cfg = make_config(tmp_path)
     assert cfg["play_sound_on_clip_saved"] is False
+    assert cfg["clip_sound_volume"] == 1.0
 
     cfg.set("play_sound_on_clip_saved", True)
+    cfg.set("clip_sound_volume", 1.75)
 
     cfg2 = make_config(tmp_path)
     assert cfg2["play_sound_on_clip_saved"] is True
+    assert cfg2["clip_sound_volume"] == 1.75
+
+
+def test_clip_capture_sound_volume_is_clamped(tmp_path):
+    cfg = make_config(tmp_path)
+
+    cfg.set("clip_sound_volume", 3)
+
+    assert cfg["clip_sound_volume"] == 2.0
 
 
 def test_rate_control_defaults_and_round_trip(tmp_path):

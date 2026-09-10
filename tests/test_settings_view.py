@@ -157,6 +157,7 @@ class ValueStub:
         self.value = value
         self.lower = None
         self.upper = None
+        self.sensitive = True
 
     def get_value(self):
         return self.value
@@ -168,6 +169,9 @@ class ValueStub:
         self.lower = lower
         self.upper = upper
         self.value = max(lower, min(upper, self.value))
+
+    def set_sensitive(self, sensitive):
+        self.sensitive = bool(sensitive)
 
 
 class ActiveStub:
@@ -286,6 +290,7 @@ def _make_view(
     view._remember_window_sizes_switch = ActiveStub()
     view._notify_on_clip_saved_switch = ActiveStub()
     view._play_sound_on_clip_saved_switch = ActiveStub()
+    view._clip_sound_volume_scale = ValueStub(1.0)
     view._show_toast = lambda _message: None
     return view
 
@@ -556,11 +561,36 @@ def test_saved_custom_resolution_is_kept_and_selected_on_load():
 
 def test_sound_feedback_setting_is_loaded_into_switch():
     view = _make_view()
-    view._config = ConfigStub({"play_sound_on_clip_saved": True})
+    view._config = ConfigStub(
+        {"play_sound_on_clip_saved": True, "clip_sound_volume": 1.65}
+    )
 
     view._load_from_config()
 
     assert view._play_sound_on_clip_saved_switch.get_active() is True
+    assert view._clip_sound_volume_scale.get_value() == 1.65
+    assert view._clip_sound_volume_scale.sensitive is True
+
+
+def test_sound_feedback_switch_controls_volume_slider_and_is_saved():
+    view = _make_view()
+    view._config = ConfigStub()
+    switch = ActiveStub(True)
+
+    view._on_clip_sound_enabled_changed(switch, None)
+
+    assert view._clip_sound_volume_scale.sensitive is True
+    assert view._config.saved == [("play_sound_on_clip_saved", True)]
+
+
+def test_sound_feedback_volume_is_saved_as_gain():
+    view = _make_view()
+    view._config = ConfigStub()
+    view._clip_sound_volume_scale.set_value(1.35)
+
+    view._save_slider("clip_sound_volume")
+
+    assert view._config.saved == [("clip_sound_volume", 1.35)]
 
 
 def test_replay_buffer_size_is_loaded_from_config():

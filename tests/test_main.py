@@ -87,6 +87,9 @@ def _load_main_module():
 
     config = types.ModuleType("config")
     config.ClipperConfig = type("ClipperConfig", (), {})
+    config.normalize_clip_sound_volume = lambda value: max(
+        0.0, min(2.0, float(value))
+    )
 
     engine_client = types.ModuleType("engine_client")
     engine_client.EngineClient = type("EngineClient", (), {})
@@ -344,11 +347,13 @@ class ConfigStub:
         whitelist: list[dict] | None = None,
         notify_on_clip_saved: bool = True,
         play_sound_on_clip_saved: bool = False,
+        clip_sound_volume: float = 1.0,
     ) -> None:
         self._minimize_to_tray_on_close = minimize_to_tray_on_close
         self._whitelist = whitelist or []
         self._notify_on_clip_saved = notify_on_clip_saved
         self._play_sound_on_clip_saved = play_sound_on_clip_saved
+        self._clip_sound_volume = clip_sound_volume
 
     def get(self, key: str, default=None):
         if key == "minimize_to_tray_on_close":
@@ -359,6 +364,8 @@ class ConfigStub:
             return self._notify_on_clip_saved
         if key == "play_sound_on_clip_saved":
             return self._play_sound_on_clip_saved
+        if key == "clip_sound_volume":
+            return self._clip_sound_volume
         if key == "setup_completed":
             return True
         return default
@@ -1565,15 +1572,17 @@ def test_clip_saved_does_not_show_notification_when_disabled():
 
 def test_clip_saved_plays_sound_when_enabled():
     app = object.__new__(ClipperApplication)
-    app._config = ConfigStub(False, play_sound_on_clip_saved=True)
-    app._clip_sound_player = types.SimpleNamespace(play=lambda: True)
+    app._config = ConfigStub(
+        False, play_sound_on_clip_saved=True, clip_sound_volume=1.6
+    )
+    app._clip_sound_player = types.SimpleNamespace(play=lambda _volume: True)
     played = []
-    app._clip_sound_player.play = lambda: played.append(True) or True
+    app._clip_sound_player.play = lambda volume: played.append(volume) or True
     app.send_notification = lambda *_args: None
 
     app._on_clip_saved({"ok": True})
 
-    assert played == [True]
+    assert played == [1.6]
 
 
 def test_clip_saved_does_not_play_sound_when_disabled():
