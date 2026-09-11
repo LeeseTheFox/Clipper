@@ -94,17 +94,17 @@ msgstr "Системне аудіо"
 msgid "Microphone"
 msgstr "Мікрофон"
 
-#: ui/audio_tracks_view.py:672 ui/audio_tracks_view.py:993
-#: ui/audio_tracks_view.py:1102
+#: ui/audio_tracks_view.py:672 ui/audio_tracks_view.py:996
+#: ui/audio_tracks_view.py:1120
 msgid "Whitelisted games"
 msgstr "Дозволені ігри"
 
-#: ui/audio_tracks_view.py:685 ui/audio_tracks_view.py:1002
+#: ui/audio_tracks_view.py:685 ui/audio_tracks_view.py:1012
 #, python-format
 msgid "App: %(name)s"
 msgstr "Застосунок: %(name)s"
 
-#: ui/audio_tracks_view.py:1000
+#: ui/audio_tracks_view.py:1010
 #, python-format
 msgid "Game: %(name)s"
 msgstr "Гра: %(name)s"
@@ -194,51 +194,51 @@ msgstr "Сортувати кліпи"
 msgid "Open clips folder"
 msgstr "Відкрити теку з кліпами"
 
-#: ui/clips_view.py:527
+#: ui/clips_view.py:541
 msgid "Edit clip from scratch"
 msgstr "Редагувати кліп з нуля"
 
-#: ui/clips_view.py:530
+#: ui/clips_view.py:544
 msgid "Edit clip"
 msgstr "Редагувати кліп"
 
-#: ui/clips_view.py:535
+#: ui/clips_view.py:549
 msgid "Permanently delete the clip"
 msgstr "Видалити кліп назавжди"
 
-#: ui/clips_view.py:538
+#: ui/clips_view.py:552
 msgid "Move clip to trash"
 msgstr "Перемістити кліп до смітника"
 
-#: ui/clips_view.py:582
+#: ui/clips_view.py:596
 msgid "Enter a valid clip name"
 msgstr "Введи дійсну назву кліпу"
 
-#: ui/clips_view.py:588
+#: ui/clips_view.py:602
 msgid "A clip with that name already exists"
 msgstr "Кліп із такою назвою вже існує"
 
-#: ui/clips_view.py:593 ui/clips_view.py:611
+#: ui/clips_view.py:607 ui/clips_view.py:625
 msgid "Could not rename clip"
 msgstr "Не вдалося перейменувати кліп"
 
-#: ui/clips_view.py:608
+#: ui/clips_view.py:622
 msgid "Clip renamed, but saved edits could not be moved"
 msgstr "Кліп перейменовано, але не вдалося перенести збережені правки"
 
-#: ui/clips_view.py:641
+#: ui/clips_view.py:655
 msgid "Could not update clip metadata"
 msgstr "Не вдалося оновити метадані кліпу"
 
-#: ui/clips_view.py:652
+#: ui/clips_view.py:666
 msgid "Could not save clip name"
 msgstr "Не вдалося зберегти назву кліпу"
 
-#: ui/clips_view.py:1296
+#: ui/clips_view.py:1310
 msgid "No clips yet"
 msgstr "Кліпів ще немає"
 
-#: ui/clips_view.py:1298
+#: ui/clips_view.py:1312
 msgid ""
 "Recorded clips will appear here.\n"
 "Press your save hotkey to capture a clip."
@@ -246,23 +246,23 @@ msgstr ""
 "Тут з’являтимуться записані кліпи.\n"
 "Натисни гарячу клавішу збереження, щоб захопити кліп."
 
-#: ui/clips_view.py:1306
+#: ui/clips_view.py:1320
 msgid "No matching clips"
 msgstr "Немає відповідних кліпів"
 
-#: ui/clips_view.py:1307
+#: ui/clips_view.py:1321
 msgid "No clip names match the current search."
 msgstr "Немає назв кліпів, що відповідають поточному пошуку."
 
-#: ui/clips_view.py:1313
+#: ui/clips_view.py:1327
 msgid "Loading clips…"
 msgstr "Завантаження кліпів…"
 
-#: ui/clips_view.py:1439
+#: ui/clips_view.py:1453
 msgid "Just now"
 msgstr "Щойно"
 
-#: ui/clips_view.py:1443
+#: ui/clips_view.py:1457
 #, python-format
 msgid "%(count)d minute ago"
 msgid_plural "%(count)d minutes ago"
@@ -270,7 +270,7 @@ msgstr[0] "%(count)d хвилину тому"
 msgstr[1] "%(count)d хвилини тому"
 msgstr[2] "%(count)d хвилин тому"
 
-#: ui/clips_view.py:1447
+#: ui/clips_view.py:1461
 #, python-format
 msgid "%(count)d hour ago"
 msgid_plural "%(count)d hours ago"
@@ -278,11 +278,11 @@ msgstr[0] "%(count)d годину тому"
 msgstr[1] "%(count)d години тому"
 msgstr[2] "%(count)d годин тому"
 
-#: ui/clips_view.py:1451
+#: ui/clips_view.py:1465
 msgid "Yesterday"
 msgstr "Учора"
 
-#: ui/clips_view.py:1454
+#: ui/clips_view.py:1468
 #, python-format
 msgid "%(count)d day ago"
 msgid_plural "%(count)d days ago"
@@ -290,53 +290,53 @@ msgstr[0] "%(count)d день тому"
 msgstr[1] "%(count)d дні тому"
 msgstr[2] "%(count)d днів тому"
 
-#: ui/clips_view.py:1460
+#: ui/clips_view.py:1474
 msgid "B"
 msgstr "Б"
 
-#: ui/clips_view.py:1460
+#: ui/clips_view.py:1474
 msgid "GB"
 msgstr "ГБ"
 
-#: ui/clips_view.py:1460
+#: ui/clips_view.py:1474
 msgid "KB"
 msgstr "КБ"
 
-#: ui/clips_view.py:1460
+#: ui/clips_view.py:1474
 msgid "MB"
 msgstr "МБ"
 
-#: ui/clips_view.py:1462
+#: ui/clips_view.py:1476
 #, python-format
 msgid "%(size).1f %(unit)s"
 msgstr "%(size).1f %(unit)s"
 
-#: ui/clips_view.py:1464
+#: ui/clips_view.py:1478
 #, python-format
 msgid "%(size).1f TB"
 msgstr "%(size).1f ТБ"
 
-#: ui/clips_view.py:1577
+#: ui/clips_view.py:1591
 msgid "Play clip"
 msgstr "Відтворити кліп"
 
-#: ui/clips_view.py:1662
+#: ui/clips_view.py:1676
 msgid "Reveal in file manager"
 msgstr "Показати у файловому менеджері"
 
-#: ui/clips_view.py:1739 ui/editor_window.py:3822
+#: ui/clips_view.py:1753 ui/editor_window.py:3822
 msgid "Could not wipe saved edits"
 msgstr "Не вдалося видалити збережені правки"
 
-#: ui/clips_view.py:1882
+#: ui/clips_view.py:1896
 msgid "Could not play clip"
 msgstr "Не вдалося відтворити кліп"
 
-#: ui/clips_view.py:2027
+#: ui/clips_view.py:2041
 msgid "Move clip to trash?"
 msgstr "Перемістити кліп до смітника?"
 
-#: ui/clips_view.py:2029
+#: ui/clips_view.py:2043
 #, python-format
 msgid ""
 "'%(name)s' will be moved to the trash.\n"
@@ -345,34 +345,34 @@ msgstr ""
 "«%(name)s» буде переміщено до смітника.\n"
 "Цю дію можна скасувати."
 
-#: ui/clips_view.py:2032 ui/dialogs.py:856 ui/editor_export_dialog.py:345
+#: ui/clips_view.py:2046 ui/dialogs.py:864 ui/editor_export_dialog.py:345
 #: ui/editor_export_dialog.py:636 ui/editor_export_dialog.py:664
 #: ui/editor_export_dialog.py:772 ui/editor_window.py:3990 ui/editor_wipe.py:16
-#: ui/update_controller.py:377
+#: ui/game_details_dialog.py:37 ui/update_controller.py:377
 msgid "Cancel"
 msgstr "Скасувати"
 
-#: ui/clips_view.py:2033
+#: ui/clips_view.py:2047
 msgid "Move to trash"
 msgstr "Перемістити до смітника"
 
-#: ui/clips_view.py:2088
+#: ui/clips_view.py:2102
 msgid "Clip deleted"
 msgstr "Кліп видалено"
 
-#: ui/clips_view.py:2088
+#: ui/clips_view.py:2102
 msgid "Clip moved to trash"
 msgstr "Кліп переміщено до смітника"
 
-#: ui/clips_view.py:2095
+#: ui/clips_view.py:2109
 msgid "Could not delete clip"
 msgstr "Не вдалося видалити кліп"
 
-#: ui/clips_view.py:2097
+#: ui/clips_view.py:2111
 msgid "Could not move clip to trash"
 msgstr "Не вдалося перемістити кліп до смітника"
 
-#: ui/dialogs.py:32
+#: ui/dialogs.py:30
 msgid ""
 "Screen capture starts capturing your whole selected screen when an added "
 "game is running.\n"
@@ -386,7 +386,7 @@ msgstr ""
 "Захоплення гри додає спеціальний ключ до параметрів запуску гри, щоб Clipper "
 "міг під’єднатися до прямого виводу Vulkan гри й захоплювати лише вікно гри."
 
-#: ui/dialogs.py:39
+#: ui/dialogs.py:37
 msgid ""
 "Display capture records your selected screen while this game is running.\n"
 "\n"
@@ -402,107 +402,103 @@ msgstr ""
 "потрібний параметр запуску. Це дасть Clipper змогу під’єднатися до прямого "
 "виводу Vulkan гри й захоплювати лише вікно гри."
 
-#: ui/dialogs.py:98
+#: ui/dialogs.py:96
 msgid "Capture method"
 msgstr "Спосіб захоплення"
 
-#: ui/dialogs.py:122
+#: ui/dialogs.py:120
 msgid "Required launch option"
 msgstr "Потрібний параметр запуску"
 
-#: ui/dialogs.py:129
+#: ui/dialogs.py:127
 msgid "Copy this into the game's launch options before starting it."
 msgstr "Скопіюй це в параметри запуску гри перед її запуском."
 
-#: ui/dialogs.py:144
+#: ui/dialogs.py:142
 msgid "Copy the required launch option"
 msgstr "Скопіювати потрібний параметр запуску"
 
-#: ui/dialogs.py:148 ui/dialogs.py:458
+#: ui/dialogs.py:146 ui/dialogs.py:454
 msgid "Copy launch option"
 msgstr "Скопіювати параметр запуску"
 
-#: ui/dialogs.py:203 ui/whitelist_view.py:455
+#: ui/dialogs.py:201 ui/whitelist_view.py:455
 msgid "Add a non-Steam game"
 msgstr "Додати гру не зі Steam"
 
-#: ui/dialogs.py:225
+#: ui/dialogs.py:224
 msgid "Pick a process"
 msgstr "Обрати процес"
 
-#: ui/dialogs.py:235
+#: ui/dialogs.py:234
 msgid "Search processes…"
 msgstr "Пошук процесів…"
 
-#: ui/dialogs.py:270
+#: ui/dialogs.py:269
 msgid "Or pick an executable path"
 msgstr "Або обери шлях до виконуваного файла"
 
-#: ui/dialogs.py:279
+#: ui/dialogs.py:278
 msgid "/path/to/game.exe"
 msgstr "/шлях/до/game.exe"
 
-#: ui/dialogs.py:285
+#: ui/dialogs.py:284
 msgid "Choose executable"
 msgstr "Обрати виконуваний файл"
 
-#: ui/dialogs.py:317 ui/dialogs.py:636
+#: ui/dialogs.py:316 ui/dialogs.py:644
 msgid "Add selected"
 msgstr "Додати вибране"
 
-#: ui/dialogs.py:352
+#: ui/dialogs.py:351
 msgid "Could not load host processes"
 msgstr "Не вдалося завантажити процеси хоста"
 
-#: ui/dialogs.py:354
+#: ui/dialogs.py:353
 msgid "No running processes found"
 msgstr "Запущених процесів не знайдено"
 
-#: ui/dialogs.py:446
+#: ui/dialogs.py:442
 msgid "Copied"
 msgstr "Скопійовано"
 
-#: ui/dialogs.py:499
+#: ui/dialogs.py:495 ui/game_details_dialog.py:92 ui/game_details_dialog.py:165
 msgid "Choose game executable"
 msgstr "Обери виконуваний файл гри"
 
-#: ui/dialogs.py:500
+#: ui/dialogs.py:496 ui/game_details_dialog.py:165
 msgid "Choose"
 msgstr "Обрати"
 
-#: ui/dialogs.py:515
+#: ui/dialogs.py:511
 msgid "Choose a local executable file."
 msgstr "Обери локальний виконуваний файл."
 
-#: ui/dialogs.py:527
-msgid "Choose a valid executable file."
-msgstr "Обери дійсний виконуваний файл."
-
-#: ui/dialogs.py:564
+#: ui/dialogs.py:572
 msgid "Select Steam game"
 msgstr "Обери гру в Steam"
 
-#: ui/dialogs.py:589
+#: ui/dialogs.py:597
 msgid "Search games…"
 msgstr "Пошук ігор…"
 
-#: ui/dialogs.py:659
+#: ui/dialogs.py:667
 msgid "Scanning Steam libraries…"
 msgstr "Сканування бібліотек Steam…"
 
-#: ui/dialogs.py:723
+#: ui/dialogs.py:731
 msgid "Steam not found"
 msgstr "Steam не знайдено"
 
-#: ui/dialogs.py:725
+#: ui/dialogs.py:733
 msgid "Could not find Steam. Start Steam once, then try again."
 msgstr "Не вдалося знайти Steam. Запусти Steam один раз і повтори спробу."
 
-#: ui/dialogs.py:728
+#: ui/dialogs.py:736
 msgid "No games found"
 msgstr "Ігор не знайдено"
 
-#: ui/dialogs.py:731
+#: ui/dialogs.py:739
 msgid ""
 "No Steam games are currently installed.\n"
 "Install games through Steam and try again."
@@ -510,36 +506,36 @@ msgstr ""
 "Наразі не встановлено жодної гри зі Steam.\n"
 "Встанови ігри через Steam і повтори спробу."
 
-#: ui/dialogs.py:767
+#: ui/dialogs.py:775
 msgid "Flatpak Steam"
 msgstr "Steam із Flatpak"
 
-#: ui/dialogs.py:767
+#: ui/dialogs.py:775 ui/game_details.py:36
 msgid "Native Steam"
 msgstr "Нативний Steam"
 
-#: ui/dialogs.py:769
+#: ui/dialogs.py:777 ui/game_details.py:39
 msgid "Steam Snap"
 msgstr "Steam зі Snap"
 
-#: ui/dialogs.py:772
+#: ui/dialogs.py:780
 #, python-format
 msgid "%(source)s · account %(account)s"
 msgstr "%(source)s · обліковий запис %(account)s"
 
-#: ui/dialogs.py:838
+#: ui/dialogs.py:846
 msgid "Warning"
 msgstr "Попередження"
 
-#: ui/dialogs.py:840
+#: ui/dialogs.py:848
 msgid "OK"
 msgstr "Гаразд"
 
-#: ui/dialogs.py:848
+#: ui/dialogs.py:856
 msgid "Game capture requires a Steam restart"
 msgstr "Для захоплення гри потрібно перезапустити Steam"
 
-#: ui/dialogs.py:850
+#: ui/dialogs.py:858
 msgid ""
 "The <b>Game capture</b> method changes this game's Steam launch options. "
 "Steam must be closed while Clipper applies the change.\n"
@@ -552,7 +548,7 @@ msgstr ""
 "Перезапусти Steam зараз, щоб продовжити, або скасуй дію без зміни списку "
 "дозволених ігор."
 
-#: ui/dialogs.py:857
+#: ui/dialogs.py:865
 msgid "Restart Steam"
 msgstr "Перезапустити Steam"
 
@@ -992,7 +988,8 @@ msgstr "100%"
 msgid "Finished"
 msgstr "Завершено"
 
-#: ui/editor_export_dialog.py:739 ui/preferences_dialog.py:29
+#: ui/editor_export_dialog.py:739 ui/game_details_dialog.py:37
+#: ui/preferences_dialog.py:29
 msgid "Close"
 msgstr "Закрити"
 
@@ -1476,6 +1473,77 @@ msgstr "Усі розрізи й зміни аудіо для «%(name)s» бу�
 #: ui/editor_wipe.py:17
 msgid "Wipe edits"
 msgstr "Видалити правки"
+
+#: ui/game_details.py:15 ui/game_details.py:40 ui/game_details.py:41
+#: ui/game_details_dialog.py:74 ui/game_details_dialog.py:77
+#: ui/game_details_dialog.py:100 ui/game_details_dialog.py:150
+#: ui/game_details_dialog.py:151 ui/game_details_dialog.py:152
+msgid "Not available"
+msgstr "Недоступно"
+
+#: ui/game_details.py:37
+msgid "Flatpak Steam (user)"
+msgstr "Steam із Flatpak (користувацький)"
+
+#: ui/game_details.py:38
+msgid "Flatpak Steam (system)"
+msgstr "Steam із Flatpak (системний)"
+
+#: ui/game_details.py:53
+msgid "Choose an existing executable file using its full path."
+msgstr "Обери наявний виконуваний файл, указавши повний шлях."
+
+#: ui/game_details.py:60
+msgid "Steam game executables cannot be edited here."
+msgstr "Тут не можна змінювати виконувані файли ігор Steam."
+
+#: ui/game_details.py:76
+msgid "This game has changed. Close its details and try again."
+msgstr "Цю гру було змінено. Закрий відомості про неї та спробуй ще раз."
+
+#: ui/game_details.py:100
+msgid "This executable is already in the Games list."
+msgstr "Цей виконуваний файл уже є у списку ігор."
+
+#: ui/game_details_dialog.py:27
+msgid "Game details"
+msgstr "Відомості про гру"
+
+#: ui/game_details_dialog.py:64 ui/whitelist_view.py:622
+msgid "Manual"
+msgstr "Вручну"
+
+#: ui/game_details_dialog.py:64 ui/whitelist_view.py:622
+msgid "Steam"
+msgstr "Steam"
+
+#: ui/game_details_dialog.py:74
+msgid "Steam account"
+msgstr "Обліковий запис Steam"
+
+#: ui/game_details_dialog.py:77
+msgid "Executable"
+msgstr "Виконуваний файл"
+
+#: ui/game_details_dialog.py:87
+msgid "Flatpak application"
+msgstr "Застосунок Flatpak"
+
+#: ui/game_details_dialog.py:88
+msgid "Executable path"
+msgstr "Шлях до виконуваного файла"
+
+#: ui/game_details_dialog.py:99
+msgid "Executable name"
+msgstr "Назва виконуваного файла"
+
+#: ui/game_details_dialog.py:106
+msgid "Save"
+msgstr "Зберегти"
+
+#: ui/game_details_dialog.py:184
+msgid "Could not save the executable path. Try again."
+msgstr "Не вдалося зберегти шлях до виконуваного файла. Спробуй ще раз."
 
 #: ui/hotkeys.py:49 ui/settings_view.py:97
 msgid "Ctrl"
@@ -2552,35 +2620,31 @@ msgstr "Додати гру зі Steam"
 msgid "Add new"
 msgstr "Додати"
 
-#: ui/whitelist_view.py:573
+#: ui/whitelist_view.py:574
 #, python-format
 msgid "%(name)s is already in the whitelist."
 msgstr "%(name)s уже є у списку дозволених ігор."
 
-#: ui/whitelist_view.py:621
-msgid "Manual"
-msgstr "Вручну"
-
-#: ui/whitelist_view.py:621
-msgid "Steam"
-msgstr "Steam"
-
-#: ui/whitelist_view.py:651
+#: ui/whitelist_view.py:653
 #, python-format
 msgid "Remove %(name)s"
 msgstr "Вилучити %(name)s"
 
-#: ui/whitelist_view.py:728 ui/whitelist_view.py:879
+#: ui/whitelist_view.py:691
+msgid "Executable updated"
+msgstr "Виконуваний файл оновлено"
+
+#: ui/whitelist_view.py:759 ui/whitelist_view.py:910
 #, python-format
 msgid "Added %(name)s"
 msgstr "Додано: %(name)s"
 
-#: ui/whitelist_view.py:744 ui/whitelist_view.py:879
+#: ui/whitelist_view.py:775 ui/whitelist_view.py:910
 #, python-format
 msgid "Removed %(name)s"
 msgstr "Вилучено: %(name)s"
 
-#: ui/whitelist_view.py:867
+#: ui/whitelist_view.py:898
 #, python-format
 msgid ""
 "Could not finish the Game capture change.\n"
@@ -2590,6 +2654,47 @@ msgstr ""
 "Не вдалося завершити зміну захоплення гри.\n"
 "\n"
 "%(error)s"
+
+#~ msgid "Paths from running apps may refer to files inside a sandbox."
+#~ msgstr ""
+#~ "Шляхи запущених застосунків можуть указувати на файли всередині пісочниці."
+
+#~ msgid "Choose a valid executable file."
+#~ msgstr "Обери дійсний виконуваний файл."
+
+#~ msgid "Detected by process name"
+#~ msgstr "Визначення за назвою процесу"
+
+#~ msgid "File available"
+#~ msgstr "Файл доступний"
+
+#~ msgid "File missing or inaccessible"
+#~ msgstr "Файл відсутній або недоступний"
+
+#~ msgid "Detection"
+#~ msgstr "Виявлення"
+
+#~ msgid "Steam app ID"
+#~ msgstr "ID застосунку Steam"
+
+#~ msgid "Loading…"
+#~ msgstr "Завантаження…"
+
+#~ msgid "Steam installation"
+#~ msgstr "Встановлення Steam"
+
+#~ msgid "Steam data folder"
+#~ msgstr "Тека даних Steam"
+
+#~ msgid "Installation folder"
+#~ msgstr "Тека встановлення"
+
+#~ msgid "Source"
+#~ msgstr "Джерело"
+
+#~ msgid "Choose the executable Clipper uses to detect this game."
+#~ msgstr ""
+#~ "Обери виконуваний файл, за яким Clipper визначатиме запуск цієї гри."
 
 #~ msgid "Game capture (advanced)"
 #~ msgstr "Захоплення гри (для досвідчених)"
