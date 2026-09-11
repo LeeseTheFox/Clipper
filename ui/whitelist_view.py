@@ -485,6 +485,7 @@ class WhitelistView(Gtk.Box):
         self.games_list.set_selection_mode(Gtk.SelectionMode.NONE)
         self.games_list.set_can_focus(False)
         self.games_list.set_filter_func(self._filter_game_row)
+        self.games_list.connect("row-activated", self._on_game_activated)
         self.scrolled.set_child(self.games_list)
         self.content_stack.add_named(self.scrolled, "games")
 
@@ -576,7 +577,7 @@ class WhitelistView(Gtk.Box):
     def _create_game_row(self, game_data):
         """Create a row for a whitelisted game"""
         row = Gtk.ListBoxRow()
-        row.set_activatable(False)
+        row.set_activatable(True)
         row.set_selectable(False)
         row._clipper_game_data = game_data
 
@@ -659,6 +660,34 @@ class WhitelistView(Gtk.Box):
     # ------------------------------------------------------------------
     # Signal handlers
     # ------------------------------------------------------------------
+
+    def _on_game_activated(self, _list, row):
+        from game_details_dialog import GameDetailsDialog
+
+        entry = row._clipper_game_data
+        artwork, frame, picture, placeholder = self._new_game_artwork(entry)
+        self._load_game_icon_async(dict(entry), frame, picture, placeholder)
+        dialog = GameDetailsDialog(
+            entry, _entry_display_name(entry), artwork, self._save_game_executable
+        )
+        dialog.present(self.get_root())
+
+    def _save_game_executable(self, original, path):
+        from game_details import replace_executable
+
+        entries = self._load_whitelist() if self._config is not None else self._whitelist
+        updated = replace_executable(entries, original, path)
+        if self._config is not None:
+            self._config.set("whitelist", updated)
+            self.reload_from_config()
+        else:
+            while row := self.games_list.get_first_child():
+                self.games_list.remove(row)
+            self._whitelist = []
+            for entry in updated:
+                self._add_entry(entry)
+            self._update_content_state()
+        self._show_toast(_("Executable updated"))
 
     def on_add_steam_game(self, button):
         """Show Steam game picker dialog"""
