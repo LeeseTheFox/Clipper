@@ -333,22 +333,13 @@ def test_restart_reserves_app_until_helper_is_ready(monkeypatch, failed):
     updater.app.setup_window = None
     updater.app._engine_client = SimpleNamespace(pending_saves=0)
     updater.dialog = Widget()
-    confirmations = []
-    confirm = SimpleNamespace(
-        add_response=lambda *_args: None,
-        set_close_response=lambda *_args: None,
-        choose=lambda *_args: confirmations.append(_args[-1]),
-        choose_finish=lambda result: result,
-    )
-    monkeypatch.setattr(update_controller.Adw.AlertDialog, "new", lambda *_args: confirm)
     pending = []
     updater._worker = lambda work, done: pending.append(done)
     quit_calls = []
     updater.app.quit = lambda: quit_calls.append(True)
     updater._restart()
     updater._restart()
-    assert len(confirmations) == 1
-    confirmations[0](confirm, "restart")
+    assert len(pending) == 1
     assert updater.app._update_restart_pending
     assert not updater.dialog.can_close
     assert not updater.button.sensitive

@@ -344,7 +344,7 @@ msgstr ""
 #: ui/clips_view.py:2046 ui/dialogs.py:864 ui/editor_export_dialog.py:345
 #: ui/editor_export_dialog.py:636 ui/editor_export_dialog.py:664
 #: ui/editor_export_dialog.py:772 ui/editor_window.py:3990 ui/editor_wipe.py:16
-#: ui/game_details_dialog.py:37 ui/update_controller.py:377
+#: ui/game_details_dialog.py:37 ui/update_controller.py:376
 msgid "Cancel"
 msgstr "Cancel"
 
@@ -1740,7 +1740,7 @@ msgstr "Engine not running"
 msgid "Could not send save command to Clipper engine"
 msgstr "Could not send save command to Clipper engine"
 
-#: ui/main.py:581 ui/update_controller.py:449
+#: ui/main.py:581
 msgid "Restart Clipper?"
 msgstr "Restart Clipper?"
 
@@ -1748,11 +1748,11 @@ msgstr "Restart Clipper?"
 msgid "Clipper needs to be restarted for this change to take effect."
 msgstr "Clipper needs to be restarted for this change to take effect."
 
-#: ui/main.py:584 ui/update_controller.py:327 ui/update_controller.py:455
+#: ui/main.py:584 ui/update_controller.py:326
 msgid "Restart later"
 msgstr "Restart later"
 
-#: ui/main.py:585 ui/update_controller.py:331 ui/update_controller.py:456
+#: ui/main.py:585 ui/update_controller.py:330
 msgid "Restart now"
 msgstr "Restart now"
 
@@ -1939,7 +1939,7 @@ msgstr "About Clipper"
 msgid "Quit"
 msgstr "Quit"
 
-#: ui/main_window.py:191 ui/update_controller.py:220
+#: ui/main_window.py:191 ui/update_controller.py:219
 msgid "A Clipper update is available"
 msgstr "A Clipper update is available"
 
@@ -2063,7 +2063,7 @@ msgstr "File size limit"
 msgid "Maximum size retained for each clip"
 msgstr "Maximum size retained for each clip"
 
-#: ui/settings_view.py:1177 ui/setup_window.py:343 ui/update_controller.py:340
+#: ui/settings_view.py:1177 ui/setup_window.py:343 ui/update_controller.py:339
 msgid "MiB"
 msgstr "MiB"
 
@@ -2422,85 +2422,85 @@ msgstr "Hide Clipper"
 msgid "Show Clipper"
 msgstr "Show Clipper"
 
-#: ui/update_controller.py:110 ui/update_controller.py:122
+#: ui/update_controller.py:109 ui/update_controller.py:121
 msgid "Checking for updates…"
 msgstr "Checking for updates…"
 
-#: ui/update_controller.py:119
+#: ui/update_controller.py:118
 msgid "Install the Flatpak version of Clipper to use in-app updates."
 msgstr "Install the Flatpak version of Clipper to use in-app updates."
 
-#: ui/update_controller.py:158
+#: ui/update_controller.py:157
 msgid "Could not check for updates. Check your connection and try again."
 msgstr "Could not check for updates. Check your connection and try again."
 
-#: ui/update_controller.py:183
+#: ui/update_controller.py:182
 msgid "Clipper is up to date."
 msgstr "Clipper is up to date."
 
-#: ui/update_controller.py:196 ui/update_controller.py:333
+#: ui/update_controller.py:195 ui/update_controller.py:332
 msgid "Clipper update available"
 msgstr "Clipper update available"
 
-#: ui/update_controller.py:198
+#: ui/update_controller.py:197
 #, python-format
 msgid "Clipper %(version)s is ready to download."
 msgstr "Clipper %(version)s is ready to download."
 
-#: ui/update_controller.py:218 ui/update_controller.py:329
+#: ui/update_controller.py:217 ui/update_controller.py:328
 msgid "Restart Clipper to finish updating"
 msgstr "Restart Clipper to finish updating"
 
-#: ui/update_controller.py:234
+#: ui/update_controller.py:233
 msgid "Updates"
 msgstr "Updates"
 
-#: ui/update_controller.py:271
+#: ui/update_controller.py:270
 msgid "Installed"
 msgstr "Installed"
 
-#: ui/update_controller.py:272
+#: ui/update_controller.py:271
 msgid "Available"
 msgstr "Available"
 
-#: ui/update_controller.py:274
+#: ui/update_controller.py:273
 msgid "Download"
 msgstr "Download"
 
-#: ui/update_controller.py:279
+#: ui/update_controller.py:278
 msgid "Release notes"
 msgstr "Release notes"
 
-#: ui/update_controller.py:291 ui/update_controller.py:327
+#: ui/update_controller.py:290 ui/update_controller.py:326
 msgid "Later"
 msgstr "Later"
 
-#: ui/update_controller.py:294 ui/update_controller.py:342
+#: ui/update_controller.py:293 ui/update_controller.py:341
 msgid "Update"
 msgstr "Update"
 
-#: ui/update_controller.py:299
+#: ui/update_controller.py:298
 msgid "Skip this version"
 msgstr "Skip this version"
 
-#: ui/update_controller.py:330
+#: ui/update_controller.py:329
 msgid "Update installed. Restart Clipper to use the new version."
 msgstr "Update installed. Restart Clipper to use the new version."
 
-#: ui/update_controller.py:339
+#: ui/update_controller.py:338
 #, python-format
 msgid "%(size)s %(unit)s"
 msgstr "%(size)s %(unit)s"
 
-#: ui/update_controller.py:374
+#: ui/update_controller.py:373
 msgid "Downloading update…"
 msgstr "Downloading update…"
 
-#: ui/update_controller.py:408
+#: ui/update_controller.py:407
 msgid "Installing update…"
 msgstr "Installing update…"
 
-#: ui/update_controller.py:419
+#: ui/update_controller.py:418
 msgid ""
 "Could not install the update. Your current version is still available. Try "
 "again."
@@ -2508,24 +2508,16 @@ msgstr ""
 "Could not install the update. Your current version is still available. Try "
 "again."
 
-#: ui/update_controller.py:424
+#: ui/update_controller.py:423
 #, python-format
 msgid "Details: %(details)s"
 msgstr "Details: %(details)s"
 
-#: ui/update_controller.py:445
+#: ui/update_controller.py:444
 msgid "Close the editor and wait for clip saving to finish before restarting."
 msgstr "Close the editor and wait for clip saving to finish before restarting."
 
-#: ui/update_controller.py:451
-msgid ""
-"Restarting interrupts recording and clears the replay buffer. Saved clips "
-"are kept."
-msgstr ""
-"Restarting interrupts recording and clears the replay buffer. Saved clips "
-"are kept."
-
-#: ui/update_controller.py:485
+#: ui/update_controller.py:463
 msgid "Could not restart Clipper. Quit and open it again to use the update."
 msgstr "Could not restart Clipper. Quit and open it again to use the update."
 

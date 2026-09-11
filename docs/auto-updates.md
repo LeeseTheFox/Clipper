@@ -59,12 +59,13 @@ Long error details wrap within the compact update dialog.
 If Flatpak rejects the transaction, its final error detail is
 shown in the dialog and recorded in Clipper's logs.
 
-Restart requires a closed editor and no pending clip saves. Confirmation explains
-that recording stops and the replay buffer is cleared. A detached host helper
-waits for the old Flatpak instance to exit, then launches the new deployment.
+Restart requires a closed editor and no pending clip saves. Restart starts
+immediately after those checks; recording stops and the replay buffer is
+cleared. A detached host helper waits for the old Flatpak instance to exit,
+then launches the new deployment.
 The normal Python foreground/background handoff cannot switch deployments.
-After confirmation, new saves and editor loads are blocked until restart or a
-restart-preparation failure. An editor that is still loading also blocks restart.
+New saves and editor loads are blocked until restart or a restart-preparation
+failure. An editor that is still loading also blocks restart.
 
 The bundled OBS replay writer reports both completed and failed saves, including
 muxer process failures. Save notifications wait for completion, and failed saves
