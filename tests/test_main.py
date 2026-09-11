@@ -113,6 +113,7 @@ def _load_main_module():
     logs.LogBuffer = type("LogBuffer", (), {"__init__": lambda self: None})
     logs.consume_handoff = lambda _file_descriptor: logs.LogBuffer()
     logs.create_handoff = lambda _log_buffer: None
+    logs.install_diagnostics = lambda _callback: None
 
     main_window = types.ModuleType("main_window")
     main_window.MainWindow = type(
@@ -1965,6 +1966,7 @@ def test_stable_learned_game_audio_identity_is_persisted_and_restarts_engine():
             "matched by identity; confirming"
         ),
         "[clipper] Learned discovery-D.exe as the audio application for THE FINALS",
+        "[clipper] Engine restart requested: Updated audio capture for THE FINALS",
     ]
 
 
@@ -2284,12 +2286,16 @@ def test_monitor_stop_event_shuts_down_idle_display_capture_engine():
         "steam-730": {"event": "process_started", "rule_id": "steam-730", "pid": 7300}
     }
     app._last_running_entry_key = "730"
+    logs = []
+    app._log = logs.append
 
     assert app._on_monitor_event({"event": "process_stopped", "rule_id": "steam-730"}) is False
 
     assert engine_manager.terminated is True
     assert app._monitor_active_rules == {}
     assert app._last_running_entry_key is None
+    assert any("no whitelisted application running" in message for message in logs)
+    assert any("Engine IPC unavailable" in message for message in logs)
 
 
 def test_monitor_ipc_start_automatically_starts_host_monitor(monkeypatch):

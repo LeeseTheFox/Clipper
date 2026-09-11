@@ -417,7 +417,7 @@ def test_hardware_detection_requires_a_successful_probe_for_each_rate_mode(monke
                 "CQP",
                 "VBR",
             }
-        return SimpleNamespace(returncode=0 if supported else 1)
+        return SimpleNamespace(returncode=0 if supported else 1, stderr="unsupported mode")
 
     monkeypatch.setattr("editor_export.run_media_tool", run)
     detect_hardware_export_encoders.cache_clear()
@@ -479,7 +479,7 @@ def test_nvenc_detection_hides_advertised_encoders_when_initialization_fails(
         if "-rc" in command:
             rate_control = command[command.index("-rc") + 1]
             supported = supported and rate_control in {"constqp", "cbr"}
-        return SimpleNamespace(returncode=0 if supported else 1)
+        return SimpleNamespace(returncode=0 if supported else 1, stderr="NVENC unavailable")
 
     monkeypatch.setattr("editor_export.run_media_tool", run)
     detect_hardware_export_encoders.cache_clear()
@@ -767,7 +767,11 @@ def test_export_process_drains_progress_before_atomic_replacement(tmp_path, monk
     assert not exporter.partial.exists()
 
 
-def test_export_process_reports_ffmpeg_detail_and_removes_partial(tmp_path):
+def test_export_process_reports_ffmpeg_detail_and_removes_partial(tmp_path, caplog):
+    caplog.set_level("INFO", logger="clipper.editor.export")
+    # Application logging may already be installed by another test.
+    caplog.handler.setLevel("INFO")
+    editor_export._LOG.addHandler(caplog.handler)
     exporter = ExportProcess(project(), ExportOptions(tmp_path, "failed"))
     exporter.process = _FinishedProcess("", return_code=1)
     exporter._stderr.write(
@@ -775,10 +779,17 @@ def test_export_process_reports_ffmpeg_detail_and_removes_partial(tmp_path):
         "Nothing was written into output file\n"
     )
 
-    with pytest.raises(RuntimeError, match="selected encoder could not be opened"):
-        exporter.finish()
+    try:
+        with pytest.raises(RuntimeError, match="selected encoder could not be opened"):
+            exporter.finish()
+    finally:
+        editor_export._LOG.removeHandler(caplog.handler)
 
     assert not exporter.partial.exists()
+    assert "encoding failed" in caplog.text
+    assert "exit=1" in caplog.text
+    assert "selected encoder could not be opened" in caplog.text
+    assert "Nothing was written into output file" in caplog.text
 
 
 def test_hardware_export_failure_recommends_the_safe_software_path(tmp_path):

@@ -244,7 +244,10 @@ static void engine_log(int log_level, const char *msg, va_list args, void *p)
 {
     (void)p;
     if (log_level <= LOG_WARNING || g_verbose) {
-        fprintf(stderr, "[engine] ");
+        fprintf(stderr, "[engine] [obs] %s: ",
+                log_level <= LOG_ERROR ? "ERROR" :
+                log_level <= LOG_WARNING ? "WARN" :
+                log_level <= LOG_INFO ? "INFO" : "DEBUG");
         vfprintf(stderr, msg, args);
         fputc('\n', stderr);
     }
@@ -569,6 +572,7 @@ static void on_clip_saved(void *param, calldata_t *cd)
     }
     cJSON_AddStringToObject(ev, "event", "clip_saved");
     cJSON_AddStringToObject(ev, "path",  path);
+    fprintf(stderr, "[engine] [replay] Clip saved: %s\n", path);
 
     broadcast_event(state, ev);      /* acquires mutex internally */
     cJSON_Delete(ev);
@@ -579,6 +583,9 @@ static void on_clip_save_failed(void *param, calldata_t *cd)
 {
     (void)cd;
     engine_state_t *state = param;
+    const char *error = obs_output_get_last_error(state->replay_output);
+    fprintf(stderr, "[engine] [replay] ERROR: clip save failed: %s\n",
+            error && *error ? error : "no output error detail available");
     cJSON *ev = cJSON_CreateObject();
     if (!ev)
         return;
@@ -772,10 +779,19 @@ static bool start_replay_buffer_internal(engine_state_t *state, bool emit_event)
     if (state->buffer_active)
         return true;
 
-    if (!state->replay_output || !obs_output_start(state->replay_output))
+    fprintf(stderr, "[engine] [replay] Starting: capture=%s video=%s audio=%s\n",
+            capture_mode_to_string(state->capture_mode),
+            state->video_encoder, state->audio_encoder);
+    if (!state->replay_output || !obs_output_start(state->replay_output)) {
+        const char *error = state->replay_output ?
+            obs_output_get_last_error(state->replay_output) : NULL;
+        fprintf(stderr, "[engine] [replay] ERROR: start failed: %s\n",
+                error && *error ? error : "output unavailable or no error detail");
         return false;
+    }
 
     state->buffer_active = true;
+    fprintf(stderr, "[engine] [replay] Buffer active\n");
     if (emit_event)
         broadcast_status_changed(state, "active");
 
@@ -1973,6 +1989,7 @@ static void handle_start_replay(engine_state_t *state, int fd)
 
 static void handle_stop_replay(engine_state_t *state, int fd)
 {
+    fprintf(stderr, "[engine] [replay] Stop requested; active=%d\n", state->buffer_active);
     if (!state->buffer_active) {
         send_error(state, fd, "not running");
         return;
@@ -1991,6 +2008,7 @@ static void handle_stop_replay(engine_state_t *state, int fd)
 
 static void handle_save_replay(engine_state_t *state, int fd, cJSON *json)
 {
+    fprintf(stderr, "[engine] [replay] Save requested; active=%d\n", state->buffer_active);
     if (!state->buffer_active) {
         send_error(state, fd, "not running");
         return;
@@ -2688,22 +2706,14 @@ static bool register_audio_source(engine_state_t *state, obs_source_t *source,
     obs_set_output_source((uint32_t)(idx + 1), source);
     active_tracks[track - 1] = true;
 
-    if (config &&
-        (config->kind == AUDIO_SOURCE_APPLICATION ||
-         config->kind == AUDIO_SOURCE_GAME_APP)) {
-        fprintf(stderr,
-                "[engine] App audio capture configured: track %d; source '%s'; "
-                "selector '%s'\n",
-                track,
-                config->display_name[0] ? config->display_name : "application",
-                config->match_value[0] ? config->match_value : "(empty)");
-    }
-
-    if (g_verbose) {
-        fprintf(stderr,
-                "[engine] audio source routed to track %d with mask 0x%x volume %.2f\n",
-                track, mask, (double)volume);
-    }
+    fprintf(stderr,
+            "[engine] [audio] Configured route: track=%d; source=%s; type=%s; "
+            "selector=%s; device=%s; volume=%.2f\n",
+            track, config && config->display_name[0] ? config->display_name :
+                obs_source_get_name(source), obs_source_get_id(source),
+            config && config->match_value[0] ? config->match_value : "none",
+            config && config->device_id[0] ? config->device_id : "default",
+            (double)volume);
 
     return true;
 }
@@ -4019,6 +4029,19 @@ int main(int argc, char *argv[])
             config_summary, state.output_width, state.output_height, state.fps,
             state.video_encoder, state.output_format, state.max_time_sec,
             state.max_size_mb);
+    fprintf(stderr,
+            "[engine] Version: %s; capture=%s; video rate_control=%s; "
+            "audio mode=%s encoder=%s bitrate=%d kbps\n",
+            ENGINE_VERSION, capture_mode_to_string(state.capture_mode),
+            video_rate_control_to_config_string(state.video_rate_control),
+            audio_mode_to_string(state.audio_mode), state.audio_encoder,
+            state.audio_bitrate);
+    fprintf(stderr, "[engine] [audio] Routes describe configured sources; "
+            "live signal activity is not measured\n");
+    fprintf(stderr,
+            "[engine] [video] Quality=%d bitrate=%d max_bitrate=%d kbps; VAAPI device=%s\n",
+            state.quality_cqp, state.video_bitrate, state.video_max_bitrate,
+            state.vaapi_device[0] ? state.vaapi_device : "automatic");
 
     /* Mutex initialisation */
     if (pthread_mutex_init(&state.clients_mutex, NULL) != 0) {

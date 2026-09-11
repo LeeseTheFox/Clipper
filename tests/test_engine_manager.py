@@ -116,12 +116,18 @@ def test_start_forwards_engine_output_to_log_callback(tmp_path):
         assert kwargs["stderr"] is not None
         assert kwargs["text"] is True
         process = FakeProcess()
-        process.stdout = io.StringIO("engine ready\nengine recording\n")
+        process.stdout = io.StringIO(
+            "engine ready\n\n"
+            "[libopus @ 0x123] 1 frames left in the queue on closing\n"
+            "[libopus @ 0x456] 1 frames left in the queue on closing\n"
+            "[libopus @ 0x789] 2 frames left in the queue on closing\n"
+            "[engine] recording\n"
+        )
         return process
 
     def log_callback(message):
         logs.append(message)
-        if len(logs) == 2:
+        if len(logs) == 4:
             log_received.set()
 
     manager = EngineProcessManager(
@@ -133,7 +139,12 @@ def test_start_forwards_engine_output_to_log_callback(tmp_path):
 
     assert manager.start() is True
     assert log_received.wait(1)
-    assert logs == ["engine: engine ready", "engine: engine recording"]
+    assert logs == [
+        "engine: engine ready",
+        "[engine] [audio] Opus encoder cleanup: 2 encoders reported one queued frame on closing",
+        "engine: [libopus @ 0x789] 2 frames left in the queue on closing",
+        "[engine] recording",
+    ]
 
 
 def test_poll_restarts_engine_when_requested(tmp_path):

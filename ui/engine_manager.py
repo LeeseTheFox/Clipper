@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 import threading
 from pathlib import Path
@@ -97,8 +98,31 @@ class EngineProcessManager:
             return
 
         def read_output() -> None:
+            queued_frames = 0
+
+            def flush_audio_cleanup() -> None:
+                nonlocal queued_frames
+                if queued_frames:
+                    log_callback(
+                        f"[engine] [audio] Opus encoder cleanup: {queued_frames} "
+                        "encoders reported one queued frame on closing"
+                    )
+                    queued_frames = 0
+
             for line in output:
-                log_callback(f"engine: {line.rstrip()}")
+                message = line.rstrip()
+                if re.fullmatch(
+                    r"\[libopus @ 0x[0-9a-fA-F]+\] 1 frames left in the queue on closing",
+                    message,
+                ):
+                    queued_frames += 1
+                    continue
+                if message:
+                    flush_audio_cleanup()
+                    log_callback(
+                        message if message.startswith("[engine]") else f"engine: {message}"
+                    )
+            flush_audio_cleanup()
 
         threading.Thread(target=read_output, daemon=True).start()
 
@@ -112,6 +136,11 @@ class EngineProcessManager:
             return None
 
         self._process = None
+        if self._log_callback is not None:
+            self._log_callback(
+                f"[engine] Process exited: code={exit_code}; "
+                f"capture_mode={self._capture_mode}; restart={exit_code == RESTART_EXIT_CODE}"
+            )
         if exit_code == RESTART_EXIT_CODE:
             self.start(self._capture_mode)
         return exit_code
@@ -127,6 +156,8 @@ class EngineProcessManager:
         try:
             process.wait(timeout=timeout)
         except subprocess.TimeoutExpired:
+            if self._log_callback is not None:
+                self._log_callback("[engine] WARN: shutdown timed out; killing process")
             process.kill()
             process.wait()
 

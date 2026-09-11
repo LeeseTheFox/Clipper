@@ -7,12 +7,15 @@ receiving events from the engine via Unix domain socket.
 """
 
 import json
+import logging
 import socket
 from collections import deque
 from collections.abc import Callable
 from typing import Any
 
 from gi.repository import GLib
+
+_LOG = logging.getLogger("clipper.engine.ipc")
 
 # Connection states
 STATE_DISCONNECTED = 0
@@ -402,19 +405,18 @@ class EngineClient:
                 for callback in self._event_handlers[event_name]:
                     try:
                         callback(msg)
-                    except Exception as e:
-                        print(f"Error in event handler for {event_name}: {e}")
+                    except Exception:
+                        _LOG.exception("Event handler failed: event=%s", event_name)
 
     def _handle_error(self, message: str) -> None:
         """Handle an error by calling the error callback if set."""
         if self._error_callback is not None:
             try:
                 self._error_callback(message)
-            except Exception as e:
-                print(f"Error in error callback: {e}")
+            except Exception:
+                _LOG.exception("Error callback failed while reporting: %s", message)
         else:
-            # Fallback: just print to stderr
-            print(f"EngineClient error: {message}")
+            _LOG.error("%s", message)
 
     def _set_state(self, new_state: int) -> None:
         """Update connection state and notify callback if state changed."""
@@ -423,8 +425,8 @@ class EngineClient:
             for callback in list(self._state_callbacks):
                 try:
                     callback(new_state)
-                except Exception as e:
-                    print(f"Error in state callback: {e}")
+                except Exception:
+                    _LOG.exception("State callback failed: state=%s", new_state)
 
     def _start_reconnect_timer(self) -> None:
         """Start attempting to reconnect to the engine."""

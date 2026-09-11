@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import time
 from pathlib import Path
 
@@ -14,7 +15,19 @@ gi.require_version("Gtk", "4.0")
 
 from editor_model import effective_audio_gain
 from gi.repository import Adw, GLib, Gst, Gtk
+from logs import diagnostic_tail
 from video_output import make_clipper_video_sink
+
+_LOG = logging.getLogger("clipper.editor.preview")
+
+
+def _log_pipeline_error(message, context):
+    error, debug = message.parse_error()
+    source = message.src.get_path_string() if message.src is not None else "unknown"
+    _LOG.error("%s: element=%s error=%s debug=%s",
+               context, source, error, diagnostic_tail(debug or ""))
+    return str(error)
+
 
 RESUME_WATCHDOG_MS = 250
 RESUME_PROGRESS_US = 10_000
@@ -987,8 +1000,8 @@ class TimelineComposition:
             self._last_position_us = self.project.output_duration_us
             self.eos_callback(self)
         elif message.type == Gst.MessageType.ERROR:
-            error, _debug = message.parse_error()
-            self.error_callback(self, str(error))
+            error = _log_pipeline_error(message, "Timeline pipeline failed")
+            self.error_callback(self, error)
 
     def cleanup(self):
         if self._cleaned:
@@ -1302,6 +1315,8 @@ class EditorPreview:
         return True
 
     def _on_bus_message(self, _bus, message):
+        if message.type == Gst.MessageType.ERROR:
+            _log_pipeline_error(message, "Source preview pipeline failed")
         _dispatch_level_message(
             message,
             self.audio_level_track_ids,
@@ -1676,6 +1691,8 @@ class EditorPreview:
                 self._on_timeline_ready,
             )
         except Exception:
+            _LOG.exception("Could not build timeline preview at position_us=%s",
+                           self.output_position_us)
             self.pipeline.set_state(Gst.State.PAUSED)
             self._show_paintable(self._legacy_paintable)
             self._set_loading(False)
@@ -1696,6 +1713,8 @@ class EditorPreview:
             self.output_position_us,
         )
         if not composition.prepare():
+            _LOG.warning("Timeline preparation failed at position_us=%s",
+                         self.output_position_us)
             composition.cleanup()
             self._timeline_composition = None
             self._show_paintable(self._legacy_paintable)
@@ -1807,6 +1826,7 @@ class EditorPreview:
 
     def _on_timeline_error(self, composition, _message):
         if composition is getattr(self, "_speculative_composition", None):
+            _LOG.info("Discarding failed background timeline preparation")
             if (
                 getattr(composition, "preparation_generation", None)
                 == getattr(self, "_preparation_generation", 0)
@@ -1829,6 +1849,8 @@ class EditorPreview:
             return
         output_us = composition.position_us()
         was_playing = self.playing
+        _LOG.warning("Falling back to source preview: position_us=%s playing=%s",
+                     output_us, was_playing)
         composition.cleanup()
         self._timeline_composition = None
         self.pipeline.set_state(Gst.State.PAUSED)
@@ -1857,6 +1879,8 @@ class EditorPreview:
             return False
         # Some playbin/sink combinations occasionally fail to leave their paused
         # preroll. Retry from the captured output position only in that case.
+        _LOG.warning("Preview resume stalled; retrying from position_us=%s",
+                     self._resume_output_us)
         self.seek_output(self._resume_output_us)
         if self.pipeline.set_state(Gst.State.PLAYING) == Gst.StateChangeReturn.FAILURE:
             self._set_playing(False)

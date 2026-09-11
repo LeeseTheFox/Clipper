@@ -51,7 +51,7 @@ from hotkeys import (
 )
 from icon_names import APP_ICON
 from log_window import LogWindow
-from logs import LogBuffer, consume_handoff, create_handoff
+from logs import LogBuffer, consume_handoff, create_handoff, install_diagnostics
 from monitor_ipc import MonitorIpcServer, default_monitor_socket_path
 from monitor_manager import HostMonitorManager
 from process_watcher import (
@@ -166,6 +166,7 @@ class ClipperApplication(Adw.Application):
         self._capabilities_cache = capabilities_cache if capabilities_cache is not None else {}
         self._config = ClipperConfig()
         self._log_buffer = log_buffer if log_buffer is not None else LogBuffer()
+        install_diagnostics(self._log)
         self._clip_sound_player = ClipSoundPlayer()
         self._autostart_manager = AutostartManager()
         self._tray: ClipperTray | None = None
@@ -431,6 +432,7 @@ class ClipperApplication(Adw.Application):
 
     def do_shutdown(self):
         """Called when the application shuts down"""
+        self._log("[clipper] Application exiting; shutting down engine")
         updater = getattr(self, "_updater", None)
         if updater:
             updater.close()
@@ -983,6 +985,7 @@ class ClipperApplication(Adw.Application):
         reason = reason or _("Restarting engine…")
 
         if self._engine_client.is_connected():
+            self._log(f"[clipper] Engine restart requested: {reason}")
             self._engine_client.set_auto_reconnect(True)
             if self._engine_client.shutdown(
                 lambda response: self._on_engine_restart_response(response, reason),
@@ -1162,6 +1165,7 @@ class ClipperApplication(Adw.Application):
             self._engine_client.set_auto_reconnect(False)
             self._engine_client.disconnect(auto_reconnect=False)
         if self._engine_manager.is_running():
+            self._log("[clipper] Stopping engine to select a new display target")
             self._engine_manager.terminate()
 
         if self._start_engine_for_capture(CAPTURE_MODE_DISPLAY):
@@ -1233,6 +1237,7 @@ class ClipperApplication(Adw.Application):
 
     def _begin_setup_after_reset(self) -> None:
         """Stop active services and return a reset installation to setup."""
+        self._log("[clipper] Settings reset; stopping engine and returning to setup")
         self._register_save_hotkey("")
         if self._engine_client and self._engine_client.is_connected():
             self._engine_client.set_auto_reconnect(False)
@@ -1255,7 +1260,6 @@ class ClipperApplication(Adw.Application):
     def _on_clip_saved(self, response: dict):
         """Handle completion of a replay-buffer save."""
         if response.get("ok"):
-            self._log("Clip saved successfully")
             # The engine completion event is the authoritative signal that the
             # file is ready.  Refresh directly instead of relying only on a
             # directory-monitor event, which can be missed by sandboxed mounts.
@@ -1302,6 +1306,7 @@ class ClipperApplication(Adw.Application):
                 completed_callback()
             return
         self._editor_open_pending = True
+        self._log(f"[editor] Opening source: {clip_path}")
 
         def worker():
             try:
@@ -1327,6 +1332,15 @@ class ClipperApplication(Adw.Application):
             from editor_window import EditorWindow
 
             project = history.project
+            self._log(
+                f"[editor] Loaded: codec={project.source.video_codec}; "
+                f"size={project.source.width}x{project.source.height}; "
+                f"fps={project.source.frame_rate_num}/{project.source.frame_rate_den}; "
+                f"vfr={project.source.variable_frame_rate}; "
+                f"audio_tracks={len(project.source.audio_tracks)}; "
+                f"segments={len(project.segments)}; "
+                f"output_duration_us={project.output_duration_us}"
+            )
             self.editor_window = EditorWindow(
                 application=self,
                 project=project,
@@ -1350,6 +1364,7 @@ class ClipperApplication(Adw.Application):
         """Return from the editor to the existing Clips window."""
         if editor_window is not self.editor_window:
             return
+        self._log("[editor] Closed editor")
         self.editor_window = None
         editor_window.destroy()
         self._session_end_prompt_pending = False
@@ -1772,6 +1787,7 @@ class ClipperApplication(Adw.Application):
 
         try:
             if force_restart and self._engine_manager.is_running():
+                self._log("[clipper] Stopping engine to apply capture configuration changes")
                 self._engine_manager.terminate()
 
             if (
@@ -1821,9 +1837,14 @@ class ClipperApplication(Adw.Application):
         if not self._engine_manager.is_running():
             return False
 
+        self._log(
+            "[clipper] Stopping idle engine: no whitelisted application running "
+            "and no temporary probe or display picker needs the engine"
+        )
         self._display_capture_sync_pending = False
 
         if not self._engine_client or not self._engine_client.is_connected():
+            self._log("[clipper] Engine IPC unavailable; terminating process directly")
             self._engine_manager.terminate()
             self._last_engine_exit_status = None
             self._set_window_engine_status(_ENGINE_STATUS_READY)
@@ -1838,6 +1859,7 @@ class ClipperApplication(Adw.Application):
 
         self._engine_shutdown_pending = False
         self._idle_engine_exit_expected = False
+        self._log("[clipper] Shutdown command could not be sent; terminating process directly")
         self._engine_manager.terminate()
         return True
 
@@ -1962,6 +1984,7 @@ class ClipperApplication(Adw.Application):
             self._display_capture_sync_pending = True
             self._engine_client.start_replay_buffer(self._on_display_capture_sync_response)
         elif not game_running and buffer_active:
+            self._log("[clipper] Stopping display replay: no display-capture application running")
             self._display_capture_sync_pending = True
             self._engine_client.stop_replay_buffer(self._on_display_capture_sync_response)
 

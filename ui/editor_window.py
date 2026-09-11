@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import math
 import os
 import threading
@@ -3891,8 +3892,14 @@ class EditorWindow(Adw.ApplicationWindow):
         from editor_export import ExportCancelledError, ExportProcess
 
         self._export_options = options
-        self.save()
-        exporter = ExportProcess(self.project.clone(), options)
+        try:
+            self.save()
+            exporter = ExportProcess(self.project.clone(), options)
+        except Exception:
+            logging.getLogger("clipper.editor.export").exception(
+                "Export setup failed: options=%s", options
+            )
+            raise
         self._exporter = exporter
         wipe_edits_action = getattr(self, "wipe_edits_action", None)
         if wipe_edits_action is not None:

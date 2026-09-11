@@ -36,6 +36,18 @@ class FakeProject:
         return output_us + 1_000
 
 
+def test_preview_failure_logs_element_and_debug_context(monkeypatch):
+    records = []
+    monkeypatch.setattr(editor_preview._LOG, "error", lambda *args: records.append(args))
+    message = SimpleNamespace(
+        src=SimpleNamespace(get_path_string=lambda: "/pipeline/audio-sink"),
+        parse_error=lambda: (RuntimeError("device disconnected"), "PipeWire connection lost"),
+    )
+    assert editor_preview._log_pipeline_error(message, "Source preview") == "device disconnected"
+    assert records[0][2] == "/pipeline/audio-sink"
+    assert records[0][4] == "PipeWire connection lost"
+
+
 class FakePipeline:
     def __init__(self, position_ns=2_001_000_000):
         self.calls = []

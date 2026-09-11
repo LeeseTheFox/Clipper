@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import shutil
 import subprocess
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
+
+from logs import diagnostic_tail
+
+_LOG = logging.getLogger("clipper.editor.media")
 
 EXTERNAL_TOOL_ENV_OVERRIDES = (
     "LD_LIBRARY_PATH",
@@ -84,9 +89,13 @@ def run_media_tool(
             shell=False,
         )
     except (OSError, subprocess.TimeoutExpired) as error:
+        _LOG.warning("Media tool could not complete: tool=%s timeout=%s reason=%s",
+                     args[0], timeout, error)
         raise MediaToolError(str(error)) from error
     if check and result.returncode:
         error_text = result.stderr if isinstance(result.stderr, str) else ""
+        _LOG.error("Media tool failed: tool=%s exit=%s\n%s",
+                   args[0], result.returncode, diagnostic_tail(error_text))
         raise MediaToolError(concise_error(error_text))
     return result
 

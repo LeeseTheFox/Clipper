@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import signal
 import subprocess
 import tempfile
 import threading
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from fractions import Fraction
@@ -17,6 +19,7 @@ from pathlib import Path
 
 from editor_model import EditorProject, effective_audio_gain
 from i18n import _
+from logs import diagnostic_tail, probe_failure_reason
 from media_tools import MediaToolError, clean_external_tool_env, run_media_tool
 from quality_controls import (
     CQP_HIGH_QUALITY,
@@ -40,6 +43,7 @@ _OBS_AV1_VAAPI_QP_SCALE = 5
 _EXPORT_SHORT_EDGES = (2160, 1440, 1080, 720, 480, 360, 240)
 _VAAPI_HEVC_WIDTH_ALIGNMENT = 64
 _VAAPI_HEVC_HEIGHT_ALIGNMENT = 16
+_LOG = logging.getLogger("clipper.editor.export")
 
 
 class ExportValidationError(ValueError):
@@ -430,8 +434,13 @@ def _probe_vaapi_encoder(
     command.extend(["-f", "null", "-"])
     try:
         result = run_media_tool(command, timeout=4, check=False)
-    except MediaToolError:
+    except MediaToolError as error:
+        _LOG.info("VAAPI probe unavailable: device=%s encoder=%s mode=%s: %s",
+                  device, encoder, rate_control, error)
         return False
+    if result.returncode:
+        _LOG.info("VAAPI probe rejected: device=%s encoder=%s mode=%s: %s",
+                  device, encoder, rate_control or "default", probe_failure_reason(result.stderr))
     return result.returncode == 0
 
 
@@ -486,8 +495,13 @@ def _probe_nvenc_encoder(encoder: str, rate_control: str | None = None) -> bool:
     command.extend(["-f", "null", "-"])
     try:
         result = run_media_tool(command, timeout=4, check=False)
-    except MediaToolError:
+    except MediaToolError as error:
+        _LOG.info("NVENC probe unavailable: encoder=%s mode=%s: %s",
+                  encoder, rate_control, error)
         return False
+    if result.returncode:
+        _LOG.info("NVENC probe rejected: encoder=%s mode=%s: %s",
+                  encoder, rate_control or "default", probe_failure_reason(result.stderr))
     return result.returncode == 0
 
 
@@ -571,6 +585,10 @@ def detect_hardware_export_encoders(
                     rate_controls,
                 )
             )
+    _LOG.info("Usable hardware export encoders: %s", "; ".join(
+        f"{item.encoder}@{item.device} ({','.join(sorted(item.rate_controls))})"
+        for item in capabilities
+    ) or "none")
     return tuple(capabilities)
 
 
@@ -1024,6 +1042,8 @@ class ExportProcess:
         self.process: subprocess.Popen | None = None
         self._stderr = tempfile.TemporaryFile(mode="w+t", encoding="utf-8")
         self._cancel_requested = False
+        self._started_at = time.monotonic()
+        self._stage = "initialization"
 
     def start(self):
         if self.process is not None:
@@ -1032,6 +1052,23 @@ class ExportProcess:
             self.cleanup()
             raise ExportCancelledError(_("Export cancelled"))
         try:
+            self._started_at = time.monotonic()
+            self._stage = "encoding"
+            options = self.options
+            _LOG.info("Starting export: source=%s; destination=%s; duration=%.2fs; segments=%s",
+                      self.project.source.path, self.destination,
+                      self.project.output_duration_us / 1_000_000, len(self.project.segments))
+            _LOG.info("Video: codec=%s; encoder=%s; device=%s; resolution=%s; %s",
+                      options.video_codec, options.video_encoder,
+                      options.hardware_device or "automatic",
+                      f"{options.output_width}x{options.output_height}"
+                      if options.output_width else "source",
+                      f"cqp={options.quality_cqp}" if options.rate_control == "cqp" else
+                      f"{options.rate_control}={options.video_bitrate} kbps; "
+                      f"max={options.video_max_bitrate} kbps")
+            _LOG.info("Audio: codec=%s; layout=%s; source_tracks=%s; container=%s",
+                      options.audio_codec, options.audio_layout,
+                      len(self.project.source.audio_tracks), options.format)
             self.process = subprocess.Popen(
                 build_ffmpeg_command(self.project, self.options, self.partial),
                 stdout=subprocess.PIPE,
@@ -1042,13 +1079,21 @@ class ExportProcess:
                 start_new_session=True,
             )
         except OSError as error:
+            _LOG.error("Could not launch FFmpeg: %s", error)
             self.cleanup()
             raise RuntimeError(
                 _("Could not start FFmpeg: %(error)s") % {"error": error}
             ) from error
+        except Exception:
+            _LOG.exception("Export command preparation failed: destination=%s", self.destination)
+            self.cleanup()
+            raise
         return self.process
 
     def cancel(self):
+        if not self._cancel_requested:
+            _LOG.info("Cancellation requested: destination=%s stage=%s",
+                      self.destination, self._stage)
         self._cancel_requested = True
         process = self.process
         if process and process.poll() is None:
@@ -1082,6 +1127,11 @@ class ExportProcess:
         return_code = process.wait()
         if return_code != 0 or self._cancel_requested:
             detail = self._read_stderr()
+            _LOG.log(logging.INFO if self._cancel_requested else logging.ERROR,
+                     "Export %s: destination=%s exit=%s elapsed=%.1fs progress=%s\n%s",
+                     "cancelled" if self._cancel_requested else "encoding failed",
+                     self.destination, return_code, time.monotonic() - self._started_at,
+                     last_progress, diagnostic_tail(detail))
             self.cleanup()
             if self._cancel_requested:
                 raise ExportCancelledError(_("Export cancelled"))
@@ -1094,13 +1144,21 @@ class ExportProcess:
 
         self._close_stderr()
         try:
+            self._stage = "validation"
+            _LOG.info("Encoding finished; validating output: %s", self.destination)
             self._validate_partial()
             if self._cancel_requested:
                 raise ExportCancelledError(_("Export cancelled"))
+            self._stage = "publishing output"
             os.replace(self.partial, self.destination)
-        except Exception:
+        except Exception as error:
+            _LOG.log(logging.INFO if isinstance(error, ExportCancelledError) else logging.ERROR,
+                     "Export stopped: destination=%s stage=%s reason=%s",
+                     self.destination, self._stage, error)
             self.cleanup()
             raise
+        _LOG.info("Export completed: destination=%s elapsed=%.1fs",
+                  self.destination, time.monotonic() - self._started_at)
         if progress_callback is not None and last_progress != 1.0:
             progress_callback(1.0)
         return self.destination
@@ -1173,6 +1231,10 @@ class ExportProcess:
             or abs(duration_us - self.project.output_duration_us) > tolerance_us
             or not frame_dimensions_match
         ):
+            _LOG.error("Output validation mismatch: expected video=%s dimensions=%s "
+                       "audio=%s tracks=%s duration_us=%s; actual=%s",
+                       video_codec, expected_dimensions, audio_codec, expected_audio,
+                       self.project.output_duration_us, probe)
             self.cleanup()
             raise RuntimeError(_("The exported file did not match the selected options"))
 

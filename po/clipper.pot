@@ -317,7 +317,7 @@ msgstr ""
 msgid "Reveal in file manager"
 msgstr ""
 
-#: ui/clips_view.py:1753 ui/editor_window.py:3822
+#: ui/clips_view.py:1753 ui/editor_window.py:3823
 msgid "Could not wipe saved edits"
 msgstr ""
 
@@ -338,7 +338,7 @@ msgstr ""
 
 #: ui/clips_view.py:2046 ui/dialogs.py:864 ui/editor_export_dialog.py:345
 #: ui/editor_export_dialog.py:636 ui/editor_export_dialog.py:664
-#: ui/editor_export_dialog.py:772 ui/editor_window.py:3990 ui/editor_wipe.py:16
+#: ui/editor_export_dialog.py:772 ui/editor_window.py:3997 ui/editor_wipe.py:16
 #: ui/game_details_dialog.py:37 ui/update_controller.py:376
 msgid "Cancel"
 msgstr ""
@@ -525,229 +525,229 @@ msgstr ""
 msgid "Restart Steam"
 msgstr ""
 
-#: ui/editor_export.py:29 ui/settings_view.py:62 ui/settings_view.py:817
+#: ui/editor_export.py:32 ui/settings_view.py:62 ui/settings_view.py:817
 msgid "Matroska video (.mkv)"
 msgstr ""
 
-#: ui/editor_export.py:30 ui/settings_view.py:63 ui/settings_view.py:818
+#: ui/editor_export.py:33 ui/settings_view.py:63 ui/settings_view.py:818
 msgid "MPEG-4 (.mp4)"
 msgstr ""
 
-#: ui/editor_export.py:31 ui/settings_view.py:64 ui/settings_view.py:819
+#: ui/editor_export.py:34 ui/settings_view.py:64 ui/settings_view.py:819
 msgid "QuickTime (.mov)"
 msgstr ""
 
-#: ui/editor_export.py:32 ui/settings_view.py:65 ui/settings_view.py:820
+#: ui/editor_export.py:35 ui/settings_view.py:65 ui/settings_view.py:820
 msgid "MPEG-TS (.ts)"
 msgstr ""
 
-#: ui/editor_export.py:99
+#: ui/editor_export.py:103
 msgid "H.264"
 msgstr ""
 
-#: ui/editor_export.py:100 ui/editor_export.py:139
+#: ui/editor_export.py:104 ui/editor_export.py:143
 msgid "Best playback compatibility"
 msgstr ""
 
-#: ui/editor_export.py:108
+#: ui/editor_export.py:112
 msgid "H265"
 msgstr ""
 
-#: ui/editor_export.py:109
+#: ui/editor_export.py:113
 msgid "Smaller files with slower encoding"
 msgstr ""
 
-#: ui/editor_export.py:117
+#: ui/editor_export.py:121
 msgid "VP9"
 msgstr ""
 
-#: ui/editor_export.py:118
+#: ui/editor_export.py:122
 msgid "Open codec suited to web playback"
 msgstr ""
 
-#: ui/editor_export.py:126
+#: ui/editor_export.py:130
 msgid "AV1"
 msgstr ""
 
-#: ui/editor_export.py:127
+#: ui/editor_export.py:131
 msgid "Best compression with the slowest encoding"
 msgstr ""
 
-#: ui/editor_export.py:138
+#: ui/editor_export.py:142
 msgid "AAC"
 msgstr ""
 
-#: ui/editor_export.py:147
+#: ui/editor_export.py:151
 msgid "Opus"
 msgstr ""
 
-#: ui/editor_export.py:148
+#: ui/editor_export.py:152
 msgid "Efficient high-quality audio"
 msgstr ""
 
-#: ui/editor_export.py:156
+#: ui/editor_export.py:160
 msgid "FLAC"
 msgstr ""
 
-#: ui/editor_export.py:157
+#: ui/editor_export.py:161
 msgid "Lossless audio with larger files"
 msgstr ""
 
-#: ui/editor_export.py:165
+#: ui/editor_export.py:169
 msgid "PCM 16-bit"
 msgstr ""
 
-#: ui/editor_export.py:166
+#: ui/editor_export.py:170
 msgid "Uncompressed audio"
 msgstr ""
 
-#: ui/editor_export.py:219 ui/editor_export.py:640
+#: ui/editor_export.py:223 ui/editor_export.py:658
 msgid "Unsupported export format"
 msgstr ""
 
-#: ui/editor_export.py:642
+#: ui/editor_export.py:660
 msgid "Unsupported audio layout"
 msgstr ""
 
-#: ui/editor_export.py:644
+#: ui/editor_export.py:662
 msgid "Unsupported video codec"
 msgstr ""
 
-#: ui/editor_export.py:646
+#: ui/editor_export.py:664
 msgid "Unsupported audio codec"
 msgstr ""
 
-#: ui/editor_export.py:648
+#: ui/editor_export.py:666
 msgid "The video codec is not supported by this format"
 msgstr ""
 
-#: ui/editor_export.py:650
+#: ui/editor_export.py:668
 msgid "The audio codec is not supported by this format"
 msgstr ""
 
-#: ui/editor_export.py:652
+#: ui/editor_export.py:670
 msgid "Unsupported rate control method"
 msgstr ""
 
-#: ui/editor_export.py:654
+#: ui/editor_export.py:672
 msgid "Unsupported video encoder"
 msgstr ""
 
-#: ui/editor_export.py:657
+#: ui/editor_export.py:675
 msgid "Software encoding cannot use a hardware device"
 msgstr ""
 
-#: ui/editor_export.py:661
+#: ui/editor_export.py:679
 msgid "The video codec cannot use VAAPI"
 msgstr ""
 
-#: ui/editor_export.py:665
+#: ui/editor_export.py:683
 msgid "Choose a valid VAAPI device"
 msgstr ""
 
-#: ui/editor_export.py:668
+#: ui/editor_export.py:686
 msgid "The video codec cannot use NVENC"
 msgstr ""
 
-#: ui/editor_export.py:670
+#: ui/editor_export.py:688
 msgid "Choose a valid NVENC device"
 msgstr ""
 
-#: ui/editor_export.py:673
+#: ui/editor_export.py:691
 #, python-format
 msgid "Quality must be between %(minimum)d and %(maximum)d"
 msgstr ""
 
-#: ui/editor_export.py:677
+#: ui/editor_export.py:695
 msgid "Video bitrate is outside the supported range"
 msgstr ""
 
-#: ui/editor_export.py:680
+#: ui/editor_export.py:698
 msgid "Maximum video bitrate is outside the supported range"
 msgstr ""
 
-#: ui/editor_export.py:684
+#: ui/editor_export.py:702
 msgid "Maximum bitrate cannot be lower than target bitrate"
 msgstr ""
 
-#: ui/editor_export.py:688
+#: ui/editor_export.py:706
 msgid "Choose both output dimensions"
 msgstr ""
 
-#: ui/editor_export.py:694
+#: ui/editor_export.py:712
 msgid "Output dimensions must be positive even numbers"
 msgstr ""
 
-#: ui/editor_export.py:705
+#: ui/editor_export.py:723
 msgid "The source resolution could not be determined"
 msgstr ""
 
-#: ui/editor_export.py:711
+#: ui/editor_export.py:729
 msgid "The output resolution must preserve the source aspect ratio"
 msgstr ""
 
-#: ui/editor_export.py:718
+#: ui/editor_export.py:736
 msgid "The output resolution must be lower than native"
 msgstr ""
 
-#: ui/editor_export.py:724
+#: ui/editor_export.py:742
 msgid "Enter a valid filename without folders"
 msgstr ""
 
-#: ui/editor_export.py:729
+#: ui/editor_export.py:747
 msgid "Enter a valid filename"
 msgstr ""
 
-#: ui/editor_export.py:734
+#: ui/editor_export.py:752
 msgid "The destination is outside the selected folder"
 msgstr ""
 
-#: ui/editor_export.py:736
+#: ui/editor_export.py:754
 msgid "Export cannot overwrite the source clip"
 msgstr ""
 
-#: ui/editor_export.py:738
+#: ui/editor_export.py:756
 msgid "The selected folder is not writable"
 msgstr ""
 
-#: ui/editor_export.py:829
+#: ui/editor_export.py:847
 msgid "[amixed]"
 msgstr ""
 
-#: ui/editor_export.py:997
+#: ui/editor_export.py:1015
 msgid "FFmpeg could not create the output file"
 msgstr ""
 
-#: ui/editor_export.py:1003
+#: ui/editor_export.py:1021
 #, python-format
 msgid ""
 "%(detail)s. The hardware encoder may not support this clip; choose Software "
 "as the video encoder and try again"
 msgstr ""
 
-#: ui/editor_export.py:1030
+#: ui/editor_export.py:1050
 msgid "Export was already started"
 msgstr ""
 
-#: ui/editor_export.py:1033 ui/editor_export.py:1087 ui/editor_export.py:1099
-#: ui/editor_export_dialog.py:751 ui/editor_window.py:3950
+#: ui/editor_export.py:1053 ui/editor_export.py:1137 ui/editor_export.py:1151
+#: ui/editor_export_dialog.py:751 ui/editor_window.py:3957
 msgid "Export cancelled"
 msgstr ""
 
-#: ui/editor_export.py:1047
+#: ui/editor_export.py:1085
 #, python-format
 msgid "Could not start FFmpeg: %(error)s"
 msgstr ""
 
-#: ui/editor_export.py:1064
+#: ui/editor_export.py:1109
 msgid "Export was not started"
 msgstr ""
 
-#: ui/editor_export.py:1144
+#: ui/editor_export.py:1202
 msgid "The exported file could not be validated"
 msgstr ""
 
-#: ui/editor_export.py:1177
+#: ui/editor_export.py:1239
 msgid "The exported file did not match the selected options"
 msgstr ""
 
@@ -797,7 +797,7 @@ msgid "Export edited clip"
 msgstr ""
 
 #: ui/editor_export_dialog.py:349 ui/editor_export_dialog.py:353
-#: ui/editor_window.py:1282 ui/editor_window.py:3929 ui/editor_window.py:3965
+#: ui/editor_window.py:1283 ui/editor_window.py:3936 ui/editor_window.py:3972
 msgid "Export"
 msgstr ""
 
@@ -928,8 +928,8 @@ msgstr ""
 msgid "%(percentage)d%% complete"
 msgstr ""
 
-#: ui/editor_export_dialog.py:684 ui/editor_window.py:1991
-#: ui/editor_window.py:2284 ui/editor_window.py:2294 ui/editor_window.py:2327
+#: ui/editor_export_dialog.py:684 ui/editor_window.py:1992
+#: ui/editor_window.py:2285 ui/editor_window.py:2295 ui/editor_window.py:2328
 #, python-format
 msgid "%(percentage)d%%"
 msgstr ""
@@ -960,7 +960,7 @@ msgstr ""
 msgid "Close"
 msgstr ""
 
-#: ui/editor_export_dialog.py:756 ui/editor_window.py:4036
+#: ui/editor_export_dialog.py:756 ui/editor_window.py:4043
 msgid "Cancel the export before closing the editor"
 msgstr ""
 
@@ -1029,398 +1029,398 @@ msgstr ""
 msgid "Replace"
 msgstr ""
 
-#: ui/editor_preview.py:48
+#: ui/editor_preview.py:61
 #, python-format
 msgid "The GStreamer element %(element)s is unavailable"
 msgstr ""
 
-#: ui/editor_preview.py:163 ui/editor_preview.py:1070 ui/editor_preview.py:1082
+#: ui/editor_preview.py:176 ui/editor_preview.py:1083 ui/editor_preview.py:1095
 msgid "The GStreamer video preview is unavailable"
 msgstr ""
 
-#: ui/editor_preview.py:172
+#: ui/editor_preview.py:185
 msgid "The timeline video preview could not be linked"
 msgstr ""
 
-#: ui/editor_preview.py:279
+#: ui/editor_preview.py:292
 msgid "The timeline audio preview could not be linked"
 msgstr ""
 
-#: ui/editor_preview.py:293
+#: ui/editor_preview.py:306
 msgid "A timeline audio track could not be linked"
 msgstr ""
 
-#: ui/editor_preview.py:487
+#: ui/editor_preview.py:500
 msgid "A timeline video segment could not be linked"
 msgstr ""
 
-#: ui/editor_preview.py:494
+#: ui/editor_preview.py:507
 msgid "A timeline audio segment could not be prepared"
 msgstr ""
 
-#: ui/editor_preview.py:727
+#: ui/editor_preview.py:740
 msgid "A timeline audio segment could not be linked"
 msgstr ""
 
-#: ui/editor_preview.py:733
+#: ui/editor_preview.py:746
 msgid "A timeline audio segment could not be concatenated"
 msgstr ""
 
-#: ui/editor_preview.py:736
+#: ui/editor_preview.py:749
 msgid "A decoded timeline audio track could not be linked"
 msgstr ""
 
-#: ui/editor_preview.py:774
+#: ui/editor_preview.py:787
 msgid "A timeline segment could not be prepared"
 msgstr ""
 
-#: ui/editor_preview.py:841
+#: ui/editor_preview.py:854
 msgid "The timeline could not be prepared"
 msgstr ""
 
-#: ui/editor_preview.py:857
+#: ui/editor_preview.py:870
 msgid "The pre-rolled timeline could not start"
 msgstr ""
 
-#: ui/editor_preview.py:1058
+#: ui/editor_preview.py:1071
 msgid "Loading video"
 msgstr ""
 
-#: ui/editor_preview.py:1090
+#: ui/editor_preview.py:1103
 msgid "The GStreamer video preview could not be linked"
 msgstr ""
 
-#: ui/editor_preview.py:1223
+#: ui/editor_preview.py:1236
 msgid "The GStreamer audio preview is unavailable"
 msgstr ""
 
-#: ui/editor_preview.py:1232
+#: ui/editor_preview.py:1245
 msgid "The GStreamer audio preview could not be linked"
 msgstr ""
 
-#: ui/editor_window.py:90
+#: ui/editor_window.py:91
 msgid "Mixed mute · click to mute all"
 msgstr ""
 
-#: ui/editor_window.py:103
+#: ui/editor_window.py:104
 msgid "Editing"
 msgstr ""
 
-#: ui/editor_window.py:105
+#: ui/editor_window.py:106
 msgid "Select all segments"
 msgstr ""
 
-#: ui/editor_window.py:106
+#: ui/editor_window.py:107
 msgid "Split at playhead"
 msgstr ""
 
-#: ui/editor_window.py:108
+#: ui/editor_window.py:109
 msgid "Delete selected segments"
 msgstr ""
 
-#: ui/editor_window.py:110
+#: ui/editor_window.py:111
 msgid "Undo"
 msgstr ""
 
-#: ui/editor_window.py:111
+#: ui/editor_window.py:112
 msgid "Redo"
 msgstr ""
 
-#: ui/editor_window.py:115 ui/video_player_window.py:67
+#: ui/editor_window.py:116 ui/video_player_window.py:67
 msgid "Playback"
 msgstr ""
 
-#: ui/editor_window.py:117 ui/video_player_window.py:69
+#: ui/editor_window.py:118 ui/video_player_window.py:69
 msgid "Play or pause"
 msgstr ""
 
-#: ui/editor_window.py:118 ui/video_player_window.py:70
+#: ui/editor_window.py:119 ui/video_player_window.py:70
 msgid "Seek backward 5 seconds"
 msgstr ""
 
-#: ui/editor_window.py:119 ui/video_player_window.py:71
+#: ui/editor_window.py:120 ui/video_player_window.py:71
 msgid "Seek forward 5 seconds"
 msgstr ""
 
-#: ui/editor_window.py:120
+#: ui/editor_window.py:121
 msgid "Seek backward one frame"
 msgstr ""
 
-#: ui/editor_window.py:121
+#: ui/editor_window.py:122
 msgid "Seek forward one frame"
 msgstr ""
 
-#: ui/editor_window.py:122 ui/video_player_window.py:74
+#: ui/editor_window.py:123 ui/video_player_window.py:74
 msgid "Mute or unmute"
 msgstr ""
 
-#: ui/editor_window.py:126
+#: ui/editor_window.py:127
 msgid "View"
 msgstr ""
 
-#: ui/editor_window.py:128 ui/video_player_window.py:80
+#: ui/editor_window.py:129 ui/video_player_window.py:80
 msgid "Toggle fullscreen"
 msgstr ""
 
-#: ui/editor_window.py:129 ui/editor_window.py:132 ui/editor_window.py:1608
+#: ui/editor_window.py:130 ui/editor_window.py:133 ui/editor_window.py:1609
 msgid "Zoom in"
 msgstr ""
 
-#: ui/editor_window.py:130 ui/editor_window.py:136 ui/editor_window.py:1584
+#: ui/editor_window.py:131 ui/editor_window.py:137 ui/editor_window.py:1585
 msgid "Zoom out"
 msgstr ""
 
-#: ui/editor_window.py:139 ui/video_player_window.py:81
+#: ui/editor_window.py:140 ui/video_player_window.py:81
 msgid "Close or exit fullscreen"
 msgstr ""
 
-#: ui/editor_window.py:457
+#: ui/editor_window.py:458
 #, python-format
 msgid "Gain %(decibels)+.1f dB"
 msgstr ""
 
-#: ui/editor_window.py:459
+#: ui/editor_window.py:460
 msgid "Gain 0.0 dB"
 msgstr ""
 
-#: ui/editor_window.py:506
+#: ui/editor_window.py:507
 msgid "Source video"
 msgstr ""
 
-#: ui/editor_window.py:517
+#: ui/editor_window.py:518
 #, python-format
 msgid "Segment %(number)d"
 msgstr ""
 
-#: ui/editor_window.py:562
+#: ui/editor_window.py:563
 msgid "All segments selected"
 msgstr ""
 
-#: ui/editor_window.py:564
+#: ui/editor_window.py:565
 #, python-format
 msgid "%(count)d segment selected"
 msgid_plural "%(count)d segments selected"
 msgstr[0] ""
 msgstr[1] ""
 
-#: ui/editor_window.py:1080
+#: ui/editor_window.py:1081
 msgid "Stereo peak level"
 msgstr ""
 
-#: ui/editor_window.py:1084
+#: ui/editor_window.py:1085
 msgid "Stereo peak meter"
 msgstr ""
 
-#: ui/editor_window.py:1274
+#: ui/editor_window.py:1275
 msgid "Video editor"
 msgstr ""
 
-#: ui/editor_window.py:1291
+#: ui/editor_window.py:1292
 msgid "Editor menu"
 msgstr ""
 
-#: ui/editor_window.py:1293
+#: ui/editor_window.py:1294
 msgid "Wipe all edits"
 msgstr ""
 
-#: ui/editor_window.py:1378 ui/editor_window.py:3418
+#: ui/editor_window.py:1379 ui/editor_window.py:3419
 #: ui/video_player_window.py:1374
 msgid "Play"
 msgstr ""
 
-#: ui/editor_window.py:1412 ui/video_player_window.py:483
+#: ui/editor_window.py:1413 ui/video_player_window.py:483
 msgid "Playback position"
 msgstr ""
 
-#: ui/editor_window.py:1453 ui/settings_view.py:1451 ui/settings_view.py:1453
+#: ui/editor_window.py:1454 ui/settings_view.py:1451 ui/settings_view.py:1453
 #: ui/video_player_window.py:516
 msgid "Volume"
 msgstr ""
 
-#: ui/editor_window.py:1461 ui/editor_window.py:1825 ui/editor_window.py:2053
+#: ui/editor_window.py:1462 ui/editor_window.py:1826 ui/editor_window.py:2054
 #: ui/video_player_window.py:524 ui/video_player_window.py:1435
 msgid "Mute"
 msgstr ""
 
-#: ui/editor_window.py:1485 ui/editor_window.py:1852
+#: ui/editor_window.py:1486 ui/editor_window.py:1853
 #: ui/video_player_window.py:548 ui/video_player_window.py:1448
 msgid "Fullscreen"
 msgstr ""
 
-#: ui/editor_window.py:1529
+#: ui/editor_window.py:1530
 msgid "Timeline"
 msgstr ""
 
-#: ui/editor_window.py:1547
+#: ui/editor_window.py:1548
 msgid "Undo (Ctrl+Z)"
 msgstr ""
 
-#: ui/editor_window.py:1551
+#: ui/editor_window.py:1552
 msgid "Redo (Ctrl+Shift+Z)"
 msgstr ""
 
-#: ui/editor_window.py:1560
+#: ui/editor_window.py:1561
 msgid "Split"
 msgstr ""
 
-#: ui/editor_window.py:1561 ui/editor_window.py:2977
+#: ui/editor_window.py:1562 ui/editor_window.py:2978
 msgid "Split at playhead (X)"
 msgstr ""
 
-#: ui/editor_window.py:1567 ui/hotkeys.py:531
+#: ui/editor_window.py:1568 ui/hotkeys.py:531
 msgid "Delete"
 msgstr ""
 
-#: ui/editor_window.py:1568
+#: ui/editor_window.py:1569
 msgid "Delete selected segments (Del)"
 msgstr ""
 
-#: ui/editor_window.py:1601
+#: ui/editor_window.py:1602
 msgid "Zoom 100%"
 msgstr ""
 
-#: ui/editor_window.py:1825 ui/editor_window.py:2053
+#: ui/editor_window.py:1826 ui/editor_window.py:2054
 #: ui/video_player_window.py:1435
 msgid "Unmute"
 msgstr ""
 
-#: ui/editor_window.py:1852 ui/video_player_window.py:1448
+#: ui/editor_window.py:1853 ui/video_player_window.py:1448
 msgid "Exit fullscreen"
 msgstr ""
 
-#: ui/editor_window.py:1863 ui/editor_window.py:3992
+#: ui/editor_window.py:1864 ui/editor_window.py:3999
 msgid "Save draft"
 msgstr ""
 
-#: ui/editor_window.py:1918
+#: ui/editor_window.py:1919
 msgid "Source clip changed or is unavailable"
 msgstr ""
 
-#: ui/editor_window.py:2012
+#: ui/editor_window.py:2013
 msgid "Video"
 msgstr ""
 
-#: ui/editor_window.py:2025
+#: ui/editor_window.py:2026
 #, python-format
 msgid "segment %(number)d"
 msgstr ""
 
-#: ui/editor_window.py:2028
+#: ui/editor_window.py:2029
 #, python-format
 msgid "%(count)d selected segment"
 msgid_plural "%(count)d selected segments"
 msgstr[0] ""
 msgstr[1] ""
 
-#: ui/editor_window.py:2054
+#: ui/editor_window.py:2055
 #, python-format
 msgid "%(action)s %(track)s for %(selection)s"
 msgstr ""
 
-#: ui/editor_window.py:2059
+#: ui/editor_window.py:2060
 #, python-format
 msgid "%(action)s %(track)s"
 msgstr ""
 
-#: ui/editor_window.py:2074
+#: ui/editor_window.py:2075
 #, python-format
 msgid "Audio %(number)d"
 msgstr ""
 
-#: ui/editor_window.py:2108 ui/main_window.py:228
+#: ui/editor_window.py:2109 ui/main_window.py:228
 msgid "Audio"
 msgstr ""
 
-#: ui/editor_window.py:2109
+#: ui/editor_window.py:2110
 msgid "No audio tracks"
 msgstr ""
 
-#: ui/editor_window.py:2129
+#: ui/editor_window.py:2130
 #, python-format
 msgid "%(count)d segment"
 msgid_plural "%(count)d segments"
 msgstr[0] ""
 msgstr[1] ""
 
-#: ui/editor_window.py:2132
+#: ui/editor_window.py:2133
 #, python-format
 msgid "%(segments)s · %(duration)s"
 msgstr ""
 
-#: ui/editor_window.py:2203
+#: ui/editor_window.py:2204
 msgid "Timeline ruler"
 msgstr ""
 
-#: ui/editor_window.py:2205
+#: ui/editor_window.py:2206
 #, python-format
 msgid "%(title)s track timeline"
 msgstr ""
 
-#: ui/editor_window.py:2274
+#: ui/editor_window.py:2275
 #, python-format
 msgid "Zoom %(percentage)d%%"
 msgstr ""
 
-#: ui/editor_window.py:2794
+#: ui/editor_window.py:2795
 #, python-format
 msgid "%(gain)s for selected audio"
 msgstr ""
 
-#: ui/editor_window.py:2959
+#: ui/editor_window.py:2960
 msgid "Select a segment to delete"
 msgstr ""
 
-#: ui/editor_window.py:2961
+#: ui/editor_window.py:2962
 msgid "At least one segment must remain"
 msgstr ""
 
-#: ui/editor_window.py:2963
+#: ui/editor_window.py:2964
 msgid "Delete selected segment (Del)"
 msgstr ""
 
-#: ui/editor_window.py:2966
+#: ui/editor_window.py:2967
 #, python-format
 msgid "Delete %(count)d selected segment (Del)"
 msgid_plural "Delete %(count)d selected segments (Del)"
 msgstr[0] ""
 msgstr[1] ""
 
-#: ui/editor_window.py:2979
+#: ui/editor_window.py:2980
 msgid "Select one segment to split"
 msgstr ""
 
-#: ui/editor_window.py:3418 ui/hotkeys.py:540 ui/video_player_window.py:462
+#: ui/editor_window.py:3419 ui/hotkeys.py:540 ui/video_player_window.py:462
 #: ui/video_player_window.py:1374
 msgid "Pause"
 msgstr ""
 
-#: ui/editor_window.py:3900
+#: ui/editor_window.py:3907
 msgid "Exporting…"
 msgstr ""
 
-#: ui/editor_window.py:3944
+#: ui/editor_window.py:3951
 #, python-format
 msgid "Exported to %(name)s"
 msgstr ""
 
-#: ui/editor_window.py:3952 ui/main.py:1978 ui/settings_view.py:1719
+#: ui/editor_window.py:3959 ui/main.py:2001 ui/settings_view.py:1719
 msgid "Unknown error"
 msgstr ""
 
-#: ui/editor_window.py:3953
+#: ui/editor_window.py:3960
 #, python-format
 msgid "Export failed: %(error)s"
 msgstr ""
 
-#: ui/editor_window.py:3989
+#: ui/editor_window.py:3996
 msgid "Save this edit?"
 msgstr ""
 
-#: ui/editor_window.py:3989
+#: ui/editor_window.py:3996
 msgid "You have unsaved changes."
 msgstr ""
 
-#: ui/editor_window.py:3991
+#: ui/editor_window.py:3998
 msgid "Discard"
 msgstr ""
 
@@ -1705,144 +1705,144 @@ msgid ""
 "It is advised to close OBS Studio or Clipper before recording."
 msgstr ""
 
-#: ui/main.py:543
+#: ui/main.py:545
 msgid "Engine not running"
 msgstr ""
 
-#: ui/main.py:549
+#: ui/main.py:551
 msgid "Could not send save command to Clipper engine"
 msgstr ""
 
-#: ui/main.py:581
+#: ui/main.py:583
 msgid "Restart Clipper?"
 msgstr ""
 
-#: ui/main.py:582
+#: ui/main.py:584
 msgid "Clipper needs to be restarted for this change to take effect."
 msgstr ""
 
-#: ui/main.py:584 ui/update_controller.py:326
+#: ui/main.py:586 ui/update_controller.py:326
 msgid "Restart later"
 msgstr ""
 
-#: ui/main.py:585 ui/update_controller.py:330
+#: ui/main.py:587 ui/update_controller.py:330
 msgid "Restart now"
 msgstr ""
 
-#: ui/main.py:608
+#: ui/main.py:610
 msgid "Save or discard the video edit before logging out"
 msgstr ""
 
-#: ui/main.py:719
+#: ui/main.py:721
 #, python-format
 msgid "Could not register save hotkey: %(error)s"
 msgstr ""
 
-#: ui/main.py:758
+#: ui/main.py:760
 #, python-format
 msgid "Global hotkey unavailable: %(message)s"
 msgstr ""
 
-#: ui/main.py:942
+#: ui/main.py:944
 msgid "Acknowledge"
 msgstr ""
 
-#: ui/main.py:983 ui/settings_view.py:1715
+#: ui/main.py:985 ui/settings_view.py:1715
 msgid "Restarting engine…"
 msgstr ""
 
-#: ui/main.py:993
+#: ui/main.py:996
 msgid "Could not send restart command to Clipper engine"
 msgstr ""
 
-#: ui/main.py:998
+#: ui/main.py:1001
 msgid "Engine will start when a whitelisted game is running"
 msgstr ""
 
-#: ui/main.py:1009
+#: ui/main.py:1012
 #, python-format
 msgid "Engine restart failed: %(error)s"
 msgstr ""
 
-#: ui/main.py:1127
+#: ui/main.py:1130
 msgid "X11 capture uses the primary X11 display without a system picker."
 msgstr ""
 
-#: ui/main.py:1136
+#: ui/main.py:1139
 msgid "The system display picker is already open."
 msgstr ""
 
-#: ui/main.py:1146
+#: ui/main.py:1149
 msgid "Stop the active game capture before changing the target display."
 msgstr ""
 
-#: ui/main.py:1204
+#: ui/main.py:1208
 msgid "Could not disable automatic startup"
 msgstr ""
 
-#: ui/main.py:1211
+#: ui/main.py:1215
 msgid "PipeWire restore token cleared"
 msgstr ""
 
-#: ui/main.py:1278
+#: ui/main.py:1282
 msgid "Clip captured"
 msgstr ""
 
-#: ui/main.py:1279
+#: ui/main.py:1283
 msgid "Your clip has been saved."
 msgstr ""
 
-#: ui/main.py:1285
+#: ui/main.py:1289
 msgid ""
 "Could not write the clip. Check the save folder and available disk space."
 msgstr ""
 
-#: ui/main.py:1287
+#: ui/main.py:1291
 #, python-format
 msgid "Failed to save clip: %(error)s"
 msgstr ""
 
-#: ui/main.py:1322
+#: ui/main.py:1327
 #, python-format
 msgid "Could not open clip editor: %(error)s"
 msgstr ""
 
-#: ui/main.py:1790
+#: ui/main.py:1806
 #, python-format
 msgid "Could not start Clipper engine: %(error)s"
 msgstr ""
 
-#: ui/main.py:1849 ui/settings_view.py:1718
+#: ui/main.py:1871 ui/settings_view.py:1718
 #, python-format
 msgid "Engine shutdown failed: %(error)s"
 msgstr ""
 
-#: ui/main.py:1888 ui/main.py:1924
+#: ui/main.py:1910 ui/main.py:1946
 msgid "Display selection was cancelled."
 msgstr ""
 
-#: ui/main.py:1893
+#: ui/main.py:1915
 msgid "Capture display selected successfully."
 msgstr ""
 
-#: ui/main.py:1897
+#: ui/main.py:1919
 msgid "No display was selected before the picker timed out."
 msgstr ""
 
-#: ui/main.py:1977
+#: ui/main.py:2000
 #, python-format
 msgid "Display capture sync failed: %(error)s"
 msgstr ""
 
-#: ui/main.py:2065
+#: ui/main.py:2088
 msgid "🦊 Leese"
 msgstr ""
 
-#: ui/main.py:2069
+#: ui/main.py:2092
 msgid "© 2026 Leese"
 msgstr ""
 
-#: ui/main.py:2075
+#: ui/main.py:2098
 msgid "GitHub"
 msgstr ""
 
