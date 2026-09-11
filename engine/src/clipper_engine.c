@@ -71,7 +71,7 @@
 #define PIPEWIRE_AUDIO_PLUGIN_DEFAULT \
     OBS_LIBDIR_DEFAULT "/obs-plugins/linux-pipewire-audio.so"
 
-#define ENGINE_VERSION   "1.0.4"
+#define ENGINE_VERSION   "1.0.5"
 #define MAX_CLIENTS      8
 #define CLIENT_BUF_SIZE  4096
 #define RESTORE_TOKEN_MAX 4096
