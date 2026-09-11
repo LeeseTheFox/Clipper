@@ -357,7 +357,7 @@ class WhitelistView(Gtk.Box):
     def _new_action_icon(self, icon_name: str, size: int = _GAME_METADATA_ICON_SIZE) -> Gtk.Image:
         icon = Gtk.Image.new_from_icon_name(icon_name)
         icon.set_pixel_size(size)
-        icon.add_css_class("dim-label")
+        icon.add_css_class("clipper-secondary-label")
         return icon
 
     def _load_game_icon_async(
@@ -622,6 +622,7 @@ class WhitelistView(Gtk.Box):
         source = _("Steam") if "appid" in game_data else _("Manual")
         source_label = Gtk.Label(label=source)
         source_label.add_css_class("caption")
+        source_label.add_css_class("clipper-secondary-label")
         source_box.append(source_label)
         capture_box.append(source_box)
 
@@ -641,7 +642,7 @@ class WhitelistView(Gtk.Box):
             detail_label.set_hexpand(True)
             detail_label.set_xalign(0)
             detail_label.add_css_class("caption")
-            detail_label.add_css_class("dim-label")
+            detail_label.add_css_class("clipper-secondary-label")
             configure_single_line_ellipsis(detail_label)
             info_box.append(detail_label)
 

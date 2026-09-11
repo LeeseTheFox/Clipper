@@ -34,6 +34,22 @@ def test_engine_ready_status_uses_adwaita_semantic_success_color():
     assert "@accent_color" not in ready_rule
 
 
+def test_light_theme_metadata_uses_readable_secondary_foreground():
+    window_source = (REPO_ROOT / "ui" / "main_window.py").read_text(encoding="utf-8")
+    clips_source = (REPO_ROOT / "ui" / "clips_view.py").read_text(encoding="utf-8")
+    games_source = (REPO_ROOT / "ui" / "whitelist_view.py").read_text(encoding="utf-8")
+
+    secondary_rule = window_source.split(".clipper-secondary-label {", 1)[1].split("}", 1)[0]
+    assert "color: alpha(@window_fg_color, 0.72);" in secondary_rule
+    assert "background-color: alpha(currentColor, 0.12);" in window_source
+    assert "border: 1px solid alpha(currentColor, 0.18);" in window_source
+    assert "font-weight: 600;" in window_source
+    assert 'time_label.add_css_class("clipper-secondary-label")' in clips_source
+    assert 'game_label.add_css_class("clipper-secondary-label")' in clips_source
+    assert 'source_label.add_css_class("clipper-secondary-label")' in games_source
+    assert 'detail_label.add_css_class("clipper-secondary-label")' in games_source
+
+
 def test_editor_save_and_export_actions_use_adwaita_semantic_styles():
     source = (REPO_ROOT / "ui" / "editor_window.py").read_text(encoding="utf-8")
 

@@ -268,4 +268,4 @@ def test_game_source_icons_follow_the_gtk_theme_color():
 
     assert icon.icon_name == "steam-symbolic"
     assert icon.pixel_size == 18
-    assert icon.css_classes == ["dim-label"]
+    assert icon.css_classes == ["clipper-secondary-label"]

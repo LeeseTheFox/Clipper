@@ -1616,7 +1616,7 @@ class ClipsView(Gtk.Box):
         time_label.set_hexpand(True)
         time_label.set_xalign(0)
         configure_single_line_ellipsis(time_label, mode=ELLIPSIZE_END)
-        time_label.add_css_class("dim-label")
+        time_label.add_css_class("clipper-secondary-label")
         time_label.add_css_class("caption")
         info_box.append(time_label)
 
@@ -1762,7 +1762,7 @@ class ClipsView(Gtk.Box):
         game_label.set_hexpand(True)
         game_label.set_xalign(0)
         configure_single_line_ellipsis(game_label, mode=ELLIPSIZE_END)
-        game_label.add_css_class("dim-label")
+        game_label.add_css_class("clipper-secondary-label")
         game_label.add_css_class("caption")
         game_box.append(game_label)
         return game_box

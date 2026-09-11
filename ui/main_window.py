@@ -612,7 +612,9 @@ class MainWindow(Adw.ApplicationWindow):
             .engine-status-indicator {
                 border-radius: 999px;
                 padding: 4px 10px;
-                background-color: alpha(currentColor, 0.08);
+                background-color: alpha(currentColor, 0.12);
+                border: 1px solid alpha(currentColor, 0.18);
+                font-weight: 600;
             }
 
             .engine-status-dot {
@@ -634,6 +636,10 @@ class MainWindow(Adw.ApplicationWindow):
 
             .engine-status-indicator.crashed {
                 color: @error_color;
+            }
+
+            .clipper-secondary-label {
+                color: alpha(@window_fg_color, 0.72);
             }
 
             .clipper-metadata-chip,
