@@ -1471,6 +1471,7 @@ static bool is_generic_audio_client_name(const char *name)
 {
     return !name || !*name ||
            strcmp(name, "WEBRTC VoiceEngine") == 0 ||
+           strcmp(name, "Chromium") == 0 ||
            strcmp(name, "Chromium input") == 0 ||
            strcmp(name, "Chromium output") == 0 ||
            strcmp(name, "AudioIPC Server") == 0 ||
@@ -1491,12 +1492,17 @@ static const char *friendly_audio_display_name(const char *app_name,
                                                const char *node_name,
                                                const char *app_id)
 {
+    const char *flatpak_name = flatpak_app_name(app_id);
+    if (binary && *binary && flatpak_name && *flatpak_name &&
+        strcasecmp(binary, flatpak_name) == 0 &&
+        (!app_name || strcasecmp(app_name, binary) != 0))
+        return binary;
+
     if (!is_generic_audio_client_name(app_name))
         return app_name;
     if (binary && *binary)
         return binary;
 
-    const char *flatpak_name = flatpak_app_name(app_id);
     if (flatpak_name && *flatpak_name)
         return flatpak_name;
 

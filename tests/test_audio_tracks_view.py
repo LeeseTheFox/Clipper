@@ -353,6 +353,28 @@ def test_audio_source_response_adds_application_to_dropdown_model():
     assert "App: Zen - Video" in dropdown.model
 
 
+def test_generic_playback_media_name_is_not_added_to_application_label():
+    view, dropdown = _make_view()
+
+    view._on_audio_sources(
+        {
+            "ok": True,
+            "sources": [
+                {
+                    "kind": "application",
+                    "display_name": "ExampleApp",
+                    "app_name": "Chromium",
+                    "binary": "ExampleApp",
+                    "media_name": "Playback",
+                }
+            ],
+        }
+    )
+
+    assert "App: ExampleApp" in dropdown.model
+    assert "App: ExampleApp - Playback" not in dropdown.model
+
+
 def test_dropdown_labels_shrink_and_ellipsize_long_window_titles(monkeypatch):
     view, _dropdown = _make_view()
     monkeypatch.setattr(audio_tracks_module.Gtk, "Label", LabelStub, raising=False)
@@ -660,6 +682,28 @@ def test_configured_application_source_remains_selected_when_offline():
 
     assert "App: Discord" in dropdown.model
     assert dropdown.selected == dropdown.model.index("App: Discord")
+
+
+def test_offline_application_uses_stable_match_when_saved_display_name_conflicts():
+    view, dropdown = _make_view()
+    view._audio["tracks"][0]["label"] = "App: Chromium - Playback"
+    view._audio["tracks"][0]["sources"] = [
+        {
+            "kind": "application",
+            "display_name": "Chromium",
+            "match": {
+                "type": "pipewire_app",
+                "value": "ExampleApp",
+                "priority": "binary_first",
+            },
+        }
+    ]
+
+    view._build_source_options(discovered_sources=[])
+    view._rebuild_source_models()
+
+    assert "App: ExampleApp" in dropdown.model
+    assert dropdown.selected == dropdown.model.index("App: ExampleApp")
 
 
 def test_track_volume_change_updates_live_without_restart_banner():

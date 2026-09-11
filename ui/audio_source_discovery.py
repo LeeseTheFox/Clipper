@@ -9,6 +9,7 @@ from typing import Any
 _GENERIC_AUDIO_CLIENT_NAMES = {
     "",
     "WEBRTC VoiceEngine",
+    "Chromium",
     "Chromium input",
     "Chromium output",
     "AudioIPC Server",
@@ -71,12 +72,24 @@ def _flatpak_app_name(app_id: str) -> str:
     return app_id.rsplit(".", 1)[-1]
 
 
+def _identity_key(value: str) -> str:
+    return value.strip().replace("\\", "/").rsplit("/", 1)[-1].casefold()
+
+
 def _friendly_audio_display_name(app_name: str, binary: str, node_name: str, app_id: str) -> str:
+    portal_name = _flatpak_app_name(app_id)
+    if (
+        binary
+        and portal_name
+        and _identity_key(binary) == _identity_key(portal_name)
+        and _identity_key(app_name) != _identity_key(binary)
+    ):
+        return binary
     if app_name not in _GENERIC_AUDIO_CLIENT_NAMES:
         return app_name
     if binary:
         return binary
-    return _flatpak_app_name(app_id) or app_name or node_name
+    return portal_name or app_name or node_name
 
 
 def _is_hidden_audio_client(name: str) -> bool:

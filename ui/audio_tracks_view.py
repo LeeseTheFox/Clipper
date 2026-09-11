@@ -683,7 +683,7 @@ class AudioTracksView(Gtk.Box):
             media_name = item.get("media_name")
             if kind == "application":
                 label = _("App: %(name)s") % {"name": display_name}
-                if media_name and media_name != display_name:
+                if self._is_descriptive_media_name(media_name, display_name):
                     label = f"{label} - {media_name}"
                 self._source_options.append(
                     {
@@ -979,7 +979,10 @@ class AudioTracksView(Gtk.Box):
             ):
                 continue
 
-            label = track.get("label") or self._label_for_sources(sources)
+            if any(source.get("kind") == "application" for source in sources):
+                label = self._label_for_sources(sources)
+            else:
+                label = track.get("label") or self._label_for_sources(sources)
 
             self._source_options.append(
                 {
@@ -994,13 +997,28 @@ class AudioTracksView(Gtk.Box):
 
         source = sources[0]
         label = source.get("display_name")
+        match_value = source.get("match", {}).get("value")
+        if (
+            source.get("kind") == "application"
+            and match_value
+            and self._normalize_match_term(label) != self._normalize_match_term(match_value)
+        ):
+            label = match_value
         if not label:
-            label = source.get("match", {}).get("value", "Application audio")
+            label = match_value or "Application audio"
         if source.get("kind") == "game_app":
             label = _("Game: %(name)s") % {"name": label}
         elif source.get("kind") == "application":
             label = _("App: %(name)s") % {"name": label}
         return label
+
+    def _is_descriptive_media_name(self, media_name, display_name):
+        if not isinstance(media_name, str) or not media_name.strip():
+            return False
+        normalized = "".join(ch for ch in media_name.casefold() if ch.isalnum())
+        if normalized in {"audio", "audiostream", "playback", "unknown"}:
+            return False
+        return self._normalize_match_term(media_name) != self._normalize_match_term(display_name)
 
     def _option_sources(self, option):
         if "sources" in option:

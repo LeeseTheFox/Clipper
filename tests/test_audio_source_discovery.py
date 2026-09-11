@@ -5,6 +5,24 @@ from types import SimpleNamespace
 import audio_source_discovery
 
 
+def test_framework_name_yields_to_corroborated_application_identity():
+    assert (
+        audio_source_discovery._friendly_audio_display_name(
+            "Framework Audio", "Acme Player", "framework-output", "org.acme.Acme Player"
+        )
+        == "Acme Player"
+    )
+
+
+def test_generic_chromium_name_uses_application_binary():
+    assert (
+        audio_source_discovery._friendly_audio_display_name(
+            "Chromium", "ExampleApp", "Chromium", ""
+        )
+        == "ExampleApp"
+    )
+
+
 def test_list_runtime_audio_sources_maps_sink_inputs(monkeypatch):
     def fake_run(cmd, **_kwargs):
         if cmd[-1] == "sink-inputs":
