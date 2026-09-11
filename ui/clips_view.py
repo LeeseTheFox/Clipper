@@ -308,6 +308,8 @@ class ClipsView(Gtk.Box):
         self.clips_list = Gtk.ListView.new(self._clip_selection_model, self._clip_factory)
         self.clips_list.add_css_class("boxed-list")
         self.clips_list.add_css_class("clipper-boxed-list")
+        self.clips_list.set_single_click_activate(False)
+        self.clips_list.connect("activate", self._on_clip_activated)
         self.clips_list.set_margin_start(6)
         self.clips_list.set_margin_end(6)
         self.clips_list.set_margin_top(6)
@@ -335,6 +337,18 @@ class ClipsView(Gtk.Box):
                 root.set_focus(None)
             return True  # Event handled
         return False  # Let other keys pass through
+
+    def _on_clip_activated(self, _list, position):
+        """Play the clip activated by a row double-click or keyboard."""
+        model = self._clip_string_model
+        if model is None or position < 0 or position >= model.get_n_items():
+            return
+
+        item = model.get_item(position)
+        path = item.get_string() if item is not None else ""
+        clip_data = self._clips_by_path.get(path)
+        if clip_data is not None:
+            self.on_play_clip(clip_data)
 
     def load_clips(self):
         """Display clips without waiting for external media tools."""

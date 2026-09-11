@@ -265,6 +265,20 @@ def test_play_clip_launches_isolated_native_player(monkeypatch, tmp_path):
     assert kwargs == {"close_fds": True}
 
 
+def test_activating_clip_row_opens_player(tmp_path):
+    view = object.__new__(ClipsView)
+    clip_path = tmp_path / "recorded-clip.mkv"
+    clip_data = {"path": clip_path, "name": clip_path.name}
+    view._clip_string_model = clips_module.Gtk.StringList.new([str(clip_path)])
+    view._clips_by_path = {str(clip_path): clip_data}
+    opened = []
+    view.on_play_clip = opened.append
+
+    view._on_clip_activated(None, 0)
+
+    assert opened == [clip_data]
+
+
 def test_play_clip_exports_wayland_parent_for_compositor_placement(monkeypatch, tmp_path):
     events = []
 
