@@ -9,8 +9,51 @@ from process_watcher import (
     is_whitelisted_game_running,
     iter_processes,
     monitor_rule_id,
+    process_choices,
     running_process_choices,
 )
+
+
+def test_flatpak_picker_prefers_app_over_renamed_helper_and_groups_children():
+    app = {"comm": "feishin", "exe": "/app/main/feishin", "flatpak_id": "org.jeffvli.feishin"}
+    choices = process_choices(
+        [
+            {**app, "pid": "1", "exe": "/usr/bin/bash"},
+            {**app, "pid": "2"},
+            {**app, "pid": "3"},
+        ]
+    )
+    assert len(choices) == 1
+    assert choices[0]["path"] == "/app/main/feishin"
+    assert choices[0]["flatpak_id"] == "org.jeffvli.feishin"
+    assert choices[0]["match_mode"] == "executable"
+
+
+def test_picker_keeps_app_namespaces_separate_and_labels_helpers_honestly():
+    choices = process_choices(
+        [
+            {
+                "pid": "1",
+                "comm": "feishin",
+                "exe": "/usr/bin/bash",
+                "flatpak_id": "org.jeffvli.feishin",
+            },
+            {"pid": "2", "comm": "feishin", "exe": "/app/main/feishin", "flatpak_id": "other.app"},
+        ]
+    )
+    assert choices[0]["name"] == "bash"
+    assert choices[0]["process_name"] == "feishin"
+    first = {"executable_path": "/app/bin/game", "flatpak_id": "first.app"}
+    second = {**first, "flatpak_id": "second.app"}
+    assert not entries_share_executable_identity(first, second)
+
+
+def test_picker_uses_windows_game_identity_instead_of_shared_wine_loader():
+    choice = process_choices(
+        [{"pid": "1", "comm": "game.exe", "exe": "/usr/bin/wine64-preloader"}]
+    )[0]
+    assert choice["path"] == "game.exe"
+    assert "match_mode" not in choice
 
 
 def test_flatpak_game_matches_appid_only_in_its_steam_environment():
@@ -514,6 +557,7 @@ def test_running_process_choices_use_real_process_metadata(tmp_path):
             "name": "game-bin",
             "path": "/opt/game/game-bin",
             "cmdline": "/opt/game/game-bin --fullscreen",
+            "match_mode": "executable",
         },
         {
             "pid": "400",

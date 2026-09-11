@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import os
 import re
+from configparser import ConfigParser
+from configparser import Error as ConfigError
 from pathlib import Path
 
 from capture_modes import capture_mode_for_entry
@@ -206,6 +208,11 @@ def _entry_executable_names(entry: dict) -> set[str]:
 
 def entries_share_executable_identity(first: dict, second: dict) -> bool:
     """Return True when two whitelist entries identify the same executable."""
+    if first.get("flatpak_id") != second.get("flatpak_id"):
+        return False
+    if first.get("match_mode") == second.get("match_mode") == "executable":
+        if first.get("process_name", "") != second.get("process_name", ""):
+            return False
     first_appid = str(first.get("appid") or "").strip()
     second_appid = str(second.get("appid") or "").strip()
     if first_appid and first_appid == second_appid:
@@ -244,6 +251,11 @@ def entries_share_executable_identity(first: dict, second: dict) -> bool:
 
 def monitor_rule_id(entry: dict, index: int) -> str:
     """Return the host-monitor rule id for a whitelist entry."""
+    if entry.get("match_mode") == "executable" and not entry.get("appid"):
+        identity = "\n".join(
+            str(entry.get(key) or "") for key in ("flatpak_id", "executable_path", "process_name")
+        )
+        return f"executable-{_stable_rule_hash(identity)}"
     appid = str(entry.get("appid") or "").strip()
     if appid:
         installation = str(entry.get("steam_installation") or "").strip()
@@ -324,6 +336,14 @@ def iter_processes(proc_root: Path = Path("/proc")) -> list[dict[str, str]]:
                 "cwd": cwd,
             }
         )
+        info = ConfigParser(interpolation=None)
+        try:
+            info.read(proc_dir / "root/.flatpak-info", encoding="utf-8")
+            app_id = info.get("Application", "name", fallback="").strip()
+        except (OSError, ConfigError, UnicodeError):
+            app_id = ""
+        if app_id:
+            processes[-1]["flatpak_id"] = app_id
 
     return processes
 
@@ -351,7 +371,10 @@ def find_running_obs_studio(
 
 
 def _display_name_for_process(process: dict[str, str]) -> str:
+    exe_name = Path(_strip_deleted_path_suffix(str(process.get("exe") or ""))).name
     comm = str(process.get("comm") or "").strip()
+    if exe_name and not comm.lower().endswith(".exe"):
+        return exe_name
     if comm:
         return comm
 
@@ -367,7 +390,9 @@ def _display_name_for_process(process: dict[str, str]) -> str:
 
 
 def _match_path_for_process(process: dict[str, str], name: str) -> str:
-    exe = str(process.get("exe") or "").strip()
+    exe = _strip_deleted_path_suffix(str(process.get("exe") or ""))
+    if name.lower().endswith(".exe") and not exe.lower().endswith(".exe"):
+        return name
     if exe:
         return exe
     return name
@@ -376,7 +401,12 @@ def _match_path_for_process(process: dict[str, str], name: str) -> str:
 def process_choices(processes: list[dict[str, str]]) -> list[dict[str, str]]:
     """Convert process metadata into display-safe whitelist picker choices."""
     choices: list[dict[str, str]] = []
-    seen: set[tuple[str, str]] = set()
+    seen: set[tuple[str, str, str, str]] = set()
+    app_executables = {
+        (process_flatpak_id(process), _basename(str(process.get("exe") or "")))
+        for process in processes
+        if process_flatpak_id(process)
+    }
 
     for process in processes:
         name = _display_name_for_process(process)
@@ -385,19 +415,34 @@ def process_choices(processes: list[dict[str, str]]) -> list[dict[str, str]]:
 
         path = _match_path_for_process(process, name)
         pid = str(process.get("pid") or "").strip()
-        key = (name.lower(), path.lower())
+        flatpak_id = process_flatpak_id(process)
+        process_name = str(process.get("comm") or "")
+        # A renamed Flatpak helper is not another copy of the application.
+        # Prefer the application's own executable when it is visible.
+        if (
+            flatpak_id
+            and process_name.lower() != _basename(path)
+            and (flatpak_id, process_name.lower()) in app_executables
+        ):
+            continue
+        key = (name, path, flatpak_id, process_name)
         if key in seen:
             continue
         seen.add(key)
 
-        choices.append(
-            {
-                "pid": pid,
-                "name": name,
-                "path": path,
-                "cmdline": str(process.get("cmdline") or ""),
-            }
-        )
+        choice = {
+            "pid": pid,
+            "name": name,
+            "path": path,
+            "cmdline": str(process.get("cmdline") or ""),
+        }
+        if path.startswith("/"):
+            choice["match_mode"] = "executable"
+            if process_name and process_name != name:
+                choice["process_name"] = process_name
+        if flatpak_id:
+            choice["flatpak_id"] = flatpak_id
+        choices.append(choice)
 
     return sorted(
         choices,
@@ -410,8 +455,28 @@ def running_process_choices(proc_root: Path = Path("/proc")) -> list[dict[str, s
     return process_choices(iter_processes(proc_root))
 
 
+def process_choice_matches_search(process: dict[str, str], query: str) -> bool:
+    """Search executable identity, not incidental arguments or app membership."""
+    return (
+        query.strip().casefold()
+        in " ".join(
+            str(process.get(key) or "") for key in ("name", "path", "process_name", "pid")
+        ).casefold()
+    )
+
+
 def entry_matches_process(entry: dict, process: dict[str, str]) -> bool:
     """Return True when a whitelist entry appears to describe a process."""
+    if entry.get("flatpak_id") and entry["flatpak_id"] != process_flatpak_id(process):
+        return False
+    if entry.get("match_mode") == "executable" and not entry.get("appid"):
+        expected = str(entry.get("executable_path") or entry.get("path") or "")
+        actual = _strip_deleted_path_suffix(str(process.get("exe") or ""))
+        paths = {expected, *_home_path_aliases(expected)}
+        process_name = entry.get("process_name")
+        return bool(
+            actual and actual in paths and (not process_name or process_name == process.get("comm"))
+        )
     comm = _norm(process.get("comm"))
     cmdline = str(process.get("cmdline") or "")
     environ = str(process.get("environ") or "")
@@ -490,6 +555,16 @@ def entry_matches_process(entry: dict, process: dict[str, str]) -> bool:
             return True
 
     return False
+
+
+def process_flatpak_id(process: dict[str, str]) -> str:
+    """Read only the application identity, never persist its environment."""
+    if process.get("flatpak_id"):
+        return process["flatpak_id"]
+    for token in str(process.get("environ") or "").split():
+        if token.startswith("FLATPAK_ID="):
+            return token.partition("=")[2]
+    return ""
 
 
 def is_whitelisted_game_running(

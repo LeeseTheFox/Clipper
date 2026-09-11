@@ -2,8 +2,6 @@
 Dialog windows for Clipper
 """
 
-from pathlib import Path
-
 import gi
 from i18n import _
 
@@ -25,7 +23,7 @@ from icon_names import (
     WARNING,
 )
 from monitor_manager import HostMonitorManager
-from process_watcher import process_choices, running_process_choices
+from process_watcher import process_choice_matches_search, process_choices, running_process_choices
 from text_helpers import configure_single_line_ellipsis
 
 CAPTURE_METHOD_HELP_TEXT = _(
@@ -213,6 +211,7 @@ class ProcessPickerDialog(Gtk.Window):
         self.add_controller(key_controller)
 
         self.setup_ui()
+        self.selection_identity = {}
 
     def setup_ui(self):
         """Build the process picker UI"""
@@ -384,6 +383,10 @@ class ProcessPickerDialog(Gtk.Window):
         row_box.append(name_label)
 
         detail_parts = []
+        if process.get("flatpak_id"):
+            detail_parts.append(process["flatpak_id"])
+        if process.get("process_name"):
+            detail_parts.append(process["process_name"])
         if process.get("pid"):
             detail_parts.append(f"PID {process['pid']}")
         path = process.get("path", "")
@@ -410,14 +413,7 @@ class ProcessPickerDialog(Gtk.Window):
             if index < 0 or index >= len(self.process_data_list):
                 return False
             process = self.process_data_list[index]
-            searchable = " ".join(
-                (
-                    process.get("name", ""),
-                    process.get("path", ""),
-                    process.get("cmdline", ""),
-                )
-            ).lower()
-            return search_text in searchable
+            return process_choice_matches_search(process, search_text)
 
         self.process_list.set_filter_func(filter_func)
         selected_row = self.process_list.get_selected_row()
@@ -518,15 +514,22 @@ class ProcessPickerDialog(Gtk.Window):
         self.executable_entry.set_text(executable_path)
 
     def _select_executable_path(self, executable_path: str) -> bool:
+        from game_details import validated_executable_path
+
         executable_path = executable_path.strip()
         if not executable_path:
             return False
 
-        process_name = Path(executable_path).name
-        if not process_name:
-            show_warning_dialog(self, _("Choose a valid executable file."))
+        try:
+            path = validated_executable_path(executable_path)
+        except ValueError as error:
+            show_warning_dialog(self, str(error))
             return False
-
+        process_name = path.name
+        executable_path = str(path)
+        self.selection_identity = (
+            {} if path.suffix.lower() == ".exe" else {"match_mode": "executable"}
+        )
         self.emit(
             "process-selected",
             process_name,
@@ -545,6 +548,11 @@ class ProcessPickerDialog(Gtk.Window):
 
         process = self._selected_process()
         if process is not None:
+            self.selection_identity = {
+                key: process[key]
+                for key in ("match_mode", "flatpak_id", "process_name")
+                if process.get(key)
+            }
             self.emit(
                 "process-selected",
                 process["name"],

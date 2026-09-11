@@ -129,6 +129,7 @@ def _load_dialogs_module():
 
     process_watcher = types.ModuleType("process_watcher")
     process_watcher.process_choices = lambda _processes: []
+    process_watcher.process_choice_matches_search = lambda _process, _query: True
     process_watcher.running_process_choices = lambda: []
 
     text_helpers = types.ModuleType("text_helpers")

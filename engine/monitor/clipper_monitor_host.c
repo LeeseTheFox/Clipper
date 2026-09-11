@@ -42,6 +42,9 @@ typedef struct {
     char path[FIELD_MAX];
     char executable_path[FIELD_MAX];
     char executable_name[FIELD_MAX];
+    char match_mode[64];
+    char flatpak_id[FIELD_MAX];
+    char process_name[FIELD_MAX];
     char install_path[FIELD_MAX];
     char steam_installation[FIELD_MAX];
     char appid[64];
@@ -55,6 +58,7 @@ typedef struct {
     char comm[FIELD_MAX];
     char cmdline[CMDLINE_MAX_BYTES];
     char environ[CMDLINE_MAX_BYTES];
+    char flatpak_id[FIELD_MAX];
     char exe[PATH_MAX];
     char cwd[PATH_MAX];
 } process_info_t;
@@ -428,8 +432,52 @@ static bool contains_steam_appid(const char *value, const char *appid)
     return false;
 }
 
+static void process_flatpak_id(char *dest, size_t size, const process_info_t *proc)
+{
+    if (proc->flatpak_id[0]) {
+        copy_string(dest, size, proc->flatpak_id);
+        return;
+    }
+    char copy[CMDLINE_MAX_BYTES];
+    char *saveptr = NULL;
+    copy_string(copy, sizeof(copy), proc->environ);
+    dest[0] = '\0';
+    for (char *token = strtok_r(copy, " \t\r\n", &saveptr); token;
+         token = strtok_r(NULL, " \t\r\n", &saveptr)) {
+        if (strncmp(token, "FLATPAK_ID=", 11) == 0) {
+            copy_string(dest, size, token + 11);
+            return;
+        }
+    }
+}
+
+static bool exact_executable_path(const char *actual, const char *expected)
+{
+    char path[PATH_MAX];
+    copy_string(path, sizeof(path), actual);
+    strip_deleted_suffix(path);
+    if (!path[0] || !expected[0])
+        return false;
+    if (strcmp(path, expected) == 0)
+        return true;
+    const char *a = strncmp(path, "/var/home/", 10) == 0 ? path + 4 : path;
+    const char *b = strncmp(expected, "/var/home/", 10) == 0 ? expected + 4 : expected;
+    return strcmp(a, b) == 0;
+}
+
 static bool rule_matches_process(const monitor_rule_t *rule, const process_info_t *proc)
 {
+    if (rule->flatpak_id[0]) {
+        char app_id[FIELD_MAX];
+        process_flatpak_id(app_id, sizeof(app_id), proc);
+        if (strcmp(app_id, rule->flatpak_id) != 0)
+            return false;
+    }
+    if (!rule->appid[0] && strcmp(rule->match_mode, "executable") == 0) {
+        return exact_executable_path(proc->exe,
+                                    rule->executable_path[0] ? rule->executable_path : rule->path) &&
+               (!rule->process_name[0] || strcmp(rule->process_name, proc->comm) == 0);
+    }
     if (rule->steam_installation[0]) {
         bool flatpak = text_mentions_name_casefold(proc->environ,
                                                   "FLATPAK_ID=com.valvesoftware.Steam");
@@ -625,6 +673,12 @@ static bool load_config(monitor_config_t *config)
                     string_or_empty(cJSON_GetObjectItemCaseSensitive(entry, "executable_path")));
         copy_string(rule->executable_name, sizeof(rule->executable_name),
                     string_or_empty(cJSON_GetObjectItemCaseSensitive(entry, "executable_name")));
+        copy_string(rule->match_mode, sizeof(rule->match_mode),
+                    string_or_empty(cJSON_GetObjectItemCaseSensitive(entry, "match_mode")));
+        copy_string(rule->flatpak_id, sizeof(rule->flatpak_id),
+                    string_or_empty(cJSON_GetObjectItemCaseSensitive(entry, "flatpak_id")));
+        copy_string(rule->process_name, sizeof(rule->process_name),
+                    string_or_empty(cJSON_GetObjectItemCaseSensitive(entry, "process_name")));
         copy_string(rule->install_path, sizeof(rule->install_path),
                     string_or_empty(cJSON_GetObjectItemCaseSensitive(entry, "install_path")));
         copy_string(rule->appid, sizeof(rule->appid),
@@ -643,6 +697,12 @@ static bool load_config(monitor_config_t *config)
                          stable_rule_hash(rule->steam_installation), appid);
             else
                 snprintf(rule->id, sizeof(rule->id), "steam-%s", appid);
+        } else if (strcmp(rule->match_mode, "executable") == 0) {
+            char identity[FIELD_MAX * 3 + 3];
+            snprintf(identity, sizeof(identity), "%s\n%s\n%s", rule->flatpak_id,
+                     rule->executable_path, rule->process_name);
+            snprintf(rule->id, sizeof(rule->id), "executable-%016llx",
+                     stable_rule_hash(identity));
         } else if (rule->executable_path[0]) {
             snprintf(rule->id, sizeof(rule->id), "path-%016llx",
                      stable_rule_hash(rule->executable_path));
@@ -695,6 +755,25 @@ static void preserve_states_for_reloaded_config(rule_state_t *states,
     }
 }
 
+static void read_flatpak_identity(process_info_t *proc, const char *path)
+{
+    FILE *file = fopen(path, "r");
+    char line[FIELD_MAX];
+    bool application = false;
+    if (!file)
+        return;
+    while (fgets(line, sizeof(line), file)) {
+        line[strcspn(line, "\r\n")] = '\0';
+        if (line[0] == '[')
+            application = strcmp(line, "[Application]") == 0;
+        else if (application && strncmp(line, "name=", 5) == 0) {
+            copy_string(proc->flatpak_id, sizeof(proc->flatpak_id), line + 5);
+            break;
+        }
+    }
+    fclose(file);
+}
+
 static size_t read_processes(process_info_t *processes, size_t max_processes)
 {
     const char *root = proc_root();
@@ -727,6 +806,8 @@ static size_t read_processes(process_info_t *processes, size_t max_processes)
         read_text_field(proc->cmdline, sizeof(proc->cmdline), path);
         snprintf(path, sizeof(path), "%s/%s/environ", root, entry->d_name);
         read_text_field(proc->environ, sizeof(proc->environ), path);
+        snprintf(path, sizeof(path), "%s/%s/root/.flatpak-info", root, entry->d_name);
+        read_flatpak_identity(proc, path);
         snprintf(path, sizeof(path), "%s/%s/exe", root, entry->d_name);
         read_link_field(proc->exe, sizeof(proc->exe), path);
         snprintf(path, sizeof(path), "%s/%s/cwd", root, entry->d_name);
@@ -1012,6 +1093,10 @@ static int list_processes(void)
         cJSON_AddStringToObject(obj, "comm", processes[idx].comm);
         cJSON_AddStringToObject(obj, "cmdline", processes[idx].cmdline);
         cJSON_AddStringToObject(obj, "exe", processes[idx].exe);
+        char app_id[FIELD_MAX];
+        process_flatpak_id(app_id, sizeof(app_id), &processes[idx]);
+        if (app_id[0])
+            cJSON_AddStringToObject(obj, "flatpak_id", app_id);
         cJSON *namespace_pids = cJSON_AddArrayToObject(obj, "namespace_pids");
         if (!namespace_pids) {
             cJSON_Delete(array);

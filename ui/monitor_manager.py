@@ -137,6 +137,8 @@ class HostMonitorManager:
                     "rule_ids": rule_ids,
                 }
             )
+            if item.get("flatpak_id"):
+                processes[-1]["flatpak_id"] = str(item["flatpak_id"])
         return processes
 
     @classmethod

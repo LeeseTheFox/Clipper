@@ -4,9 +4,136 @@ import time
 from pathlib import Path
 
 import pytest
+from process_watcher import (
+    entry_matches_process,
+    monitor_rule_id,
+    process_choice_matches_search,
+    process_choices,
+    running_process_choices,
+)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 MONITOR_BINARY = REPO_ROOT / "engine" / "monitor" / "clipper-monitor-host"
+
+
+def test_feishin_search_groups_sandbox_children_without_environment(tmp_path, monitor_binary):
+    proc_root = tmp_path / "proc"
+    proc_root.mkdir()
+    for pid, name, exe, environ in (
+        ("1", "feishin", "/app/main/feishin", "FLATPAK_ID=org.jeffvli.feishin"),
+        ("2", "feishin", "/app/main/feishin", ""),
+        ("3", "cat", "/usr/bin/cat", "FLATPAK_ID=org.jeffvli.feishin"),
+        ("4", "feishin", "/usr/bin/bash", ""),
+    ):
+        _add_proc(
+            proc_root, pid, comm=name, exe=exe, environ=environ, cmdline=f"{exe} /tmp/feishin.log"
+        )
+        root = proc_root / pid / "root"
+        root.mkdir()
+        (root / ".flatpak-info").write_text(
+            "[Application]\nname=org.jeffvli.feishin\n[Instance]\ninstance-id=42\n",
+            encoding="utf-8",
+        )
+    for choices in (
+        running_process_choices(proc_root),
+        process_choices(_list_processes(monitor_binary, proc_root)),
+    ):
+        matches = [p for p in choices if process_choice_matches_search(p, "feishin")]
+        assert len(matches) == 1
+        assert matches[0]["path"] == "/app/main/feishin"
+        assert matches[0]["flatpak_id"] == "org.jeffvli.feishin"
+        assert any(process_choice_matches_search(p, "cat") for p in choices)
+    config = tmp_path / "config.json"
+    _write_config(
+        config,
+        [
+            {
+                "executable_path": "/app/main/feishin",
+                "flatpak_id": "org.jeffvli.feishin",
+                "match_mode": "executable",
+            }
+        ],
+    )
+    # Only the environment-free app process remains executable.
+    (proc_root / "1/exe").unlink()
+    assert _probe(monitor_binary, config, proc_root)["matches"] == 1
+
+
+@pytest.mark.parametrize(
+    "process,expected",
+    [
+        ({"exe": "/app/main/feishin", "environ": "FLATPAK_ID=org.jeffvli.feishin"}, True),
+        ({"exe": "/app/main/feishin (deleted)", "environ": "FLATPAK_ID=org.jeffvli.feishin"}, True),
+        ({"exe": "/app/main/feishin", "environ": "FLATPAK_ID=other.app"}, False),
+        ({"exe": "/app/main/Feishin", "environ": "FLATPAK_ID=org.jeffvli.feishin"}, False),
+        (
+            {
+                "exe": "/usr/bin/bash",
+                "comm": "feishin",
+                "environ": "FLATPAK_ID=org.jeffvli.feishin",
+                "cmdline": "/app/main/feishin",
+                "cwd": "/app/main/feishin",
+            },
+            False,
+        ),
+        ({"exe": "/app/main/feishin", "environ": "FLATPAK_ID=org.jeffvli.feishin.extra"}, False),
+    ],
+)
+def test_precise_flatpak_rules_agree_in_native_and_host_monitors(
+    tmp_path, monitor_binary, process, expected
+):
+    entry = {
+        "name": "feishin",
+        "path": "/app/main/feishin",
+        "executable_path": "/app/main/feishin",
+        "executable_name": "feishin",
+        "flatpak_id": "org.jeffvli.feishin",
+        "match_mode": "executable",
+    }
+    proc_root = tmp_path / "proc"
+    proc_root.mkdir()
+    _add_proc(proc_root, "42", **process)
+    config = tmp_path / "config.json"
+    _write_config(config, [entry])
+    assert entry_matches_process(entry, process) is expected
+    assert _probe(monitor_binary, config, proc_root)["matches"] == int(expected)
+    completed = subprocess.run(
+        [str(monitor_binary), "--list-processes"],
+        check=True,
+        capture_output=True,
+        text=True,
+        env={"CLIPPER_CONFIG_FILE": str(config), "CLIPPER_PROC_ROOT": str(proc_root)},
+    )
+    listed = json.loads(completed.stdout)[0]
+    assert listed["rule_ids"] == ([monitor_rule_id(entry, 0)] if expected else [])
+    assert listed["flatpak_id"] == process["environ"].partition("=")[2]
+
+
+@pytest.mark.parametrize(
+    "comm,exe,expected",
+    [
+        ("feishin", "/usr/bin/bash", True),
+        ("clipper", "/usr/bin/bash", False),
+        ("bash", "/usr/bin/bash", False),
+        ("feishin", "/usr/bin/bash/child", False),
+    ],
+)
+def test_precise_renamed_runtime_requires_both_executable_and_process_name(
+    tmp_path, monitor_binary, comm, exe, expected
+):
+    entry = {
+        "executable_path": "/usr/bin/bash",
+        "match_mode": "executable",
+        "process_name": "feishin",
+    }
+    process = {"comm": comm, "exe": exe}
+    proc_root = tmp_path / "proc"
+    proc_root.mkdir()
+    _add_proc(proc_root, "42", **process)
+    config = tmp_path / "config.json"
+    _write_config(config, [entry])
+    assert entry_matches_process(entry, process) is expected
+    assert _probe(monitor_binary, config, proc_root)["matches"] == int(expected)
 
 
 @pytest.fixture(scope="module")

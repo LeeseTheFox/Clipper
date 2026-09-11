@@ -160,6 +160,18 @@ def test_process_selected_uses_executable_basename_when_name_is_empty():
     assert view.toasts == ["Added Example Game.exe"]
 
 
+def test_process_selection_persists_scoped_identity():
+    view = _make_view()
+    dialog = types.SimpleNamespace(selection_identity={
+        "match_mode": "executable", "flatpak_id": "org.jeffvli.feishin",
+    })
+    view.on_process_selected(dialog, "feishin", "/app/main/feishin", "display_capture")
+    entry = view._whitelist[0]
+    assert entry["flatpak_id"] == "org.jeffvli.feishin"
+    assert entry["match_mode"] == "executable"
+    assert entry["executable_path"] == "/app/main/feishin"
+
+
 def test_remove_game_toast_uses_executable_basename_for_empty_legacy_name():
     view = _make_view()
     row = RowStub(0)

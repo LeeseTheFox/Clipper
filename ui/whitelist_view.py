@@ -711,6 +711,7 @@ class WhitelistView(Gtk.Box):
             process_name = _entry_display_name({"path": process_path})
 
         game_data = {"name": process_name, "path": process_path}
+        game_data.update(getattr(dialog, "selection_identity", {}))
         if "/" in process_path:
             executable_name = Path(process_path).name
             if executable_name:
