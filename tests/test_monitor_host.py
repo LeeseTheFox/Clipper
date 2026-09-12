@@ -1,5 +1,7 @@
 import json
+import os
 import subprocess
+import threading
 import time
 from pathlib import Path
 
@@ -984,6 +986,62 @@ def test_monitor_host_service_detects_obs_studio_without_a_config_rule(
     )
 
     assert "[clipper-monitor] started clipper-observer-obs-studio pid=410" in completed.stderr
+
+
+def test_monitor_host_service_uses_one_snapshot_for_obs_and_all_rules(
+    tmp_path,
+    monitor_binary,
+):
+    initial_proc = tmp_path / "proc-initial"
+    initial_proc.mkdir()
+    empty_proc = tmp_path / "proc-empty"
+    empty_proc.mkdir()
+    proc_root = tmp_path / "proc"
+    proc_root.symlink_to(initial_proc, target_is_directory=True)
+    config_path = tmp_path / "config.json"
+    _write_config(
+        config_path,
+        [
+            {"name": "obs"},
+            {"name": "obs-studio", "executable_name": "obs"},
+        ],
+    )
+    _add_proc(
+        initial_proc,
+        "410",
+        comm="obs",
+        cmdline="/app/bin/obs",
+    )
+    environ_fifo = initial_proc / "410" / "environ"
+    environ_fifo.unlink()
+    os.mkfifo(environ_fifo)
+
+    def replace_proc_root_during_scan() -> None:
+        with environ_fifo.open("wb"):
+            replacement = tmp_path / "proc-replacement"
+            replacement.symlink_to(empty_proc, target_is_directory=True)
+            os.replace(replacement, proc_root)
+
+    replacer = threading.Thread(target=replace_proc_root_during_scan, daemon=True)
+    replacer.start()
+    completed = subprocess.run(
+        [str(monitor_binary), "--service"],
+        check=True,
+        env={
+            "CLIPPER_CONFIG_FILE": str(config_path),
+            "CLIPPER_PROC_ROOT": str(proc_root),
+            "CLIPPER_MONITOR_MAX_ITERATIONS": "1",
+        },
+        capture_output=True,
+        text=True,
+        timeout=2,
+    )
+    replacer.join(timeout=1)
+
+    assert not replacer.is_alive()
+    assert "[clipper-monitor] started clipper-observer-obs-studio pid=410" in completed.stderr
+    assert "[clipper-monitor] started rule-0 pid=410" in completed.stderr
+    assert "[clipper-monitor] started rule-1 pid=410" in completed.stderr
 
 
 def test_monitor_host_does_not_mistake_clipper_libobs_engine_for_obs(

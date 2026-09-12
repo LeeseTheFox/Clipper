@@ -32,7 +32,7 @@
 #define CMDLINE_MAX_BYTES 8192
 #define RULE_ID_MAX 256
 #define MAX_NAMESPACE_PIDS 8
-#define DEFAULT_INTERVAL_MS 2000
+#define DEFAULT_INTERVAL_MS 5000
 #define DELETED_PATH_SUFFIX " (deleted)"
 #define OBS_STUDIO_RULE_ID "clipper-observer-obs-studio"
 
@@ -774,14 +774,17 @@ static void read_flatpak_identity(process_info_t *proc, const char *path)
     fclose(file);
 }
 
-static size_t read_processes(process_info_t *processes, size_t max_processes)
+static bool read_processes(process_info_t *processes, size_t max_processes,
+                           size_t *count_out)
 {
     const char *root = proc_root();
     DIR *dir = opendir(root);
     struct dirent *entry;
     size_t count = 0;
-    if (!dir)
-        return 0;
+    if (!dir) {
+        *count_out = 0;
+        return false;
+    }
 
     while ((entry = readdir(dir)) != NULL && count < max_processes) {
         char path[PATH_MAX];
@@ -820,7 +823,8 @@ static size_t read_processes(process_info_t *processes, size_t max_processes)
     }
 
     closedir(dir);
-    return count;
+    *count_out = count;
+    return true;
 }
 
 static bool steam_process_matches_variant(const process_info_t *proc,
@@ -972,22 +976,17 @@ static int run_steam_command(steam_variant_t variant, bool shutdown)
     return 3;
 }
 
-static bool find_match_for_rule(const monitor_rule_t *rule, process_info_t *matched)
+static bool find_match_for_rule(const monitor_rule_t *rule,
+                                const process_info_t *processes, size_t count,
+                                process_info_t *matched)
 {
-    process_info_t *processes = calloc(MAX_PROCESSES, sizeof(process_info_t));
-    size_t count;
-    if (!processes)
-        return false;
-    count = read_processes(processes, MAX_PROCESSES);
     for (size_t idx = 0; idx < count; idx++) {
         if (rule_matches_process(rule, &processes[idx])) {
             if (matched)
                 *matched = processes[idx];
-            free(processes);
             return true;
         }
     }
-    free(processes);
     return false;
 }
 
@@ -1004,24 +1003,16 @@ static bool process_is_obs_studio(const process_info_t *proc)
            string_equals_casefold(exe_name, "obs-studio");
 }
 
-static bool find_obs_studio_process(process_info_t *matched)
+static bool find_obs_studio_process(const process_info_t *processes, size_t count,
+                                    process_info_t *matched)
 {
-    process_info_t *processes = calloc(MAX_PROCESSES, sizeof(process_info_t));
-    size_t count;
-    if (!processes)
-        return false;
-
-    count = read_processes(processes, MAX_PROCESSES);
     for (size_t idx = 0; idx < count; idx++) {
         if (process_is_obs_studio(&processes[idx])) {
             if (matched)
                 *matched = processes[idx];
-            free(processes);
             return true;
         }
     }
-
-    free(processes);
     return false;
 }
 
@@ -1074,7 +1065,12 @@ static int list_processes(void)
         return 2;
     }
 
-    count = read_processes(processes, MAX_PROCESSES);
+    if (!read_processes(processes, MAX_PROCESSES, &count)) {
+        fprintf(stderr, "[clipper-monitor] could not read process snapshot: %s\n",
+                strerror(errno));
+        free(processes);
+        return 2;
+    }
     array = cJSON_CreateArray();
     if (!array) {
         free(processes);
@@ -1160,21 +1156,33 @@ static bool send_event(int fd, const char *event, const monitor_rule_t *rule,
 static int run_once(bool require_socket)
 {
     monitor_config_t config;
+    process_info_t *processes;
+    size_t process_count;
     int fd = -1;
     int matches = 0;
     if (!load_config(&config))
         return 2;
+    processes = calloc(MAX_PROCESSES, sizeof(process_info_t));
+    if (!processes)
+        return 2;
+    if (!read_processes(processes, MAX_PROCESSES, &process_count)) {
+        fprintf(stderr, "[clipper-monitor] could not read process snapshot: %s\n",
+                strerror(errno));
+        free(processes);
+        return 2;
+    }
     if (require_socket) {
         fd = connect_monitor_socket();
         if (fd < 0) {
             fprintf(stderr, "[clipper-monitor] could not connect to monitor socket: %s\n",
                     strerror(errno));
+            free(processes);
             return 3;
         }
     }
     for (size_t idx = 0; idx < config.rule_count; idx++) {
         process_info_t proc;
-        if (find_match_for_rule(&config.rules[idx], &proc)) {
+        if (find_match_for_rule(&config.rules[idx], processes, process_count, &proc)) {
             matches++;
             if (fd >= 0)
                 send_event(fd, "process_started", &config.rules[idx], &proc);
@@ -1182,6 +1190,7 @@ static int run_once(bool require_socket)
     }
     if (fd >= 0)
         close(fd);
+    free(processes);
     printf("{\"ok\":true,\"rules\":%zu,\"matches\":%d}\n", config.rule_count, matches);
     return 0;
 }
@@ -1219,6 +1228,8 @@ static int run_service(void)
     stamp = current_config_stamp();
 
     for (;;) {
+        process_info_t *processes;
+        size_t process_count = 0;
         config_stamp_t current_stamp = current_config_stamp();
         if (!config_stamp_equal(stamp, current_stamp)) {
             monitor_config_t reloaded;
@@ -1235,9 +1246,16 @@ static int run_service(void)
         if (fd < 0)
             fd = connect_monitor_socket();
 
-        {
+        processes = calloc(MAX_PROCESSES, sizeof(process_info_t));
+        if (!processes) {
+            fprintf(stderr, "[clipper-monitor] could not allocate process snapshot: %s\n",
+                    strerror(errno));
+        } else if (!read_processes(processes, MAX_PROCESSES, &process_count)) {
+            fprintf(stderr, "[clipper-monitor] could not read process snapshot: %s\n",
+                    strerror(errno));
+        } else {
             process_info_t proc;
-            bool matched = find_obs_studio_process(&proc);
+            bool matched = find_obs_studio_process(processes, process_count, &proc);
             if (matched && !obs_state.active) {
                 obs_state.active = true;
                 obs_state.pid = proc.pid;
@@ -1260,34 +1278,38 @@ static int run_service(void)
                     fd = -1;
                 }
             }
-        }
 
-        for (size_t idx = 0; idx < config.rule_count; idx++) {
-            process_info_t proc;
-            bool matched = find_match_for_rule(&config.rules[idx], &proc);
-            if (matched && !states[idx].active) {
-                states[idx].active = true;
-                states[idx].pid = proc.pid;
-                copy_string(states[idx].name, sizeof(states[idx].name), process_name(&proc));
-                fprintf(stderr, "[clipper-monitor] started %s pid=%d\n",
-                        config.rules[idx].id, proc.pid);
-                if (fd >= 0 && !send_event(fd, "process_started", &config.rules[idx], &proc)) {
-                    close(fd);
-                    fd = -1;
-                }
-            } else if (!matched && states[idx].active) {
-                process_info_t stopped = {0};
-                stopped.pid = states[idx].pid;
-                copy_string(stopped.comm, sizeof(stopped.comm), states[idx].name);
-                states[idx].active = false;
-                fprintf(stderr, "[clipper-monitor] stopped %s\n", config.rules[idx].id);
-                if (fd >= 0 &&
-                    !send_event(fd, "process_stopped", &config.rules[idx], &stopped)) {
-                    close(fd);
-                    fd = -1;
+            for (size_t idx = 0; idx < config.rule_count; idx++) {
+                matched = find_match_for_rule(&config.rules[idx], processes,
+                                              process_count, &proc);
+                if (matched && !states[idx].active) {
+                    states[idx].active = true;
+                    states[idx].pid = proc.pid;
+                    copy_string(states[idx].name, sizeof(states[idx].name),
+                                process_name(&proc));
+                    fprintf(stderr, "[clipper-monitor] started %s pid=%d\n",
+                            config.rules[idx].id, proc.pid);
+                    if (fd >= 0 &&
+                        !send_event(fd, "process_started", &config.rules[idx], &proc)) {
+                        close(fd);
+                        fd = -1;
+                    }
+                } else if (!matched && states[idx].active) {
+                    process_info_t stopped = {0};
+                    stopped.pid = states[idx].pid;
+                    copy_string(stopped.comm, sizeof(stopped.comm), states[idx].name);
+                    states[idx].active = false;
+                    fprintf(stderr, "[clipper-monitor] stopped %s\n",
+                            config.rules[idx].id);
+                    if (fd >= 0 &&
+                        !send_event(fd, "process_stopped", &config.rules[idx], &stopped)) {
+                        close(fd);
+                        fd = -1;
+                    }
                 }
             }
         }
+        free(processes);
         loops++;
         if (max_loops > 0 && loops >= max_loops)
             break;
