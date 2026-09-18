@@ -510,14 +510,24 @@ class ClipperApplication(Adw.Application):
         self._background_hold = False
 
     def _hide_window_to_background(self, window) -> None:
-        """Release GTK/Vulkan state when hiding an engine-free window."""
+        """Retire the gallery while the application keeps recording services alive."""
         active_editor = getattr(self, "editor_window", None) is not None
         updating = getattr(getattr(self, "_updater", None), "busy", False)
-        if active_editor or self._engine_manager.is_running() or updating:
+        if active_editor or updating:
             window.set_visible(False)
             if active_editor and not getattr(self, "_background_hold", False):
                 self.hold()
                 self._background_hold = True
+            self._refresh_tray_menu()
+            return
+
+        if self._engine_manager.is_running():
+            if not self._background_hold:
+                self.hold()
+                self._background_hold = True
+            window.cleanup()
+            self.window = None
+            window.destroy()
             self._refresh_tray_menu()
             return
 

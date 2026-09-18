@@ -3,6 +3,8 @@ import sys
 import types
 from pathlib import Path
 
+import pytest
+
 
 def _load_clips_module():
     module_name = "test_clips_view_isolated"
@@ -454,6 +456,11 @@ def _make_view():
     view._media_enrichment_start_id = None
     view._media_cache_save_id = None
     view._media_enrichment_running = False
+    view._media_worker_generation = None
+    view._media_cancel = clips_module.threading.Event()
+    view._closed = False
+    view._suspended = False
+    view._refresh_deferred = False
     view._media_pending_jobs = {}
     view._media_inflight_paths = set()
     view._media_metadata = {}
@@ -758,6 +765,7 @@ def test_media_enrichment_probes_off_main_path_and_returns_to_glib(monkeypatch, 
                 "thumbnail": None,
             }
         ],
+        view._media_cancel,
     )
 
     assert callbacks == [
@@ -791,6 +799,139 @@ def test_media_enrichment_probes_off_main_path_and_returns_to_glib(monkeypatch, 
         ),
         (view._on_media_enrichment_batch_finished, (7, (str(clip_path),))),
     ]
+
+
+def test_cancelled_enrichment_does_not_start_more_subprocesses(monkeypatch, tmp_path):
+    view = _make_view()
+    path = tmp_path / "clip.mkv"
+    path.write_bytes(b"clip")
+    info = path.stat()
+    cancel = clips_module.threading.Event()
+    calls = []
+
+    def probe(_path):
+        calls.append("probe")
+        cancel.set()
+        return "0:42"
+
+    monkeypatch.setattr(view, "get_video_duration", probe)
+    monkeypatch.setattr(view, "get_video_thumbnail", lambda *_args: calls.append("thumbnail"))
+    callbacks = []
+    monkeypatch.setattr(clips_module.GLib, "idle_add", lambda *args: callbacks.append(args))
+    job = {"path": path, "mtime_ns": info.st_mtime_ns, "size": info.st_size,
+           "duration": None, "thumbnail": None}
+    view._enrich_media_worker(1, [job, job], cancel)
+    assert calls == ["probe"]
+    assert len(callbacks) == 1
+    assert callbacks[0][0] == view._on_media_enrichment_batch_finished
+
+
+def test_failed_media_probe_releases_worker_slot(monkeypatch, tmp_path):
+    view = _make_view()
+    path = tmp_path / "clip.mkv"
+    path.write_bytes(b"clip")
+    info = path.stat()
+    callbacks = []
+
+    def failed_probe(_path):
+        raise RuntimeError("probe failed")
+
+    monkeypatch.setattr(view, "get_video_duration", failed_probe)
+    monkeypatch.setattr(clips_module.GLib, "idle_add", lambda *args: callbacks.append(args))
+    view._media_worker_generation = view._media_load_generation = 1
+    view._media_enrichment_running = True
+    view._media_inflight_paths = {str(path)}
+    job = {"path": path, "mtime_ns": info.st_mtime_ns, "size": info.st_size,
+           "duration": None, "thumbnail": None}
+    with pytest.raises(RuntimeError, match="probe failed"):
+        view._enrich_media_worker(1, [job], view._media_cancel)
+
+    assert callbacks == [(view._on_media_enrichment_batch_finished, 1, (str(path),))]
+    callback, *args = callbacks[0]
+    callback(*args)
+    assert not view._media_enrichment_running
+    assert not view._media_inflight_paths
+
+
+def test_stale_worker_completion_cannot_clear_new_worker():
+    view = _make_view()
+    view._media_worker_generation = 2
+    view._media_load_generation = 2
+    view._media_enrichment_running = True
+    view._media_inflight_paths = {"new.mkv"}
+    view._on_media_enrichment_batch_finished(1, ("new.mkv",))
+    assert view._media_enrichment_running
+    assert view._media_inflight_paths == {"new.mkv"}
+
+
+def test_search_reuses_sort_order(monkeypatch, tmp_path):
+    view = _make_view()
+    view.clips_data = [{"path": tmp_path / name, "name": name} for name in ("b", "a")]
+    view.sort_mode = view.SORT_NAME
+    assert [clip["name"] for clip in view._visible_clips()] == ["a", "b"]
+    monkeypatch.setattr(view, "_sorted_clips", lambda *_args: pytest.fail("sorted again"))
+    view.search_query = "b"
+    assert [clip["name"] for clip in view._visible_clips()] == ["b"]
+
+
+def test_artwork_misses_are_memoized_per_refresh(monkeypatch):
+    view = _make_view()
+    view._artwork_cache = {}
+    calls = []
+    monkeypatch.setattr(clips_module, "cached_icon_path_for_game", lambda game: calls.append(game))
+    game = {"name": "Game", "executable_path": "/games/example"}
+    assert view._compact_game_data(game) == game
+    assert view._compact_game_data(game) == game
+    assert len(calls) == 1
+    view._artwork_cache = {}
+    view._compact_game_data(game)
+    assert len(calls) == 2
+
+
+def test_closed_worker_completion_does_not_schedule_work(monkeypatch):
+    view = _make_view()
+    view._closed = True
+    monkeypatch.setattr(clips_module.GLib, "timeout_add", lambda *_args: pytest.fail("timer"))
+    assert view._on_media_enrichment_batch_finished(0, ()) is False
+
+
+def test_hidden_gallery_defers_refresh_and_media_work(monkeypatch):
+    view = _make_view()
+    del view.refresh
+    view._suspended = True
+    view._media_pending_jobs = {"clip.mkv": {}}
+    monkeypatch.setattr(clips_module.GLib, "timeout_add", lambda *_args: pytest.fail("timer"))
+    monkeypatch.setattr(clips_module.GLib, "idle_add", lambda *_args: pytest.fail("idle"))
+    view.refresh()
+    view._schedule_refresh()
+    view._schedule_media_enrichment_worker()
+    assert view._start_media_enrichment_worker() is False
+    assert view.load_clips() is False
+    assert view._refresh_deferred is True
+    assert view._media_pending_jobs == {"clip.mkv": {}}
+
+
+def test_unmap_cancels_work_and_map_refreshes_once(monkeypatch):
+    view = _make_view()
+    del view.refresh
+    view._idle_load_id = 10
+    view._refresh_timeout_id = 11
+    view._media_enrichment_start_id = 12
+    removed = []
+    monkeypatch.setattr(clips_module.GLib, "source_remove", removed.append, raising=False)
+    view._on_gallery_unmapped()
+    assert view._media_cancel.is_set()
+    assert view._media_load_generation == 1
+    assert removed == [10, 11, 12]
+    assert view._apply_media_enrichment(0, {}) is False
+    scheduled = []
+    monkeypatch.setattr(
+        clips_module.GLib, "idle_add", lambda callback: scheduled.append(callback) or 13
+    )
+    view._on_gallery_mapped()
+    view.refresh()
+    assert scheduled == [view.load_clips]
+    assert view._suspended is False
 
 
 def test_large_library_recycles_bound_row_widgets(tmp_path):

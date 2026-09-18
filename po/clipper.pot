@@ -168,198 +168,198 @@ msgstr ""
 msgid "Game capture"
 msgstr ""
 
-#: ui/clips_view.py:259
+#: ui/clips_view.py:269
 msgid "Search clips by name"
 msgstr ""
 
-#: ui/clips_view.py:276
+#: ui/clips_view.py:286
 msgid "Newest"
 msgstr ""
 
-#: ui/clips_view.py:277
+#: ui/clips_view.py:287
 msgid "Oldest"
 msgstr ""
 
-#: ui/clips_view.py:278
+#: ui/clips_view.py:288
 msgid "A-Z"
 msgstr ""
 
-#: ui/clips_view.py:281
+#: ui/clips_view.py:291
 msgid "Sort clips"
 msgstr ""
 
-#: ui/clips_view.py:287
+#: ui/clips_view.py:297
 msgid "Open clips folder"
 msgstr ""
 
-#: ui/clips_view.py:541
+#: ui/clips_view.py:564
 msgid "Edit clip from scratch"
 msgstr ""
 
-#: ui/clips_view.py:544
+#: ui/clips_view.py:567
 msgid "Edit clip"
 msgstr ""
 
-#: ui/clips_view.py:549
+#: ui/clips_view.py:572
 msgid "Permanently delete the clip"
 msgstr ""
 
-#: ui/clips_view.py:552
+#: ui/clips_view.py:575
 msgid "Move clip to trash"
 msgstr ""
 
-#: ui/clips_view.py:596
+#: ui/clips_view.py:622
 msgid "Enter a valid clip name"
 msgstr ""
 
-#: ui/clips_view.py:602
+#: ui/clips_view.py:628
 msgid "A clip with that name already exists"
 msgstr ""
 
-#: ui/clips_view.py:607 ui/clips_view.py:625
+#: ui/clips_view.py:633 ui/clips_view.py:651
 msgid "Could not rename clip"
 msgstr ""
 
-#: ui/clips_view.py:622
+#: ui/clips_view.py:648
 msgid "Clip renamed, but saved edits could not be moved"
 msgstr ""
 
-#: ui/clips_view.py:655
+#: ui/clips_view.py:681
 msgid "Could not update clip metadata"
 msgstr ""
 
-#: ui/clips_view.py:666
+#: ui/clips_view.py:692
 msgid "Could not save clip name"
 msgstr ""
 
-#: ui/clips_view.py:1310
+#: ui/clips_view.py:1379
 msgid "No clips yet"
 msgstr ""
 
-#: ui/clips_view.py:1312
+#: ui/clips_view.py:1381
 msgid ""
 "Recorded clips will appear here.\n"
 "Press your save hotkey to capture a clip."
 msgstr ""
 
-#: ui/clips_view.py:1320
+#: ui/clips_view.py:1389
 msgid "No matching clips"
 msgstr ""
 
-#: ui/clips_view.py:1321
+#: ui/clips_view.py:1390
 msgid "No clip names match the current search."
 msgstr ""
 
-#: ui/clips_view.py:1327
+#: ui/clips_view.py:1396
 msgid "Loading clips…"
 msgstr ""
 
-#: ui/clips_view.py:1453
+#: ui/clips_view.py:1547
 msgid "Just now"
 msgstr ""
 
-#: ui/clips_view.py:1457
+#: ui/clips_view.py:1551
 #, python-format
 msgid "%(count)d minute ago"
 msgid_plural "%(count)d minutes ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: ui/clips_view.py:1461
+#: ui/clips_view.py:1555
 #, python-format
 msgid "%(count)d hour ago"
 msgid_plural "%(count)d hours ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: ui/clips_view.py:1465
+#: ui/clips_view.py:1559
 msgid "Yesterday"
 msgstr ""
 
-#: ui/clips_view.py:1468
+#: ui/clips_view.py:1562
 #, python-format
 msgid "%(count)d day ago"
 msgid_plural "%(count)d days ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: ui/clips_view.py:1474
+#: ui/clips_view.py:1568
 msgid "B"
 msgstr ""
 
-#: ui/clips_view.py:1474
+#: ui/clips_view.py:1568
 msgid "GB"
 msgstr ""
 
-#: ui/clips_view.py:1474
+#: ui/clips_view.py:1568
 msgid "KB"
 msgstr ""
 
-#: ui/clips_view.py:1474
+#: ui/clips_view.py:1568
 msgid "MB"
 msgstr ""
 
-#: ui/clips_view.py:1476
+#: ui/clips_view.py:1570
 #, python-format
 msgid "%(size).1f %(unit)s"
 msgstr ""
 
-#: ui/clips_view.py:1478
+#: ui/clips_view.py:1572
 #, python-format
 msgid "%(size).1f TB"
 msgstr ""
 
-#: ui/clips_view.py:1591
+#: ui/clips_view.py:1685
 msgid "Play clip"
 msgstr ""
 
-#: ui/clips_view.py:1676
+#: ui/clips_view.py:1770
 msgid "Reveal in file manager"
 msgstr ""
 
-#: ui/clips_view.py:1753 ui/editor_window.py:3823
+#: ui/clips_view.py:1847 ui/editor_window.py:3823
 msgid "Could not wipe saved edits"
 msgstr ""
 
-#: ui/clips_view.py:1896
+#: ui/clips_view.py:1990
 msgid "Could not play clip"
 msgstr ""
 
-#: ui/clips_view.py:2041
+#: ui/clips_view.py:2135
 msgid "Move clip to trash?"
 msgstr ""
 
-#: ui/clips_view.py:2043
+#: ui/clips_view.py:2137
 #, python-format
 msgid ""
 "'%(name)s' will be moved to the trash.\n"
 "This can be reversed."
 msgstr ""
 
-#: ui/clips_view.py:2046 ui/dialogs.py:864 ui/editor_export_dialog.py:345
+#: ui/clips_view.py:2140 ui/dialogs.py:864 ui/editor_export_dialog.py:345
 #: ui/editor_export_dialog.py:636 ui/editor_export_dialog.py:664
 #: ui/editor_export_dialog.py:772 ui/editor_window.py:3997 ui/editor_wipe.py:16
 #: ui/game_details_dialog.py:37 ui/update_controller.py:376
 msgid "Cancel"
 msgstr ""
 
-#: ui/clips_view.py:2047
+#: ui/clips_view.py:2141
 msgid "Move to trash"
 msgstr ""
 
-#: ui/clips_view.py:2102
+#: ui/clips_view.py:2196
 msgid "Clip deleted"
 msgstr ""
 
-#: ui/clips_view.py:2102
+#: ui/clips_view.py:2196
 msgid "Clip moved to trash"
 msgstr ""
 
-#: ui/clips_view.py:2109
+#: ui/clips_view.py:2203
 msgid "Could not delete clip"
 msgstr ""
 
-#: ui/clips_view.py:2111
+#: ui/clips_view.py:2205
 msgid "Could not move clip to trash"
 msgstr ""
 
@@ -1029,72 +1029,72 @@ msgstr ""
 msgid "Replace"
 msgstr ""
 
-#: ui/editor_preview.py:61
+#: ui/editor_preview.py:62
 #, python-format
 msgid "The GStreamer element %(element)s is unavailable"
 msgstr ""
 
-#: ui/editor_preview.py:176 ui/editor_preview.py:1083 ui/editor_preview.py:1095
+#: ui/editor_preview.py:177 ui/editor_preview.py:1084 ui/editor_preview.py:1096
 msgid "The GStreamer video preview is unavailable"
 msgstr ""
 
-#: ui/editor_preview.py:185
+#: ui/editor_preview.py:186
 msgid "The timeline video preview could not be linked"
 msgstr ""
 
-#: ui/editor_preview.py:292
+#: ui/editor_preview.py:293
 msgid "The timeline audio preview could not be linked"
 msgstr ""
 
-#: ui/editor_preview.py:306
+#: ui/editor_preview.py:307
 msgid "A timeline audio track could not be linked"
 msgstr ""
 
-#: ui/editor_preview.py:500
+#: ui/editor_preview.py:501
 msgid "A timeline video segment could not be linked"
 msgstr ""
 
-#: ui/editor_preview.py:507
+#: ui/editor_preview.py:508
 msgid "A timeline audio segment could not be prepared"
 msgstr ""
 
-#: ui/editor_preview.py:740
+#: ui/editor_preview.py:741
 msgid "A timeline audio segment could not be linked"
 msgstr ""
 
-#: ui/editor_preview.py:746
+#: ui/editor_preview.py:747
 msgid "A timeline audio segment could not be concatenated"
 msgstr ""
 
-#: ui/editor_preview.py:749
+#: ui/editor_preview.py:750
 msgid "A decoded timeline audio track could not be linked"
 msgstr ""
 
-#: ui/editor_preview.py:787
+#: ui/editor_preview.py:788
 msgid "A timeline segment could not be prepared"
 msgstr ""
 
-#: ui/editor_preview.py:854
+#: ui/editor_preview.py:855
 msgid "The timeline could not be prepared"
 msgstr ""
 
-#: ui/editor_preview.py:870
+#: ui/editor_preview.py:871
 msgid "The pre-rolled timeline could not start"
 msgstr ""
 
-#: ui/editor_preview.py:1071
+#: ui/editor_preview.py:1072
 msgid "Loading video"
 msgstr ""
 
-#: ui/editor_preview.py:1103
+#: ui/editor_preview.py:1104
 msgid "The GStreamer video preview could not be linked"
 msgstr ""
 
-#: ui/editor_preview.py:1236
+#: ui/editor_preview.py:1254
 msgid "The GStreamer audio preview is unavailable"
 msgstr ""
 
-#: ui/editor_preview.py:1245
+#: ui/editor_preview.py:1263
 msgid "The GStreamer audio preview could not be linked"
 msgstr ""
 
@@ -1403,7 +1403,7 @@ msgstr ""
 msgid "Exported to %(name)s"
 msgstr ""
 
-#: ui/editor_window.py:3959 ui/main.py:2001 ui/settings_view.py:1719
+#: ui/editor_window.py:3959 ui/main.py:2011 ui/settings_view.py:1719
 msgid "Unknown error"
 msgstr ""
 
@@ -1705,144 +1705,144 @@ msgid ""
 "It is advised to close OBS Studio or Clipper before recording."
 msgstr ""
 
-#: ui/main.py:545
+#: ui/main.py:555
 msgid "Engine not running"
 msgstr ""
 
-#: ui/main.py:551
+#: ui/main.py:561
 msgid "Could not send save command to Clipper engine"
 msgstr ""
 
-#: ui/main.py:583
+#: ui/main.py:593
 msgid "Restart Clipper?"
 msgstr ""
 
-#: ui/main.py:584
+#: ui/main.py:594
 msgid "Clipper needs to be restarted for this change to take effect."
 msgstr ""
 
-#: ui/main.py:586 ui/update_controller.py:326
+#: ui/main.py:596 ui/update_controller.py:326
 msgid "Restart later"
 msgstr ""
 
-#: ui/main.py:587 ui/update_controller.py:330
+#: ui/main.py:597 ui/update_controller.py:330
 msgid "Restart now"
 msgstr ""
 
-#: ui/main.py:610
+#: ui/main.py:620
 msgid "Save or discard the video edit before logging out"
 msgstr ""
 
-#: ui/main.py:721
+#: ui/main.py:731
 #, python-format
 msgid "Could not register save hotkey: %(error)s"
 msgstr ""
 
-#: ui/main.py:760
+#: ui/main.py:770
 #, python-format
 msgid "Global hotkey unavailable: %(message)s"
 msgstr ""
 
-#: ui/main.py:944
+#: ui/main.py:954
 msgid "Acknowledge"
 msgstr ""
 
-#: ui/main.py:985 ui/settings_view.py:1715
+#: ui/main.py:995 ui/settings_view.py:1715
 msgid "Restarting engine…"
 msgstr ""
 
-#: ui/main.py:996
+#: ui/main.py:1006
 msgid "Could not send restart command to Clipper engine"
 msgstr ""
 
-#: ui/main.py:1001
+#: ui/main.py:1011
 msgid "Engine will start when a whitelisted game is running"
 msgstr ""
 
-#: ui/main.py:1012
+#: ui/main.py:1022
 #, python-format
 msgid "Engine restart failed: %(error)s"
 msgstr ""
 
-#: ui/main.py:1130
+#: ui/main.py:1140
 msgid "X11 capture uses the primary X11 display without a system picker."
 msgstr ""
 
-#: ui/main.py:1139
+#: ui/main.py:1149
 msgid "The system display picker is already open."
 msgstr ""
 
-#: ui/main.py:1149
+#: ui/main.py:1159
 msgid "Stop the active game capture before changing the target display."
 msgstr ""
 
-#: ui/main.py:1208
+#: ui/main.py:1218
 msgid "Could not disable automatic startup"
 msgstr ""
 
-#: ui/main.py:1215
+#: ui/main.py:1225
 msgid "PipeWire restore token cleared"
 msgstr ""
 
-#: ui/main.py:1282
+#: ui/main.py:1292
 msgid "Clip captured"
 msgstr ""
 
-#: ui/main.py:1283
+#: ui/main.py:1293
 msgid "Your clip has been saved."
 msgstr ""
 
-#: ui/main.py:1289
+#: ui/main.py:1299
 msgid ""
 "Could not write the clip. Check the save folder and available disk space."
 msgstr ""
 
-#: ui/main.py:1291
+#: ui/main.py:1301
 #, python-format
 msgid "Failed to save clip: %(error)s"
 msgstr ""
 
-#: ui/main.py:1327
+#: ui/main.py:1337
 #, python-format
 msgid "Could not open clip editor: %(error)s"
 msgstr ""
 
-#: ui/main.py:1806
+#: ui/main.py:1816
 #, python-format
 msgid "Could not start Clipper engine: %(error)s"
 msgstr ""
 
-#: ui/main.py:1871 ui/settings_view.py:1718
+#: ui/main.py:1881 ui/settings_view.py:1718
 #, python-format
 msgid "Engine shutdown failed: %(error)s"
 msgstr ""
 
-#: ui/main.py:1910 ui/main.py:1946
+#: ui/main.py:1920 ui/main.py:1956
 msgid "Display selection was cancelled."
 msgstr ""
 
-#: ui/main.py:1915
+#: ui/main.py:1925
 msgid "Capture display selected successfully."
 msgstr ""
 
-#: ui/main.py:1919
+#: ui/main.py:1929
 msgid "No display was selected before the picker timed out."
 msgstr ""
 
-#: ui/main.py:2000
+#: ui/main.py:2010
 #, python-format
 msgid "Display capture sync failed: %(error)s"
 msgstr ""
 
-#: ui/main.py:2088
+#: ui/main.py:2098
 msgid "🦊 Leese"
 msgstr ""
 
-#: ui/main.py:2092
+#: ui/main.py:2102
 msgid "© 2026 Leese"
 msgstr ""
 
-#: ui/main.py:2098
+#: ui/main.py:2108
 msgid "GitHub"
 msgstr ""
 
@@ -1866,7 +1866,7 @@ msgstr ""
 msgid "Clipper"
 msgstr ""
 
-#: ui/main_window.py:136 ui/main_window.py:428
+#: ui/main_window.py:136 ui/main_window.py:433
 msgid "Engine status"
 msgstr ""
 
@@ -1927,11 +1927,11 @@ msgstr ""
 msgid "Games"
 msgstr ""
 
-#: ui/main_window.py:469
+#: ui/main_window.py:474
 msgid "Waiting for frame"
 msgstr ""
 
-#: ui/main_window.py:562
+#: ui/main_window.py:567
 msgid "Preview unavailable"
 msgstr ""
 

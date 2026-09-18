@@ -5,6 +5,7 @@ Clips view - shows recent recorded clips
 import json
 import os
 import re
+import stat as stat_module
 import subprocess
 import sys
 import tempfile
@@ -207,6 +208,8 @@ class ClipsView(Gtk.Box):
         self.edit_clip_callback = edit_clip_callback
         self.clips_rendered_callback = clips_rendered_callback
         self.clips_data = []
+        self._sort_cache = None
+        self._artwork_cache = {}
         self.search_query = ""
         self.sort_mode = self.SORT_NEWEST
         self._loading = False
@@ -217,6 +220,13 @@ class ClipsView(Gtk.Box):
         self._media_enrichment_start_id = None
         self._media_cache_save_id = None
         self._media_enrichment_running = False
+        self._media_worker_generation = None
+        self._media_cancel = threading.Event()
+        self._closed = False
+        self._suspended = True
+        self._refresh_deferred = True
+        self.connect("map", self._on_gallery_mapped)
+        self.connect("unmap", self._on_gallery_unmapped)
         self._media_pending_jobs = {}
         self._media_inflight_paths = set()
         self._media_metadata = {}
@@ -352,11 +362,19 @@ class ClipsView(Gtk.Box):
 
     def load_clips(self):
         """Display clips without waiting for external media tools."""
-        output_folder = Path(self.config["output_folder"])
         self._idle_load_id = None
+        if self._closed or self._suspended:
+            self._refresh_deferred = True
+            return False
+        self._refresh_deferred = False
+        output_folder = Path(self.config["output_folder"])
         self._media_load_generation += 1
+        self._media_cancel.set()
+        self._media_cancel = threading.Event()
 
         self.clips_data = []
+        self._sort_cache = None
+        self._artwork_cache = {}
 
         # Check if output folder exists
         if not output_folder.exists():
@@ -364,11 +382,17 @@ class ClipsView(Gtk.Box):
 
         # Scan for supported video files
         try:
-            video_files = [
-                path
-                for path in output_folder.iterdir()
-                if path.is_file() and path.suffix.lower() in VIDEO_EXTENSIONS
-            ]
+            video_files = []
+            with os.scandir(output_folder) as entries:
+                for entry in entries:
+                    if Path(entry.name).suffix.lower() not in VIDEO_EXTENSIONS:
+                        continue
+                    try:
+                        file_stat = entry.stat()
+                    except OSError:
+                        continue
+                    if stat_module.S_ISREG(file_stat.st_mode):
+                        video_files.append((Path(entry.path), file_stat))
         except Exception as e:
             print(f"Error scanning clips folder: {e}")
             video_files = []
@@ -383,9 +407,8 @@ class ClipsView(Gtk.Box):
         self._media_inflight_paths = set()
         whitelist_games = self._whitelist_games_by_filename_token()
         refreshed_game_metadata = {}
-        for clip_path in video_files:
+        for clip_path, stat in video_files:
             try:
-                stat = clip_path.stat()
                 self._clip_identities[str(clip_path)] = (
                     stat.st_mtime_ns,
                     stat.st_size,
@@ -554,12 +577,15 @@ class ClipsView(Gtk.Box):
     def _visible_clips(self):
         """Return clips matching the active search query in the active sort order."""
         query = self.search_query.casefold()
-        clips = [
-            clip
-            for clip in self.clips_data
-            if not query or query in clip.get("name", "").casefold()
-        ]
+        cached = getattr(self, "_sort_cache", None)
+        if cached is None or cached[0] is not self.clips_data or cached[1] != self.sort_mode:
+            ordered = self._sorted_clips(self.clips_data)
+            self._sort_cache = (self.clips_data, self.sort_mode, ordered)
+        else:
+            ordered = cached[2]
+        return [clip for clip in ordered if not query or query in self._clip_name_key(clip)]
 
+    def _sorted_clips(self, clips):
         if self.sort_mode == self.SORT_OLDEST:
             return sorted(
                 clips,
@@ -665,6 +691,7 @@ class ClipsView(Gtk.Box):
             # requested name if this optional display-name cache cannot save.
             self._show_toast(_("Could not save clip name"))
         clip_data["name"] = name
+        self._sort_cache = None
         if new_path != old_path:
             self._schedule_media_cache_save()
         return True
@@ -900,9 +927,16 @@ class ClipsView(Gtk.Box):
         icon_path_value = game_data.get("icon_path")
         if isinstance(icon_path_value, str) and icon_path_value:
             compact["icon_path"] = icon_path_value
-        icon_path = cached_icon_path_for_game(compact)
-        if not icon_path and compact.get("appid"):
-            icon_path = steam.get_game_icon_path(compact["appid"])
+        cache = getattr(self, "_artwork_cache", None)
+        key = tuple(sorted(compact.items()))
+        if cache is not None and key in cache:
+            icon_path = cache[key]
+        else:
+            icon_path = cached_icon_path_for_game(compact)
+            if not icon_path and compact.get("appid"):
+                icon_path = steam.get_game_icon_path(compact["appid"])
+            if cache is not None:
+                cache[key] = icon_path
         if icon_path:
             compact["icon_path"] = icon_path
         else:
@@ -1083,7 +1117,9 @@ class ClipsView(Gtk.Box):
 
     def _schedule_media_enrichment_worker(self):
         if (
-            not self._media_pending_jobs
+            self._closed
+            or self._suspended
+            or not self._media_pending_jobs
             or self._media_enrichment_running
             or self._media_enrichment_start_id is not None
         ):
@@ -1093,26 +1129,45 @@ class ClipsView(Gtk.Box):
 
     def _start_media_enrichment_worker(self):
         self._media_enrichment_start_id = None
-        if self._media_enrichment_running or not self._media_pending_jobs:
+        if (
+            self._closed
+            or self._suspended
+            or self._media_enrichment_running
+            or not self._media_pending_jobs
+        ):
             return False
 
         paths = list(self._media_pending_jobs)[:MEDIA_ENRICHMENT_BATCH_SIZE]
         jobs = [self._media_pending_jobs.pop(path) for path in paths]
         generation = self._media_load_generation
         self._media_enrichment_running = True
+        self._media_worker_generation = generation
         self._media_inflight_paths.update(paths)
         threading.Thread(
             target=self._enrich_media_worker,
-            args=(generation, jobs),
+            args=(generation, jobs, self._media_cancel),
             name="clipper-clip-media",
             daemon=True,
         ).start()
         return False
 
-    def _enrich_media_worker(self, generation, jobs):
+    def _enrich_media_worker(self, generation, jobs, cancel):
         """Probe uncached media properties away from GTK's main thread."""
+        try:
+            self._probe_media_batch(generation, jobs, cancel)
+        finally:
+            # Always release the worker slot, including unexpected probe failures.
+            GLib.idle_add(
+                self._on_media_enrichment_batch_finished,
+                generation,
+                tuple(str(job["path"]) for job in jobs),
+            )
+
+    def _probe_media_batch(self, generation, jobs, cancel):
         results = {}
         for job in jobs:
+            if cancel.is_set():
+                break
             clip_path = job["path"]
             try:
                 stat = clip_path.stat()
@@ -1128,11 +1183,14 @@ class ClipsView(Gtk.Box):
             except OSError:
                 continue
 
-        GLib.idle_add(self._apply_media_enrichment, generation, results)
+        if not cancel.is_set():
+            GLib.idle_add(self._apply_media_enrichment, generation, results)
 
         # Thumbnail decoding is usually the slowest part. Generate and reveal
         # each missing image progressively after all durations are available.
         for job in jobs:
+            if cancel.is_set():
+                break
             if job["thumbnail"]:
                 continue
             clip_path = job["path"]
@@ -1146,6 +1204,8 @@ class ClipsView(Gtk.Box):
                 thumbnail = self.get_video_thumbnail(clip_path, stat)
             except OSError:
                 continue
+            if cancel.is_set():
+                break
             GLib.idle_add(
                 self._apply_media_enrichment,
                 generation,
@@ -1158,12 +1218,6 @@ class ClipsView(Gtk.Box):
                     }
                 },
             )
-        GLib.idle_add(
-            self._on_media_enrichment_batch_finished,
-            generation,
-            tuple(str(job["path"]) for job in jobs),
-        )
-
     def _apply_media_enrichment(self, generation, results):
         """Apply background media results without rebuilding or scrolling the list."""
         if generation != self._media_load_generation:
@@ -1197,14 +1251,20 @@ class ClipsView(Gtk.Box):
         self._schedule_media_cache_save()
         return False
 
-    def _on_media_enrichment_batch_finished(self, _generation, paths):
-        self._media_inflight_paths.difference_update(paths)
+    def _on_media_enrichment_batch_finished(self, generation, paths):
+        if self._closed or generation != self._media_worker_generation:
+            return False
+        if generation == self._media_load_generation:
+            self._media_inflight_paths.difference_update(paths)
+        self._media_worker_generation = None
         self._media_enrichment_running = False
         self._schedule_media_enrichment_worker()
         self._schedule_media_cache_save()
         return False
 
     def _schedule_media_cache_save(self):
+        if self._closed or self._suspended:
+            return
         if self._media_cache_save_id is not None:
             GLib.source_remove(self._media_cache_save_id)
         self._media_cache_save_id = GLib.timeout_add(
@@ -1213,6 +1273,8 @@ class ClipsView(Gtk.Box):
 
     def _start_media_cache_save(self):
         self._media_cache_save_id = None
+        if self._closed or self._suspended:
+            return False
         if (
             self._media_enrichment_running
             or self._media_pending_jobs
@@ -1247,6 +1309,12 @@ class ClipsView(Gtk.Box):
         return thumbnail_path if self._thumbnail_exists(thumbnail_path) else None
 
     def _set_clip_thumbnail_widget(self, container, thumbnail_path):
+        identity = str(thumbnail_path) if thumbnail_path else None
+        if (
+            hasattr(container, "_clipper_thumbnail_identity")
+            and container._clipper_thumbnail_identity == identity
+        ):
+            return
         # The placeholder image expands so Gtk.Box centers its icon, but that
         # expansion must stop at the fixed-size thumbnail container. Otherwise
         # Gtk.Overlay propagates it to the row and the placeholder thumbnail
@@ -1278,6 +1346,7 @@ class ClipsView(Gtk.Box):
             content.set_halign(Gtk.Align.CENTER)
             content.set_valign(Gtk.Align.CENTER)
         container.append(content)
+        container._clipper_thumbnail_identity = identity
         container._clipper_has_thumbnail = bool(thumbnail_path)
         if getattr(container, "_clipper_play_hovered", False) and not thumbnail_path:
             content.set_opacity(0)
@@ -1344,6 +1413,9 @@ class ClipsView(Gtk.Box):
 
     def refresh(self, show_loading=False):
         """Refresh clips from the current output folder."""
+        if self._closed or self._suspended:
+            self._refresh_deferred = True
+            return
         if show_loading:
             self._start_loading()
             return
@@ -1351,8 +1423,15 @@ class ClipsView(Gtk.Box):
         if self._idle_load_id is None:
             self._idle_load_id = GLib.idle_add(self.load_clips)
 
-    def cleanup(self):
-        """Stop scheduled UI work and ignore any in-flight media worker."""
+    def _on_gallery_unmapped(self, *_args):
+        """Cancel queued work; an active probe stops at its next cancellation check."""
+        self._suspended = True
+        self._refresh_deferred = True
+        self._cancel_media_work()
+
+    def _cancel_media_work(self):
+        """Invalidate worker results and remove scheduled gallery work."""
+        self._media_cancel.set()
         self._media_load_generation += 1
         for attribute in (
             "_idle_load_id",
@@ -1364,6 +1443,18 @@ class ClipsView(Gtk.Box):
             if source_id is not None:
                 GLib.source_remove(source_id)
                 setattr(self, attribute, None)
+
+    def _on_gallery_mapped(self, *_args):
+        if self._closed:
+            return
+        self._suspended = False
+        if self._refresh_deferred:
+            self.refresh()
+
+    def cleanup(self):
+        """Stop scheduled UI work and ignore any in-flight media worker."""
+        self._closed = True
+        self._cancel_media_work()
         for source_id in self._local_delete_forget_ids.values():
             GLib.source_remove(source_id)
         self._local_delete_forget_ids.clear()
@@ -1436,6 +1527,9 @@ class ClipsView(Gtk.Box):
 
     def _schedule_refresh(self):
         """Debounce refreshes from multi-event file monitor notifications."""
+        if self._closed or self._suspended:
+            self._refresh_deferred = True
+            return
         if self._refresh_timeout_id is None:
             self._refresh_timeout_id = GLib.timeout_add(350, self._run_scheduled_refresh)
 

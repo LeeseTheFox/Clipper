@@ -170,75 +170,75 @@ msgstr "Захоплення екрана"
 msgid "Game capture"
 msgstr "Захоплення гри"
 
-#: ui/clips_view.py:259
+#: ui/clips_view.py:269
 msgid "Search clips by name"
 msgstr "Пошук кліпів за назвою"
 
-#: ui/clips_view.py:276
+#: ui/clips_view.py:286
 msgid "Newest"
 msgstr "Спочатку нові"
 
-#: ui/clips_view.py:277
+#: ui/clips_view.py:287
 msgid "Oldest"
 msgstr "Спочатку старі"
 
-#: ui/clips_view.py:278
+#: ui/clips_view.py:288
 msgid "A-Z"
 msgstr "А–Я"
 
-#: ui/clips_view.py:281
+#: ui/clips_view.py:291
 msgid "Sort clips"
 msgstr "Сортувати кліпи"
 
-#: ui/clips_view.py:287
+#: ui/clips_view.py:297
 msgid "Open clips folder"
 msgstr "Відкрити теку з кліпами"
 
-#: ui/clips_view.py:541
+#: ui/clips_view.py:564
 msgid "Edit clip from scratch"
 msgstr "Редагувати кліп з нуля"
 
-#: ui/clips_view.py:544
+#: ui/clips_view.py:567
 msgid "Edit clip"
 msgstr "Редагувати кліп"
 
-#: ui/clips_view.py:549
+#: ui/clips_view.py:572
 msgid "Permanently delete the clip"
 msgstr "Видалити кліп назавжди"
 
-#: ui/clips_view.py:552
+#: ui/clips_view.py:575
 msgid "Move clip to trash"
 msgstr "Перемістити кліп до смітника"
 
-#: ui/clips_view.py:596
+#: ui/clips_view.py:622
 msgid "Enter a valid clip name"
 msgstr "Введи дійсну назву кліпу"
 
-#: ui/clips_view.py:602
+#: ui/clips_view.py:628
 msgid "A clip with that name already exists"
 msgstr "Кліп із такою назвою вже існує"
 
-#: ui/clips_view.py:607 ui/clips_view.py:625
+#: ui/clips_view.py:633 ui/clips_view.py:651
 msgid "Could not rename clip"
 msgstr "Не вдалося перейменувати кліп"
 
-#: ui/clips_view.py:622
+#: ui/clips_view.py:648
 msgid "Clip renamed, but saved edits could not be moved"
 msgstr "Кліп перейменовано, але не вдалося перенести збережені правки"
 
-#: ui/clips_view.py:655
+#: ui/clips_view.py:681
 msgid "Could not update clip metadata"
 msgstr "Не вдалося оновити метадані кліпу"
 
-#: ui/clips_view.py:666
+#: ui/clips_view.py:692
 msgid "Could not save clip name"
 msgstr "Не вдалося зберегти назву кліпу"
 
-#: ui/clips_view.py:1310
+#: ui/clips_view.py:1379
 msgid "No clips yet"
 msgstr "Кліпів ще немає"
 
-#: ui/clips_view.py:1312
+#: ui/clips_view.py:1381
 msgid ""
 "Recorded clips will appear here.\n"
 "Press your save hotkey to capture a clip."
@@ -246,23 +246,23 @@ msgstr ""
 "Тут з’являтимуться записані кліпи.\n"
 "Натисни гарячу клавішу збереження, щоб захопити кліп."
 
-#: ui/clips_view.py:1320
+#: ui/clips_view.py:1389
 msgid "No matching clips"
 msgstr "Немає відповідних кліпів"
 
-#: ui/clips_view.py:1321
+#: ui/clips_view.py:1390
 msgid "No clip names match the current search."
 msgstr "Немає назв кліпів, що відповідають поточному пошуку."
 
-#: ui/clips_view.py:1327
+#: ui/clips_view.py:1396
 msgid "Loading clips…"
 msgstr "Завантаження кліпів…"
 
-#: ui/clips_view.py:1453
+#: ui/clips_view.py:1547
 msgid "Just now"
 msgstr "Щойно"
 
-#: ui/clips_view.py:1457
+#: ui/clips_view.py:1551
 #, python-format
 msgid "%(count)d minute ago"
 msgid_plural "%(count)d minutes ago"
@@ -270,7 +270,7 @@ msgstr[0] "%(count)d хвилину тому"
 msgstr[1] "%(count)d хвилини тому"
 msgstr[2] "%(count)d хвилин тому"
 
-#: ui/clips_view.py:1461
+#: ui/clips_view.py:1555
 #, python-format
 msgid "%(count)d hour ago"
 msgid_plural "%(count)d hours ago"
@@ -278,11 +278,11 @@ msgstr[0] "%(count)d годину тому"
 msgstr[1] "%(count)d години тому"
 msgstr[2] "%(count)d годин тому"
 
-#: ui/clips_view.py:1465
+#: ui/clips_view.py:1559
 msgid "Yesterday"
 msgstr "Учора"
 
-#: ui/clips_view.py:1468
+#: ui/clips_view.py:1562
 #, python-format
 msgid "%(count)d day ago"
 msgid_plural "%(count)d days ago"
@@ -290,53 +290,53 @@ msgstr[0] "%(count)d день тому"
 msgstr[1] "%(count)d дні тому"
 msgstr[2] "%(count)d днів тому"
 
-#: ui/clips_view.py:1474
+#: ui/clips_view.py:1568
 msgid "B"
 msgstr "Б"
 
-#: ui/clips_view.py:1474
+#: ui/clips_view.py:1568
 msgid "GB"
 msgstr "ГБ"
 
-#: ui/clips_view.py:1474
+#: ui/clips_view.py:1568
 msgid "KB"
 msgstr "КБ"
 
-#: ui/clips_view.py:1474
+#: ui/clips_view.py:1568
 msgid "MB"
 msgstr "МБ"
 
-#: ui/clips_view.py:1476
+#: ui/clips_view.py:1570
 #, python-format
 msgid "%(size).1f %(unit)s"
 msgstr "%(size).1f %(unit)s"
 
-#: ui/clips_view.py:1478
+#: ui/clips_view.py:1572
 #, python-format
 msgid "%(size).1f TB"
 msgstr "%(size).1f ТБ"
 
-#: ui/clips_view.py:1591
+#: ui/clips_view.py:1685
 msgid "Play clip"
 msgstr "Відтворити кліп"
 
-#: ui/clips_view.py:1676
+#: ui/clips_view.py:1770
 msgid "Reveal in file manager"
 msgstr "Показати у файловому менеджері"
 
-#: ui/clips_view.py:1753 ui/editor_window.py:3823
+#: ui/clips_view.py:1847 ui/editor_window.py:3823
 msgid "Could not wipe saved edits"
 msgstr "Не вдалося видалити збережені правки"
 
-#: ui/clips_view.py:1896
+#: ui/clips_view.py:1990
 msgid "Could not play clip"
 msgstr "Не вдалося відтворити кліп"
 
-#: ui/clips_view.py:2041
+#: ui/clips_view.py:2135
 msgid "Move clip to trash?"
 msgstr "Перемістити кліп до смітника?"
 
-#: ui/clips_view.py:2043
+#: ui/clips_view.py:2137
 #, python-format
 msgid ""
 "'%(name)s' will be moved to the trash.\n"
@@ -345,30 +345,30 @@ msgstr ""
 "«%(name)s» буде переміщено до смітника.\n"
 "Цю дію можна скасувати."
 
-#: ui/clips_view.py:2046 ui/dialogs.py:864 ui/editor_export_dialog.py:345
+#: ui/clips_view.py:2140 ui/dialogs.py:864 ui/editor_export_dialog.py:345
 #: ui/editor_export_dialog.py:636 ui/editor_export_dialog.py:664
 #: ui/editor_export_dialog.py:772 ui/editor_window.py:3997 ui/editor_wipe.py:16
 #: ui/game_details_dialog.py:37 ui/update_controller.py:376
 msgid "Cancel"
 msgstr "Скасувати"
 
-#: ui/clips_view.py:2047
+#: ui/clips_view.py:2141
 msgid "Move to trash"
 msgstr "Перемістити до смітника"
 
-#: ui/clips_view.py:2102
+#: ui/clips_view.py:2196
 msgid "Clip deleted"
 msgstr "Кліп видалено"
 
-#: ui/clips_view.py:2102
+#: ui/clips_view.py:2196
 msgid "Clip moved to trash"
 msgstr "Кліп переміщено до смітника"
 
-#: ui/clips_view.py:2109
+#: ui/clips_view.py:2203
 msgid "Could not delete clip"
 msgstr "Не вдалося видалити кліп"
 
-#: ui/clips_view.py:2111
+#: ui/clips_view.py:2205
 msgid "Could not move clip to trash"
 msgstr "Не вдалося перемістити кліп до смітника"
 
@@ -1062,72 +1062,72 @@ msgstr "%(name)s уже існує. Обери «Замінити», щоб пе
 msgid "Replace"
 msgstr "Замінити"
 
-#: ui/editor_preview.py:61
+#: ui/editor_preview.py:62
 #, python-format
 msgid "The GStreamer element %(element)s is unavailable"
 msgstr "Елемент GStreamer %(element)s недоступний"
 
-#: ui/editor_preview.py:176 ui/editor_preview.py:1083 ui/editor_preview.py:1095
+#: ui/editor_preview.py:177 ui/editor_preview.py:1084 ui/editor_preview.py:1096
 msgid "The GStreamer video preview is unavailable"
 msgstr "Попередній перегляд відео GStreamer недоступний"
 
-#: ui/editor_preview.py:185
+#: ui/editor_preview.py:186
 msgid "The timeline video preview could not be linked"
 msgstr "Не вдалося під’єднати попередній перегляд відео до часової шкали"
 
-#: ui/editor_preview.py:292
+#: ui/editor_preview.py:293
 msgid "The timeline audio preview could not be linked"
 msgstr "Не вдалося під’єднати попередній перегляд аудіо до часової шкали"
 
-#: ui/editor_preview.py:306
+#: ui/editor_preview.py:307
 msgid "A timeline audio track could not be linked"
 msgstr "Не вдалося під’єднати аудіодоріжку до часової шкали"
 
-#: ui/editor_preview.py:500
+#: ui/editor_preview.py:501
 msgid "A timeline video segment could not be linked"
 msgstr "Не вдалося під’єднати відеосегмент часової шкали"
 
-#: ui/editor_preview.py:507
+#: ui/editor_preview.py:508
 msgid "A timeline audio segment could not be prepared"
 msgstr "Не вдалося підготувати аудіосегмент часової шкали"
 
-#: ui/editor_preview.py:740
+#: ui/editor_preview.py:741
 msgid "A timeline audio segment could not be linked"
 msgstr "Не вдалося під’єднати аудіосегмент часової шкали"
 
-#: ui/editor_preview.py:746
+#: ui/editor_preview.py:747
 msgid "A timeline audio segment could not be concatenated"
 msgstr "Не вдалося об’єднати аудіосегмент часової шкали"
 
-#: ui/editor_preview.py:749
+#: ui/editor_preview.py:750
 msgid "A decoded timeline audio track could not be linked"
 msgstr "Не вдалося під’єднати декодовану аудіодоріжку часової шкали"
 
-#: ui/editor_preview.py:787
+#: ui/editor_preview.py:788
 msgid "A timeline segment could not be prepared"
 msgstr "Не вдалося підготувати сегмент часової шкали"
 
-#: ui/editor_preview.py:854
+#: ui/editor_preview.py:855
 msgid "The timeline could not be prepared"
 msgstr "Не вдалося підготувати часову шкалу"
 
-#: ui/editor_preview.py:870
+#: ui/editor_preview.py:871
 msgid "The pre-rolled timeline could not start"
 msgstr "Не вдалося запустити попередньо підготовлену часову шкалу"
 
-#: ui/editor_preview.py:1071
+#: ui/editor_preview.py:1072
 msgid "Loading video"
 msgstr "Завантаження відео"
 
-#: ui/editor_preview.py:1103
+#: ui/editor_preview.py:1104
 msgid "The GStreamer video preview could not be linked"
 msgstr "Не вдалося під’єднати попередній перегляд відео GStreamer"
 
-#: ui/editor_preview.py:1236
+#: ui/editor_preview.py:1254
 msgid "The GStreamer audio preview is unavailable"
 msgstr "Попередній перегляд аудіо GStreamer недоступний"
 
-#: ui/editor_preview.py:1245
+#: ui/editor_preview.py:1263
 msgid "The GStreamer audio preview could not be linked"
 msgstr "Не вдалося під’єднати попередній перегляд аудіо GStreamer"
 
@@ -1440,7 +1440,7 @@ msgstr "Експорт…"
 msgid "Exported to %(name)s"
 msgstr "Експортовано до %(name)s"
 
-#: ui/editor_window.py:3959 ui/main.py:2001 ui/settings_view.py:1719
+#: ui/editor_window.py:3959 ui/main.py:2011 ui/settings_view.py:1719
 msgid "Unknown error"
 msgstr "Невідома помилка"
 
@@ -1745,147 +1745,147 @@ msgstr ""
 "кодер. Це також може спричинити проблеми в іграх із вибраним способом "
 "«Захоплення гри». Перед записом радимо закрити OBS Studio або Clipper."
 
-#: ui/main.py:545
+#: ui/main.py:555
 msgid "Engine not running"
 msgstr "Рушій не запущено"
 
-#: ui/main.py:551
+#: ui/main.py:561
 msgid "Could not send save command to Clipper engine"
 msgstr "Не вдалося надіслати команду збереження рушію Clipper"
 
-#: ui/main.py:583
+#: ui/main.py:593
 msgid "Restart Clipper?"
 msgstr "Перезапустити Clipper?"
 
-#: ui/main.py:584
+#: ui/main.py:594
 msgid "Clipper needs to be restarted for this change to take effect."
 msgstr "Щоб зміна набула чинності, потрібно перезапустити Clipper."
 
-#: ui/main.py:586 ui/update_controller.py:326
+#: ui/main.py:596 ui/update_controller.py:326
 msgid "Restart later"
 msgstr "Перезапустити пізніше"
 
-#: ui/main.py:587 ui/update_controller.py:330
+#: ui/main.py:597 ui/update_controller.py:330
 msgid "Restart now"
 msgstr "Перезапустити зараз"
 
-#: ui/main.py:610
+#: ui/main.py:620
 msgid "Save or discard the video edit before logging out"
 msgstr "Збережи або відкинь зміни відео перед виходом із системи"
 
-#: ui/main.py:721
+#: ui/main.py:731
 #, python-format
 msgid "Could not register save hotkey: %(error)s"
 msgstr "Не вдалося зареєструвати сполучення клавіш збереження: %(error)s"
 
-#: ui/main.py:760
+#: ui/main.py:770
 #, python-format
 msgid "Global hotkey unavailable: %(message)s"
 msgstr "Глобальне сполучення клавіш недоступне: %(message)s"
 
-#: ui/main.py:944
+#: ui/main.py:954
 msgid "Acknowledge"
 msgstr "Зрозуміло"
 
-#: ui/main.py:985 ui/settings_view.py:1715
+#: ui/main.py:995 ui/settings_view.py:1715
 msgid "Restarting engine…"
 msgstr "Перезапуск рушія…"
 
-#: ui/main.py:996
+#: ui/main.py:1006
 msgid "Could not send restart command to Clipper engine"
 msgstr "Не вдалося надіслати команду перезапуску рушію Clipper"
 
-#: ui/main.py:1001
+#: ui/main.py:1011
 msgid "Engine will start when a whitelisted game is running"
 msgstr "Рушій запуститься, коли буде запущено дозволену гру"
 
-#: ui/main.py:1012
+#: ui/main.py:1022
 #, python-format
 msgid "Engine restart failed: %(error)s"
 msgstr "Не вдалося перезапустити рушій: %(error)s"
 
-#: ui/main.py:1130
+#: ui/main.py:1140
 msgid "X11 capture uses the primary X11 display without a system picker."
 msgstr ""
 "Захоплення X11 використовує основний дисплей X11 без системного засобу "
 "вибору."
 
-#: ui/main.py:1139
+#: ui/main.py:1149
 msgid "The system display picker is already open."
 msgstr "Системний засіб вибору екрана вже відкрито."
 
-#: ui/main.py:1149
+#: ui/main.py:1159
 msgid "Stop the active game capture before changing the target display."
 msgstr "Зупини активне захоплення гри перед зміною цільового екрана."
 
-#: ui/main.py:1208
+#: ui/main.py:1218
 msgid "Could not disable automatic startup"
 msgstr "Не вдалося вимкнути автоматичний запуск"
 
-#: ui/main.py:1215
+#: ui/main.py:1225
 msgid "PipeWire restore token cleared"
 msgstr "Токен відновлення PipeWire очищено"
 
-#: ui/main.py:1282
+#: ui/main.py:1292
 msgid "Clip captured"
 msgstr "Кліп захоплено"
 
-#: ui/main.py:1283
+#: ui/main.py:1293
 msgid "Your clip has been saved."
 msgstr "Твій кліп збережено."
 
-#: ui/main.py:1289
+#: ui/main.py:1299
 msgid ""
 "Could not write the clip. Check the save folder and available disk space."
 msgstr ""
 "Не вдалося записати кліп. Перевір теку збереження та вільне місце на диску."
 
-#: ui/main.py:1291
+#: ui/main.py:1301
 #, python-format
 msgid "Failed to save clip: %(error)s"
 msgstr "Не вдалося зберегти кліп: %(error)s"
 
-#: ui/main.py:1327
+#: ui/main.py:1337
 #, python-format
 msgid "Could not open clip editor: %(error)s"
 msgstr "Не вдалося відкрити редактор кліпів: %(error)s"
 
-#: ui/main.py:1806
+#: ui/main.py:1816
 #, python-format
 msgid "Could not start Clipper engine: %(error)s"
 msgstr "Не вдалося запустити рушій Clipper: %(error)s"
 
-#: ui/main.py:1871 ui/settings_view.py:1718
+#: ui/main.py:1881 ui/settings_view.py:1718
 #, python-format
 msgid "Engine shutdown failed: %(error)s"
 msgstr "Не вдалося завершити роботу рушія: %(error)s"
 
-#: ui/main.py:1910 ui/main.py:1946
+#: ui/main.py:1920 ui/main.py:1956
 msgid "Display selection was cancelled."
 msgstr "Вибір екрана скасовано."
 
-#: ui/main.py:1915
+#: ui/main.py:1925
 msgid "Capture display selected successfully."
 msgstr "Екран для захоплення успішно вибрано."
 
-#: ui/main.py:1919
+#: ui/main.py:1929
 msgid "No display was selected before the picker timed out."
 msgstr "До завершення часу очікування засобу вибору не вибрано жодного екрана."
 
-#: ui/main.py:2000
+#: ui/main.py:2010
 #, python-format
 msgid "Display capture sync failed: %(error)s"
 msgstr "Не вдалося синхронізувати захоплення екрана: %(error)s"
 
-#: ui/main.py:2088
+#: ui/main.py:2098
 msgid "🦊 Leese"
 msgstr "🦊 Leese"
 
-#: ui/main.py:2092
+#: ui/main.py:2102
 msgid "© 2026 Leese"
 msgstr "© 2026 Leese"
 
-#: ui/main.py:2098
+#: ui/main.py:2108
 msgid "GitHub"
 msgstr "GitHub"
 
@@ -1909,7 +1909,7 @@ msgstr "Завершено аварійно"
 msgid "Clipper"
 msgstr "Clipper"
 
-#: ui/main_window.py:136 ui/main_window.py:428
+#: ui/main_window.py:136 ui/main_window.py:433
 msgid "Engine status"
 msgstr "Стан рушія"
 
@@ -1970,11 +1970,11 @@ msgstr "Кліпи"
 msgid "Games"
 msgstr "Ігри"
 
-#: ui/main_window.py:469
+#: ui/main_window.py:474
 msgid "Waiting for frame"
 msgstr "Очікування кадру"
 
-#: ui/main_window.py:562
+#: ui/main_window.py:567
 msgid "Preview unavailable"
 msgstr "Попередній перегляд недоступний"
 

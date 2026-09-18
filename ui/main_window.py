@@ -286,6 +286,11 @@ class MainWindow(Adw.ApplicationWindow):
 
     def cleanup(self) -> None:
         """Stop child-view background work before the application exits."""
+        self._hide_preview_popover()
+        if self._preview_fade_id is not None:
+            GLib.source_remove(self._preview_fade_id)
+            self._preview_fade_id = None
+        self._finish_preview_hide()
         for view in (
             self.clips_view,
             self.audio_view,

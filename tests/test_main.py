@@ -544,6 +544,8 @@ def make_application(
     app._tray = TrayStub(tray_available)
     app._engine_manager = EngineManagerStub(running=engine_running)
     app._restart_in_background = False
+    app._background_hold = False
+    app.hold = lambda: None
     app.window = WindowStub()
     app._quit_calls = 0
     app.quit = lambda: setattr(app, "_quit_calls", app._quit_calls + 1)
@@ -605,17 +607,24 @@ def test_close_request_restarts_idle_window_in_background():
     assert app._refresh_calls == 0
 
 
-def test_close_request_only_hides_window_while_engine_is_running():
+def test_close_request_retires_window_while_engine_is_running():
     app = make_application(
         minimize_to_tray_on_close=True,
         tray_available=True,
         engine_running=True,
     )
 
+    window = app.window
+    destroyed = []
+    window.destroy = lambda: destroyed.append(True)
     handled = app._on_window_close_request(None)
 
     assert handled is True
-    assert app.window.visible_values == [False]
+    assert app.window is None
+    assert window.cleanup_calls == 1
+    assert destroyed == [True]
+    assert app._background_hold is True
+    assert app._engine_manager.is_running()
     assert app._restart_in_background is False
     assert app._quit_calls == 0
     assert app._refresh_calls == 1
@@ -881,6 +890,51 @@ def test_background_activation_starts_services_without_creating_window(monkeypat
     assert presented == [True]
     assert released == [True]
     assert app._background_hold is False
+
+
+def test_recording_window_can_be_retired_and_recreated(monkeypatch):
+    app = make_status_application(engine_manager=EngineManagerStub(running=True))
+    app._window_engine_status = main_module._ENGINE_STATUS_RECORDING
+    app._refresh_tray_menu = lambda: None
+    lifetime = []
+    app.hold = lambda: lifetime.append("hold")
+    app.release = lambda: lifetime.append("release")
+    windows = []
+
+    class MainWindowStub:
+        def __init__(self, **_kwargs):
+            self.cleaned = False
+            self.destroyed = False
+            windows.append(self)
+
+        def set_engine_status(self, status):
+            self.status = status
+
+        def connect(self, *_args):
+            pass
+
+        def present(self):
+            pass
+
+        def cleanup(self):
+            self.cleaned = True
+
+        def destroy(self):
+            self.destroyed = True
+
+    monkeypatch.setattr(main_module, "MainWindow", MainWindowStub)
+    manager = app._engine_manager
+    for _ in range(2):
+        app.do_activate()
+        assert windows[-1].status == main_module._ENGINE_STATUS_RECORDING
+        app._hide_window_to_background(app.window)
+        assert windows[-1].cleaned and windows[-1].destroyed
+        assert app.window is None
+        assert app._engine_manager is manager
+        assert manager.is_running()
+    app.do_activate()
+    assert len(windows) == 3
+    assert lifetime == ["hold", "release", "hold", "release"]
 
 
 def test_first_activation_presents_multistep_setup_instead_of_main_window(monkeypatch):
