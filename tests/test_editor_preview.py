@@ -144,10 +144,18 @@ class FakeLevelStructure:
 
 def make_preview(monkeypatch, position=2_000_000, playing=False):
     timers = {}
+    next_timer = 0
+
+    def add_timer(_interval, callback):
+        nonlocal next_timer
+        next_timer += 1
+        timers[next_timer] = callback
+        return next_timer
+
     monkeypatch.setattr(
         editor_preview.GLib,
         "timeout_add",
-        lambda _interval, callback: timers.setdefault(1, callback) and 1,
+        add_timer,
     )
     monkeypatch.setattr(editor_preview.GLib, "source_remove", timers.pop)
     preview = EditorPreview.__new__(EditorPreview)
@@ -164,6 +172,40 @@ def make_preview(monkeypatch, position=2_000_000, playing=False):
     preview.picture = SimpleNamespace(set_paintable=lambda _paintable: None)
     preview.pipeline = FakePipeline()
     return preview, timers
+
+
+def test_position_timer_stops_after_paused_seek_and_deduplicates(monkeypatch):
+    preview, timers = make_preview(monkeypatch)
+    positions = []
+    preview.changed_callback = positions.append
+    preview.seek_output(3_000_000)
+    timer = preview._position_timer
+    preview._ensure_position_timer()
+    assert preview._position_timer == timer
+    assert preview._poll_position() is True  # Decoder still at the old position.
+    preview.pipeline.position_ns = 3_001_000_000
+    assert preview._poll_position() is False
+    assert preview._position_timer is None
+    assert positions == [3_000_000]  # Explicit seek already notified the UI.
+    assert timer in timers
+
+
+def test_paused_seek_polling_is_bounded(monkeypatch):
+    preview, _timers = make_preview(monkeypatch)
+    preview.seek_output(8_000_000)
+    preview._position_poll_deadline = 0
+    assert preview._poll_position() is False
+    assert preview._position_timer is None
+    assert preview.output_position_us == 8_000_000
+
+
+def test_pause_cancels_position_timer(monkeypatch):
+    preview, timers = make_preview(monkeypatch)
+    preview.play()
+    position_timer = preview._position_timer
+    preview.pause()
+    assert position_timer not in timers
+    assert preview._position_timer is None
 
 
 def make_gap_project(*, first_gain=1.0):
@@ -1018,7 +1060,7 @@ def test_resuming_preserves_decoder_state_when_playback_advances(monkeypatch):
     assert preview.playing is True
 
     preview.pipeline.position_ns += 100_000_000
-    assert timers[1]() is False
+    assert timers[preview._resume_watchdog_id]() is False
     assert "seek" not in [call[0] for call in preview.pipeline.calls]
 
 
@@ -1028,7 +1070,7 @@ def test_stalled_resume_seeks_to_the_exact_captured_output_time(monkeypatch):
     preview.changed_callback = positions.append
 
     preview.play()
-    assert timers[1]() is False
+    assert timers[preview._resume_watchdog_id]() is False
 
     seek = next(call for call in preview.pipeline.calls if call[0] == "seek")
     assert seek[3] == 2_001_000_000

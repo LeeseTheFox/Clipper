@@ -33,6 +33,7 @@ RESUME_WATCHDOG_MS = 250
 RESUME_PROGRESS_US = 10_000
 SEEK_SETTLE_TOLERANCE_US = 250_000
 POSITION_POLL_MS = 10
+PAUSED_SEEK_POLL_SECONDS = 2.0
 LOADING_SPINNER_DELAY_MS = 50
 AUDIO_PREROLL_US = 200_000
 LEVEL_INTERVAL_NS = 50_000_000
@@ -1130,7 +1131,24 @@ class EditorPreview:
         self.bus.add_signal_watch()
         self._bus_handler_id = self.bus.connect("message", self._on_bus_message)
         self.pipeline.set_state(Gst.State.PAUSED)
-        self._position_timer = GLib.timeout_add(POSITION_POLL_MS, self._poll_position)
+        self._position_timer = None
+
+    def _ensure_position_timer(self):
+        if getattr(self, "_closing", False) or not getattr(self, "_source_valid", True):
+            return
+        if getattr(self, "_position_timer", None) is None:
+            self._position_timer = GLib.timeout_add(POSITION_POLL_MS, self._poll_position)
+
+    def _stop_position_timer(self):
+        timer = getattr(self, "_position_timer", None)
+        self._position_timer = None
+        if timer is not None:
+            GLib.source_remove(timer)
+
+    def _watch_source_seek(self, source_us):
+        self._pending_source_seek_us = source_us
+        self._position_poll_deadline = time.monotonic() + PAUSED_SEEK_POLL_SECONDS
+        self._ensure_position_timer()
 
     def _hold_current_frame(self):
         """Keep the visible frame stable while another pipeline prepares."""
@@ -1305,18 +1323,37 @@ class EditorPreview:
         self._apply_audio_settings()
 
     def _poll_position(self):
+        if getattr(self, "_closing", False) or not getattr(self, "_source_valid", True):
+            self._position_timer = None
+            return False
         composition = getattr(self, "_timeline_composition", None)
         if composition is not None:
+            previous = self.output_position_us
             self.output_position_us = composition.position_us()
-            if self.changed_callback:
+            if self.changed_callback and previous != self.output_position_us:
                 self.changed_callback(self.output_position_us)
-            return True
-        self._sync_position_from_pipeline()
-        return True
+        else:
+            self._sync_position_from_pipeline()
+        keep_polling = self.playing or (
+            getattr(self, "_pending_source_seek_us", None) is not None
+            and time.monotonic() < getattr(self, "_position_poll_deadline", 0)
+        )
+        if not keep_polling:
+            self._position_timer = None
+        return keep_polling
 
     def _on_bus_message(self, _bus, message):
         if message.type == Gst.MessageType.ERROR:
             _log_pipeline_error(message, "Source preview pipeline failed")
+        if (
+            message.type == Gst.MessageType.ASYNC_DONE
+            and not getattr(self, "_closing", False)
+            and getattr(self, "_source_valid", True)
+            and getattr(self, "_timeline_composition", None) is None
+        ):
+            # A delayed completion can outlive the bounded paused-seek timer.
+            # Query the current target; an unrelated completion cannot clear it.
+            self._sync_position_from_pipeline()
         _dispatch_level_message(
             message,
             self.audio_level_track_ids,
@@ -1324,6 +1361,7 @@ class EditorPreview:
         )
 
     def _sync_position_from_pipeline(self):
+        previous = self.output_position_us
         success, source_ns = self.pipeline.query_position(Gst.Format.TIME)
         if not success:
             return None
@@ -1361,7 +1399,7 @@ class EditorPreview:
             ):
                 self.output_position_us = cursor + source_us - segment.source_start_us
                 self._apply_audio_settings(segment)
-                if self.changed_callback:
+                if self.changed_callback and previous != self.output_position_us:
                     self.changed_callback(self.output_position_us)
                 break
             cursor += segment.duration_us
@@ -1391,7 +1429,7 @@ class EditorPreview:
             self._show_paintable(self._legacy_paintable)
             self._set_loading(False)
         source_us = self.project.output_to_source_us(self.output_position_us)
-        self._pending_source_seek_us = source_us
+        self._watch_source_seek(source_us)
         seek_flags = Gst.SeekFlags.FLUSH | (
             Gst.SeekFlags.ACCURATE if accurate else Gst.SeekFlags.KEY_UNIT
         )
@@ -1428,7 +1466,7 @@ class EditorPreview:
         )
         self._apply_audio_settings()
         source_us = self.project.output_to_source_us(self.output_position_us)
-        self._pending_source_seek_us = source_us
+        self._watch_source_seek(source_us)
         self.pipeline.seek_simple(
             Gst.Format.TIME,
             Gst.SeekFlags.FLUSH | Gst.SeekFlags.ACCURATE,
@@ -1784,7 +1822,7 @@ class EditorPreview:
         )
         self._apply_audio_settings()
         source_us = self.project.output_to_source_us(self.output_position_us)
-        self._pending_source_seek_us = source_us
+        self._watch_source_seek(source_us)
         self.pipeline.seek_simple(
             Gst.Format.TIME,
             Gst.SeekFlags.FLUSH | Gst.SeekFlags.ACCURATE,
@@ -1899,6 +1937,10 @@ class EditorPreview:
 
     def _set_playing(self, playing):
         self.playing = playing
+        if playing:
+            self._ensure_position_timer()
+        else:
+            self._stop_position_timer()
         if not playing:
             self._set_loading(False)
         if self.state_changed_callback:
@@ -2043,6 +2085,7 @@ class EditorPreview:
     def invalidate_source(self):
         """Stop all decoder work after the monitored source identity changes."""
         self._source_valid = False
+        self._stop_position_timer()
         composition = getattr(self, "_timeline_composition", None)
         if composition is not None:
             self.output_position_us = composition.position_us()
@@ -2059,9 +2102,6 @@ class EditorPreview:
         self._cancel_resume_watchdog()
         self._set_loading(False)
         self._set_playing(False)
-        if self._position_timer:
-            GLib.source_remove(self._position_timer)
-            self._position_timer = None
         self._invalidate_preparation()
         self.pipeline.set_state(Gst.State.NULL)
         self.bus.disconnect(self._bus_handler_id)
