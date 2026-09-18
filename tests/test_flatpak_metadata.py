@@ -237,7 +237,7 @@ def test_flatpak_builds_complete_multiarch_payload_from_one_pinned_source():
     assert "archive.kernel.org/centos-vault" not in manifest
     assert "validate_game_capture_payload.py /app --self-test" in manifest
 
-    assert 'PAYLOAD_VERSION = "obs-vkcapture-1.5.6-clipper.1"' in builder
+    assert 'PAYLOAD_VERSION = "obs-vkcapture-1.5.6-clipper.3"' in builder
     assert '"-march=x86-64"' in builder
     assert '"-m32"' in builder
     assert '"-march=i686"' in builder

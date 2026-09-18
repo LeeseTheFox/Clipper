@@ -17,7 +17,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-PAYLOAD_VERSION = "obs-vkcapture-1.5.6-clipper.1"
+PAYLOAD_VERSION = "obs-vkcapture-1.5.6-clipper.3"
 SOURCE_VERSION = "1.5.6"
 SOURCE_COMMIT = "a9ea91fe1994708067e95d4159852b11b4209a16"
 SOCKET_PREFIX = "/io/github/leesethefox/Clipper/vkcapture/"
@@ -120,7 +120,7 @@ def _validate_helper(root: Path, relative: Path) -> str:
     program_headers = _readelf(path, "-l")
     dynamic = _readelf(path, "-d")
     if "INTERP" in program_headers or "NEEDED" in dynamic:
-        maximum = max(_glibc_versions(path), default=(0,))
+        maximum: tuple[int, ...] = max(_glibc_versions(path), default=(0,))
         if maximum > (2, 31):
             version = ".".join(str(part) for part in maximum)
             raise ValidationError(
@@ -186,7 +186,7 @@ def _validate_payload_manifest(payload: Path) -> dict[str, Any]:
         "project": "obs-vkcapture",
         "version": SOURCE_VERSION,
         "commit": SOURCE_COMMIT,
-        "patch": "clipper-ipc-v1",
+        "patch": "clipper-ipc-v1-copy-pacing-v2",
     }:
         raise ValidationError("payload source revision or patch identifier is invalid")
     if manifest["abi"] != {
@@ -256,7 +256,7 @@ def _validate_payload_elf(payload: Path, relative: Path, elf_class: str, machine
     if "libc.so.6" not in needed:
         raise ValidationError(f"libc dependency missing from {relative}")
 
-    maximum = max(_glibc_versions(path), default=(0,))
+    maximum: tuple[int, ...] = max(_glibc_versions(path), default=(0,))
     if maximum > MAX_GLIBC:
         version = ".".join(str(part) for part in maximum)
         raise ValidationError(f"{relative} imports GLIBC_{version}, above GLIBC_2.17")

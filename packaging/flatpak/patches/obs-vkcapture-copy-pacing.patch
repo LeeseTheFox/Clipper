@@ -1,0 +1,189 @@
+--- a/src/capture.h
++++ b/src/capture.h
+@@ -100,6 +100,7 @@
+ bool capture_should_stop();
+ bool capture_should_init();
+ bool capture_ready();
++bool capture_copy_due();
+ 
+ bool capture_allocate_no_modifiers();
+ bool capture_allocate_linear();
+--- a/src/capture.c
++++ b/src/capture.c
+@@ -18,6 +18,7 @@
+ 
+ #include "capture.h"
+ #include "utils.h"
++#include "copy_pacing.h"
+ 
+ #include <stdio.h>
+ #include <string.h>
+@@ -41,6 +42,11 @@
+     bool map_host;
+     bool need_reinit;
+     uint8_t device_uuid[16];
++    struct clipper_copy_clock copy_clock;
++    struct capture_control_data pending_control;
++    size_t control_bytes;
++    uint64_t copy_requests;
++    uint64_t copy_skips;
+ } data;
+ 
+ static bool get_wine_exe(char *buf, size_t bufsize)
+@@ -112,8 +118,9 @@
+ 
+     data.connfd = sock;
+ 
+-    struct capture_client_data cd;
++    struct capture_client_data cd = {0};
+     cd.type = CAPTURE_CLIENT_DATA_TYPE;
++    memcpy(cd.padding, CLIPPER_COPY_CAPABILITY, 8);
+     get_exe(cd.exe, sizeof(cd.exe));
+ 
+     struct msghdr msg = {0};
+@@ -125,8 +132,11 @@
+     msg.msg_iovlen = 1;
+ 
+     const ssize_t sent = sendmsg(data.connfd, &msg, MSG_NOSIGNAL);
+-    if (sent < 0) {
++    if (sent != sizeof(cd)) {
+         hlog("Socket sendmsg error %s", strerror(errno));
++        close(data.connfd);
++        data.connfd = -1;
++        return false;
+     }
+ 
+     return true;
+@@ -151,9 +161,14 @@
+         return;
+     }
+ 
+-    struct capture_control_data control;
+-    ssize_t n = recv(data.connfd, &control, sizeof(control), 0);
+-    if (n == sizeof(control)) {
++    /* SOCK_STREAM may split a fixed-size control message across reads. */
++    ssize_t n = recv(data.connfd, (uint8_t *)&data.pending_control + data.control_bytes,
++                     sizeof(data.pending_control) - data.control_bytes, 0);
++    if (n > 0)
++        data.control_bytes += (size_t)n;
++    if (data.control_bytes == sizeof(data.pending_control)) {
++        const struct capture_control_data control = data.pending_control;
++        data.control_bytes = 0;
+         const bool old_no_modifiers = data.no_modifiers;
+         const bool old_linear = data.linear;
+         const bool old_map_host = data.map_host;
+@@ -162,6 +177,9 @@
+         data.linear = control.linear == 1;
+         data.map_host = control.map_host == 1;
+         memcpy(data.device_uuid, control.device_uuid, 16);
++        clipper_copy_configure(&data.copy_clock, control.padding);
++        if (!data.accepted)
++            data.copy_clock.started = false;
+         if (data.capturing && (old_no_modifiers != data.no_modifiers
+             || old_linear != data.linear
+             || old_map_host != data.map_host)) {
+@@ -169,7 +187,7 @@
+         }
+     }
+     if (n == -1) {
+-        if (errno == EAGAIN || errno == EWOULDBLOCK) {
++        if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
+             return;
+         }
+         if (errno != ECONNRESET) {
+@@ -180,6 +198,8 @@
+         close(data.connfd);
+         data.connfd = -1;
+         data.accepted = false;
++        data.control_bytes = 0;
++        memset(&data.copy_clock, 0, sizeof(data.copy_clock));
+     }
+ }
+ 
+@@ -226,11 +246,27 @@
+ 
+     data.capturing = true;
+     data.need_reinit = false;
++    data.copy_clock.started = false;
++    data.copy_requests = data.copy_skips = 0;
+ }
+ 
+ void capture_stop()
+ {
++    if (data.capturing)
++        hlog("Copy pacing: requests=%llu skipped=%llu",
++             (unsigned long long)data.copy_requests, (unsigned long long)data.copy_skips);
+     data.capturing = false;
++    data.copy_clock.started = false;
++}
++
++bool capture_copy_due()
++{
++    bool due = clipper_copy_due(&data.copy_clock, (uint64_t)os_time_get_nano());
++    if (due)
++        data.copy_requests++;
++    else
++        data.copy_skips++;
++    return due;
+ }
+ 
+ bool capture_should_stop()
+--- a/src/vkcapture.c
++++ b/src/vkcapture.c
+@@ -37,6 +37,7 @@
+ 
+ #include "utils.h"
+ #include "capture.h"
++#include "copy_pacing.h"
+ #include "plugin-macros.h"
+ 
+ #define CLIPPER_SOCKET_PREFIX "/io/github/leesethefox/Clipper/vkcapture/"
+@@ -441,6 +442,15 @@
+         || client->import_failures == IMPORT_LINEAR_HOST_MAPPED);
+     msg->map_host = !!(client->import_failures == IMPORT_LINEAR_HOST_MAPPED);
+     memcpy(msg->device_uuid, gl_device_uuid, 16);
++    /* Old hooks ignore padding; old receivers send zeroed control padding.
++     * Enable only after an exact versioned capability handshake. */
++    struct obs_video_info video;
++    const char *disable = getenv("CLIPPER_HOOK_COPY_PACING");
++    if (msg->capturing && (!disable || strcmp(disable, "0")) &&
++        !memcmp(client->cdata.padding, CLIPPER_COPY_CAPABILITY, 8) &&
++        obs_get_video_info(&video)) {
++        clipper_copy_control(msg->padding, video.fps_num, video.fps_den);
++    }
+ }
+ 
+ static void activate_client(vkcapture_source_t *ctx, vkcapture_client_t *client, bool activate)
+@@ -1050,7 +1060,7 @@
+                 }
+ 
+                 if (buf[0] == CAPTURE_CLIENT_DATA_TYPE) {
+-                    if (io.iov_len != CAPTURE_CLIENT_DATA_SIZE) {
++                    if (n != CAPTURE_CLIENT_DATA_SIZE) {
+                         server_cleanup_client(client);
+                         break;
+                     }
+--- a/src/vklayer.c
++++ b/src/vklayer.c
+@@ -1242,7 +1242,9 @@
+             return;
+         }
+ 
+-        vk_shtex_capture(data, &data->funcs, swap, 0, queue, info);
++        /* Skip before touching copy fences, command pools or present waits. */
++        if (capture_copy_due())
++            vk_shtex_capture(data, &data->funcs, swap, 0, queue, info);
+     }
+ }
+ 
+--- a/src/glinject.c
++++ b/src/glinject.c
+@@ -1019,6 +1019,8 @@
+     }
+ 
+     if (capture_ready() && data.surface == surface) {
++        if (!capture_copy_due())
++            return;
+         int width, height;
+         querySurface(&width, &height);
+         if (data.height != height || data.width != width) {

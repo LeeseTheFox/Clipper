@@ -1,0 +1,85 @@
+--- a/src/capture.c
++++ b/src/capture.c
+@@ -121,6 +121,7 @@
+     struct capture_client_data cd = {0};
+     cd.type = CAPTURE_CLIENT_DATA_TYPE;
+     memcpy(cd.padding, CLIPPER_COPY_CAPABILITY, 8);
++    memcpy(cd.padding + 8, CLIPPER_COPY_TIMING_CAPABILITY, 8);
+     get_exe(cd.exe, sizeof(cd.exe));
+ 
+     struct msghdr msg = {0};
+@@ -152,7 +153,7 @@
+ {
+     static int64_t last_check = 0;
+     const int64_t now = os_time_get_nano();
+-    if (now - last_check < 1000000000) {
++    if (data.connfd < 0 && now - last_check < 1000000000) {
+         return;
+     }
+     last_check = now;
+@@ -261,7 +262,10 @@
+ 
+ bool capture_copy_due()
+ {
+-    bool due = clipper_copy_due(&data.copy_clock, (uint64_t)os_time_get_nano());
++    struct timespec ts;
++    clock_gettime(CLOCK_MONOTONIC, &ts);
++    bool due = clipper_copy_due(&data.copy_clock,
++        (uint64_t)ts.tv_sec * 1000000000ULL + ts.tv_nsec);
+     if (due)
+         data.copy_requests++;
+     else
+--- a/src/vkcapture.c
++++ b/src/vkcapture.c
+@@ -38,6 +38,7 @@
+ #include "utils.h"
+ #include "capture.h"
+ #include "copy_pacing.h"
++#include <linux/sockios.h>
+ #include "plugin-macros.h"
+ 
+ #define CLIPPER_SOCKET_PREFIX "/io/github/leesethefox/Clipper/vkcapture/"
+@@ -79,6 +80,7 @@
+     size_t map_size;
+     void *map_memory;
+     uint64_t timeout;
++    uint64_t pacing_tick;
+     bool unresponsive;
+     struct capture_client_data cdata;
+     struct capture_texture_data tdata;
+@@ -568,6 +570,35 @@
+         }
+     }
+ 
++    /* One outstanding timing control, shared by all source instances. Reuse
++     * the single exported texture: no additional copy/frame buffer queue. */
++    vkcapture_client_t *paced = find_client_by_id(ctx->client_id);
++    struct obs_video_info video;
++    uint64_t tick = obs_get_video_frame_time();
++    const char *disable = getenv("CLIPPER_HOOK_COPY_PACING");
++    if (paced && paced->activated && !paced->unresponsive &&
++        paced->pacing_tick != tick && (!disable || strcmp(disable, "0")) &&
++        !memcmp(paced->cdata.padding + 8, CLIPPER_COPY_TIMING_CAPABILITY, 8) &&
++        obs_get_video_info(&video) &&
++        clipper_copy_rate_valid(video.fps_num, video.fps_den)) {
++        paced->pacing_tick = tick;
++        int queued = 0;
++        if (ioctl(paced->sockfd, SIOCOUTQ, &queued) == 0 && !queued) {
++            struct capture_control_data msg = {0};
++            msg.capturing = 1;
++            fill_capture_control_data(&msg, paced);
++            clipper_copy_timing(msg.padding, video.fps_num, video.fps_den,
++                tick + 1000000000ULL * video.fps_den / video.fps_num);
++            ssize_t sent = send(paced->sockfd, &msg, sizeof(msg), MSG_DONTWAIT | MSG_NOSIGNAL);
++            if ((sent >= 0 && sent != sizeof(msg)) ||
++                (sent < 0 && errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)) {
++                /* Never let a partial record prefix the next control. */
++                paced->unresponsive = true;
++                shutdown(paced->sockfd, SHUT_RDWR);
++                server_wakeup();
++            }
++        }
++    }
+     pthread_mutex_unlock(&server.mutex);
+ 
+     UNUSED_PARAMETER(seconds);

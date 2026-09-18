@@ -10,7 +10,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-PAYLOAD_VERSION = "obs-vkcapture-1.5.6-clipper.1"
+PAYLOAD_VERSION = "obs-vkcapture-1.5.6-clipper.3"
 SOURCE_VERSION = "1.5.6"
 SOURCE_COMMIT = "a9ea91fe1994708067e95d4159852b11b4209a16"
 SOCKET_PREFIX = "/io/github/leesethefox/Clipper/vkcapture/"
@@ -335,7 +335,7 @@ def write_payload_manifest(payload: Path, aliases: dict[str, str]) -> None:
             "project": "obs-vkcapture",
             "version": SOURCE_VERSION,
             "commit": SOURCE_COMMIT,
-            "patch": "clipper-ipc-v1",
+            "patch": "clipper-ipc-v1-copy-pacing-v2",
         },
         "abi": {
             "maximum_glibc": "2.17",
@@ -381,6 +381,8 @@ def main() -> int:
         text = path.read_text(encoding="utf-8")
         if SOCKET_PREFIX not in text or "/com/obsproject/vkcapture" in text:
             raise RuntimeError(f"Clipper IPC patch is not active in {path}")
+        if '#include "copy_pacing.h"' not in text:
+            raise RuntimeError(f"Clipper copy pacing patch is not active in {path}")
 
     sysroot = build / "sysroot"
     prepare_sysroot(rpm_dir, sysroot)

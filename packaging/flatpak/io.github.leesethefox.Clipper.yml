@@ -180,7 +180,7 @@ modules:
       - install -Dm755 receiver-build/linux-vkcapture.so /app/lib/obs-plugins/linux-vkcapture.so
       - install -d /app/share/obs/obs-plugins/linux-vkcapture/locale
       - install -m644 data/locale/*.ini /app/share/obs/obs-plugins/linux-vkcapture/locale/
-      - python3 build_game_capture_payload.py --source=. --rpm-dir=sysroot-rpms --build-dir=payload-build --destination=/app/share/clipper/game-capture/payloads/obs-vkcapture-1.5.6-clipper.1
+      - python3 build_game_capture_payload.py --source=. --rpm-dir=sysroot-rpms --build-dir=payload-build --destination=/app/share/clipper/game-capture/payloads/obs-vkcapture-1.5.6-clipper.3
       - install -Dm644 LICENSE /app/share/licenses/io.github.leesethefox.Clipper/obs-vkcapture-GPL-2.0.txt
     sources:
       - type: git
@@ -191,6 +191,13 @@ modules:
         path: patches/obs-vkcapture-lazy-cursor.patch
       - type: patch
         path: patches/obs-vkcapture-clipper-ipc.patch
+      - type: patch
+        path: patches/obs-vkcapture-copy-pacing.patch
+      - type: patch
+        path: patches/obs-vkcapture-consumer-pacing.patch
+      - type: file
+        path: ../../engine/gamecapture/copy_pacing.h
+        dest: src
       - type: file
         path: ../../tools/build_game_capture_payload.py
       - type: file

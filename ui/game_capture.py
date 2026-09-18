@@ -19,7 +19,7 @@ from pathlib import Path
 
 APP_ID = "io.github.leesethefox.Clipper"
 STEAM_ID = "com.valvesoftware.Steam"
-PAYLOAD_VERSION = "obs-vkcapture-1.5.6-clipper.1"
+PAYLOAD_VERSION = "obs-vkcapture-1.5.6-clipper.3"
 BUNDLED_PAYLOAD = Path("/app/share/clipper/game-capture/payloads") / PAYLOAD_VERSION
 
 
