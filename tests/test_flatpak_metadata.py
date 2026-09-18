@@ -67,6 +67,15 @@ def _runtime_ui_modules() -> set[str]:
     return imported
 
 
+def test_engine_loads_native_nvenc_with_list_sized_storage():
+    source = (REPO_ROOT / "engine/src/clipper_engine.c").read_text()
+    names = re.search(r"plugin_names\[\]\s*=\s*\{([^}]+)\}", source)
+    assert names is not None
+    assert '"obs-nvenc"' in names[1]
+    assert "plugin_paths[sizeof(plugin_names) / sizeof(plugin_names[0])]" in source
+    assert "plugin_data_paths[sizeof(plugin_names) / sizeof(plugin_names[0])]" in source
+
+
 def test_flatpak_exported_app_id_files_are_consistent():
     assert MANIFEST.exists()
     assert DESKTOP.exists()

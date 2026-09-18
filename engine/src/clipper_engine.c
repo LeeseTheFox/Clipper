@@ -3080,18 +3080,19 @@ static bool libobs_init(engine_state_t *state)
     char obs_data_dir[PATH_MAX];
     char obs_plugin_data_pattern[PATH_MAX];
     char obs_libobs_data[PATH_MAX * 2];
-    char plugin_paths[6][PATH_MAX];
-    char plugin_data_paths[6][PATH_MAX * 2];
     char vkc_plugin_so[PATH_MAX];
     char vkc_plugin_data[PATH_MAX];
     static const char *plugin_names[] = {
         "obs-ffmpeg",
+        "obs-nvenc",
         "obs-x264",
         "obs-outputs",
         "linux-pulseaudio",
         "linux-pipewire",
         "linux-capture",
     };
+    char plugin_paths[sizeof(plugin_names) / sizeof(plugin_names[0])][PATH_MAX];
+    char plugin_data_paths[sizeof(plugin_names) / sizeof(plugin_names[0])][PATH_MAX * 2];
 
     build_obs_paths(obs_plugin_dir, sizeof(obs_plugin_dir),
                     obs_data_dir, sizeof(obs_data_dir),
