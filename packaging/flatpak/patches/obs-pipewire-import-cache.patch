@@ -1,0 +1,289 @@
+--- a/plugins/linux-pipewire/pipewire.c
++++ b/plugins/linux-pipewire/pipewire.c
+@@ -77,6 +77,17 @@
+ 	DARRAY(uint64_t) modifiers;
+ };
+ 
++/* Owned by a live pw_buffer, never by its (reusable) fd number. */
++struct dmabuf_import {
++	struct dmabuf_import *next;
++	struct pw_buffer *buffer;
++	gs_texture_t *texture;
++	uint32_t planes;
++	int fds[MAX_AV_PLANES];
++	uint32_t strides[MAX_AV_PLANES];
++	uint32_t offsets[MAX_AV_PLANES];
++};
++
+ struct _obs_pipewire {
+ 	int pipewire_fd;
+ 
+@@ -100,6 +111,8 @@
+ 	obs_source_t *source;
+ 
+ 	gs_texture_t *texture;
++	bool texture_imported;
++	struct dmabuf_import *imports;
+ 
+ 	struct pw_stream *stream;
+ 	struct spa_hook stream_listener;
+@@ -151,6 +164,95 @@
+ 
+ /* auxiliary methods */
+ 
++/* Called with the graphics lock held, like processing and rendering. */
++static void clear_frame_sync(obs_pipewire_stream *s)
++{
++#if PW_CHECK_VERSION(1, 2, 0)
++	if (s->sync.release_syncobj_fd != -1 && !s->sync.release_point_will_signal)
++		gs_sync_signal_syncobj_timeline_point(s->sync.release_syncobj_fd, s->sync.release_point);
++#endif
++	g_clear_fd(&s->sync.acquire_syncobj_fd, NULL);
++	g_clear_fd(&s->sync.release_syncobj_fd, NULL);
++	s->sync.set = false;
++}
++
++static void clear_current_texture(obs_pipewire_stream *s)
++{
++	if (!s->texture_imported)
++		gs_texture_destroy(s->texture);
++	s->texture = NULL;
++	s->texture_imported = false;
++}
++
++static void clear_imports(obs_pipewire_stream *s)
++{
++	clear_frame_sync(s);
++	clear_current_texture(s);
++	while (s->imports) {
++		struct dmabuf_import *entry = s->imports;
++		s->imports = entry->next;
++		gs_texture_destroy(entry->texture);
++		bfree(entry);
++	}
++}
++
++static void on_remove_buffer_cb(void *data, struct pw_buffer *buffer)
++{
++	obs_pipewire_stream *s = data;
++	obs_enter_graphics();
++	for (struct dmabuf_import **link = &s->imports; *link; link = &(*link)->next) {
++		struct dmabuf_import *entry = *link;
++		if (entry->buffer != buffer)
++			continue;
++		if (entry->texture && s->texture == entry->texture) {
++			clear_frame_sync(s);
++			clear_current_texture(s);
++		}
++		*link = entry->next;
++		gs_texture_destroy(entry->texture);
++		bfree(entry);
++		break;
++	}
++	obs_leave_graphics();
++}
++
++static gs_texture_t *import_buffer(obs_pipewire_stream *s, struct pw_buffer *buffer, uint32_t drm_format,
++				   uint32_t planes, const int *fds, const uint32_t *strides,
++				   const uint32_t *offsets, const uint64_t *modifiers)
++{
++	if (!planes || planes > MAX_AV_PLANES)
++		return NULL;
++
++	struct dmabuf_import *entry = s->imports;
++	while (entry && entry->buffer != buffer)
++		entry = entry->next;
++	if (!entry) {
++		entry = bzalloc(sizeof(*entry));
++		entry->buffer = buffer;
++		entry->next = s->imports;
++		s->imports = entry;
++	}
++
++	/* Chunk offsets/strides can change even while the buffer stays alive.
++	 * Format, dimensions and modifier changes clear the entire cache. */
++	if (entry->texture && (entry->planes != planes ||
++			      memcmp(entry->fds, fds, planes * sizeof(*fds)) ||
++			      memcmp(entry->strides, strides, planes * sizeof(*strides)) ||
++			      memcmp(entry->offsets, offsets, planes * sizeof(*offsets))))
++		g_clear_pointer(&entry->texture, gs_texture_destroy);
++
++	if (!entry->texture) {
++		entry->texture = gs_texture_create_from_dmabuf(s->format.info.raw.size.width,
++							     s->format.info.raw.size.height, drm_format, GS_BGRX,
++							     planes, fds, strides, offsets, modifiers);
++		entry->planes = planes;
++		memcpy(entry->fds, fds, planes * sizeof(*fds));
++		memcpy(entry->strides, strides, planes * sizeof(*strides));
++		memcpy(entry->offsets, offsets, planes * sizeof(*offsets));
++	}
++	return entry->texture;
++}
++
+ static bool parse_pw_version(struct obs_pw_version *dst, const char *version)
+ {
+ 	int n_matches = sscanf(version, "%d.%d.%d", &dst->major, &dst->minor, &dst->micro);
+@@ -314,7 +416,10 @@
+ 	} else {
+ 		framerate = SPA_FRACTION(obs_pw_stream->video_info.fps_num, obs_pw_stream->video_info.fps_den);
+ 		min_framerate = SPA_FRACTION(0, 1);
+-		max_framerate = SPA_FRACTION(360, 1);
++		/* Display capture need not produce faster than the recording clock. */
++		max_framerate = (obs_source_get_output_flags(obs_pw_stream->source) & OBS_SOURCE_ASYNC)
++					? SPA_FRACTION(360, 1)
++					: framerate;
+ 	}
+ 
+ 	if (obs_pw_stream->resolution.set) {
+@@ -366,6 +471,10 @@
+ 			    SPA_POD_CHOICE_RANGE_Rectangle(&resolution, &min_resolution, &max_resolution),
+ 			    SPA_FORMAT_VIDEO_framerate,
+ 			    SPA_POD_CHOICE_RANGE_Fraction(&framerate, &min_framerate, &max_framerate), 0);
++	/* Variable-rate compositors may negotiate framerate=0/1. */
++	if (!(obs_source_get_output_flags(obs_pw_stream->source) & OBS_SOURCE_ASYNC))
++		spa_pod_builder_add(b, SPA_FORMAT_VIDEO_maxFramerate,
++				    SPA_POD_CHOICE_RANGE_Fraction(&max_framerate, &min_framerate, &max_framerate), 0);
+ 	return spa_pod_builder_pop(b, &format_frame);
+ }
+ 
+@@ -719,6 +828,7 @@
+ 	struct spa_buffer *buffer;
+ 	struct pw_buffer *b;
+ 	bool has_buffer = true;
++	bool buffer_consumed = false;
+ 
+ 	b = find_latest_buffer(obs_pw_stream->stream);
+ 	if (!b) {
+@@ -777,18 +887,16 @@
+ 			corrupt |= (buffer->datas[plane].chunk->flags & SPA_CHUNK_FLAG_CORRUPTED) > 0;
+ 		}
+ 
+-#if PW_CHECK_VERSION(1, 2, 0)
+-		if (obs_pw_stream->sync.release_syncobj_fd != -1) {
+-			if (!obs_pw_stream->sync.release_point_will_signal) {
+-				gs_sync_signal_syncobj_timeline_point(obs_pw_stream->sync.release_syncobj_fd,
+-								      obs_pw_stream->sync.release_point);
+-				obs_pw_stream->sync.release_point_will_signal = true;
+-			}
++		if (corrupt) {
++			blog(LOG_DEBUG, "[pipewire] buffer contains corrupted data");
++			goto read_metadata;
+ 		}
+ 
+-		g_clear_fd(&obs_pw_stream->sync.acquire_syncobj_fd, NULL);
+-		g_clear_fd(&obs_pw_stream->sync.release_syncobj_fd, NULL);
++		clear_current_texture(obs_pw_stream);
++		clear_frame_sync(obs_pw_stream);
++		buffer_consumed = true;
+ 
++#if PW_CHECK_VERSION(1, 2, 0)
+ 		if (synctimeline && (buffer->n_datas == (planes + 2))) {
+ 			assert(buffer->datas[planes].type == SPA_DATA_SyncObj);
+ 			assert(buffer->datas[planes + 1].type == SPA_DATA_SyncObj);
+@@ -809,21 +917,13 @@
+ 		obs_pw_stream->sync.set = false;
+ #endif
+ 
+-		if (corrupt) {
+-			blog(LOG_DEBUG, "[pipewire] buffer contains corrupted data");
+-			goto read_metadata;
+-		}
+-
+-		g_clear_pointer(&obs_pw_stream->texture, gs_texture_destroy);
+-
+ 		use_modifiers = obs_pw_stream->format.info.raw.modifier != DRM_FORMAT_MOD_INVALID;
+-		obs_pw_stream->texture = gs_texture_create_from_dmabuf(obs_pw_stream->format.info.raw.size.width,
+-								       obs_pw_stream->format.info.raw.size.height,
+-								       obs_pw_video_format.drm_format, GS_BGRX, planes,
+-								       fds, strides, offsets,
+-								       use_modifiers ? modifiers : NULL);
++		obs_pw_stream->texture = import_buffer(obs_pw_stream, b, obs_pw_video_format.drm_format, planes,
++						      fds, strides, offsets, use_modifiers ? modifiers : NULL);
++		obs_pw_stream->texture_imported = obs_pw_stream->texture != NULL;
+ 
+ 		if (obs_pw_stream->texture == NULL) {
++			clear_frame_sync(obs_pw_stream);
+ 			remove_modifier_from_format(obs_pw_stream, obs_pw_stream->format.info.raw.format,
+ 						    obs_pw_stream->format.info.raw.modifier);
+ 			pw_loop_signal_event(pw_thread_loop_get_loop(obs_pw->thread_loop), obs_pw_stream->reneg);
+@@ -849,14 +949,16 @@
+ 			goto read_metadata;
+ 		}
+ 
+-		g_clear_pointer(&obs_pw_stream->texture, gs_texture_destroy);
++		clear_frame_sync(obs_pw_stream);
++		clear_current_texture(obs_pw_stream);
++		buffer_consumed = true;
+ 		obs_pw_stream->texture = gs_texture_create(obs_pw_stream->format.info.raw.size.width,
+ 							   obs_pw_stream->format.info.raw.size.height,
+ 							   obs_pw_video_format.gs_format, 1,
+ 							   (const uint8_t **)&buffer->datas[0].data, GS_DYNAMIC);
+ 	}
+ 
+-	if (obs_pw_video_format.swap_red_blue)
++	if (obs_pw_stream->texture && obs_pw_video_format.swap_red_blue)
+ 		swap_texture_red_blue(obs_pw_stream->texture);
+ 
+ 	/* Video Crop */
+@@ -921,7 +1023,10 @@
+ 		obs_pw_stream->cursor.y = cursor->position.y;
+ 	}
+ 
+-	pw_stream_queue_buffer(obs_pw_stream->stream, b);
++	if (buffer_consumed)
++		pw_stream_queue_buffer(obs_pw_stream->stream, b);
++	else
++		return_unused_pw_buffer(obs_pw_stream->stream, b);
+ 
+ 	obs_leave_graphics();
+ }
+@@ -957,7 +1062,14 @@
+ 	bool supports_explicit_sync = false;
+ #endif
+ 
+-	if (!param || id != SPA_PARAM_Format)
++	if (id != SPA_PARAM_Format)
++		return;
++
++	obs_enter_graphics();
++	clear_imports(obs_pw_stream);
++	obs_pw_stream->negotiated = false;
++	obs_leave_graphics();
++	if (!param)
+ 		return;
+ 
+ 	result = spa_format_parse(param, &obs_pw_stream->format.media_type, &obs_pw_stream->format.media_subtype);
+@@ -1077,6 +1189,7 @@
+ 	PW_VERSION_STREAM_EVENTS,
+ 	.state_changed = on_state_changed_cb,
+ 	.param_changed = on_param_changed_cb,
++	.remove_buffer = on_remove_buffer_cb,
+ 	.process = on_process_cb,
+ };
+ 
+@@ -1410,19 +1523,17 @@
+ 
+ 	g_ptr_array_remove(obs_pw_stream->obs_pw->streams, obs_pw_stream);
+ 
+-	obs_enter_graphics();
+-	g_clear_pointer(&obs_pw_stream->cursor.texture, gs_texture_destroy);
+-	g_clear_pointer(&obs_pw_stream->texture, gs_texture_destroy);
+-	obs_leave_graphics();
+-
+ 	pw_thread_loop_lock(obs_pw_stream->obs_pw->thread_loop);
++	/* Match the callback lock order and stop processing before final cleanup. */
+ 	if (obs_pw_stream->stream)
+ 		pw_stream_disconnect(obs_pw_stream->stream);
+ 	g_clear_pointer(&obs_pw_stream->stream, pw_stream_destroy);
+-	pw_thread_loop_unlock(obs_pw_stream->obs_pw->thread_loop);
+ 
+-	g_clear_fd(&obs_pw_stream->sync.acquire_syncobj_fd, NULL);
+-	g_clear_fd(&obs_pw_stream->sync.release_syncobj_fd, NULL);
++	obs_enter_graphics();
++	clear_imports(obs_pw_stream);
++	g_clear_pointer(&obs_pw_stream->cursor.texture, gs_texture_destroy);
++	obs_leave_graphics();
++	pw_thread_loop_unlock(obs_pw_stream->obs_pw->thread_loop);
+ 
+ 	clear_format_info(obs_pw_stream);
+ 	bfree(obs_pw_stream);

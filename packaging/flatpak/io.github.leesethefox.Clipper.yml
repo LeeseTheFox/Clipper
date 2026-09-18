@@ -178,6 +178,8 @@ modules:
         path: patches/obs-native-capture.patch
       - type: patch
         path: patches/obs-lazy-video-buffers.patch
+      - type: patch
+        path: patches/obs-pipewire-import-cache.patch
 
   # Build the receiver and portable game hooks from the same patched source.
   - name: obs-vkcapture
