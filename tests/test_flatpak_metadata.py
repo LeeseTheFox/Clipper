@@ -2,6 +2,7 @@ import ast
 import configparser
 import importlib.util
 import re
+import shlex
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -203,7 +204,11 @@ def test_game_capture_permission_linter_exceptions_are_exact_and_documented():
 def test_host_helpers_are_statically_linked_in_packaged_build():
     manifest = MANIFEST.read_text(encoding="utf-8")
 
-    assert "make -C engine/monitor LDFLAGS=-static" in manifest
+    command = next(line.strip()[2:] for line in manifest.splitlines()
+                   if line.strip().startswith("- make -C engine/monitor "))
+    flags = next(arg.split("=", 1)[1] for arg in shlex.split(command)
+                 if arg.startswith("LDFLAGS="))
+    assert "-static" in shlex.split(flags)
 
 
 

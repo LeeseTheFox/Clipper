@@ -142,11 +142,11 @@ Clipper містить власний стек запису.
 ./tools/run_pytest_quiet.sh
 ```
 
-Для самодостатнього Flatpak установіть Flatpak Builder і GNOME SDK 50, а потім
+Для самодостатнього Flatpak установіть Flatpak Builder і GNOME SDK 51, а потім
 запустіть обмежений за ресурсами скрипт збирання:
 
 ```bash
-flatpak install --user flathub org.gnome.Sdk//50 org.flatpak.Builder
+flatpak install --user flathub org.gnome.Sdk//51 org.flatpak.Builder
 ./tools/run_flatpak_build_quiet.sh
 ```
 

@@ -141,11 +141,11 @@ PyGObject. Самодостаточная Flatpak-версия Clipper вклю�
 ./tools/run_pytest_quiet.sh
 ```
 
-Для самодостаточного Flatpak установите Flatpak Builder и GNOME SDK 50, затем
+Для самодостаточного Flatpak установите Flatpak Builder и GNOME SDK 51, затем
 запустите скрипт сборки с ограничением ресурсов:
 
 ```bash
-flatpak install --user flathub org.gnome.Sdk//50 org.flatpak.Builder
+flatpak install --user flathub org.gnome.Sdk//51 org.flatpak.Builder
 ./tools/run_flatpak_build_quiet.sh
 ```
 

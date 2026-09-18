@@ -1,6 +1,6 @@
 id: io.github.leesethefox.Clipper
 runtime: org.gnome.Platform
-runtime-version: '50'
+runtime-version: '51'
 sdk: org.gnome.Sdk
 command: clipper
 separate-locales: false
@@ -266,7 +266,9 @@ modules:
       - python3 tools/build_translations.py --output-dir=/app/share/locale
       # Host-executed helpers are static so the GNOME runtime's newer glibc
       # does not become an undeclared host ABI requirement.
-      - make -C engine/monitor LDFLAGS=-static
+      # GCC 16 adds a dynamic-only libatomic shim by default. The monitor uses
+      # no out-of-line atomic operations and must remain a static host helper.
+      - make -C engine/monitor LDFLAGS="-static -fno-link-libatomic"
       - make -C engine/src OBS_PREFIX=/app
       - install -Dm755 clipper /app/bin/clipper
       - make -C engine/src OBS_PREFIX=/app install

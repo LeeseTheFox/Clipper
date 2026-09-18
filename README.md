@@ -134,11 +134,11 @@ Run tests, type checking, and linting with:
 ./tools/run_pytest_quiet.sh
 ```
 
-For the standalone Flatpak, install Flatpak Builder and the GNOME 50 SDK, then
+For the standalone Flatpak, install Flatpak Builder and the GNOME 51 SDK, then
 run the bounded build wrapper:
 
 ```bash
-flatpak install --user flathub org.gnome.Sdk//50 org.flatpak.Builder
+flatpak install --user flathub org.gnome.Sdk//51 org.flatpak.Builder
 ./tools/run_flatpak_build_quiet.sh
 ```
 

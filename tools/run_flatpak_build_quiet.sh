@@ -23,6 +23,11 @@ if ! flatpak --user info "$builder_app" >/dev/null 2>&1; then
     exit 1
 fi
 
+# libflatpak inside Builder otherwise searches its sandbox's XDG_DATA_HOME,
+# missing SDKs installed in the host user installation.
+builder_location="$(flatpak --user info --show-location "$builder_app")"
+flatpak_user_dir="${builder_location%/app/*}"
+
 log_file="$(mktemp)"
 cleanup() {
     rm -f "$log_file"
@@ -39,7 +44,8 @@ systemd-run \
     -p MemorySwapMax=6G \
     -p CPUWeight=50 \
     env CMAKE_BUILD_PARALLEL_LEVEL=1 MAKEFLAGS=-j1 \
-    flatpak run --command=flatpak-builder "$builder_app" \
+    flatpak run --env=FLATPAK_USER_DIR="$flatpak_user_dir" \
+    --command=flatpak-builder "$builder_app" \
     --user \
     --force-clean \
     --disable-updates \
