@@ -9,13 +9,45 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <errno.h>
 #include <unistd.h>
 #include <vulkan/vulkan.h>
 
+#ifndef WIDTH
 #define WIDTH 320
+#endif
+#ifndef HEIGHT
 #define HEIGHT 240
-#define FRAME_COUNT 300
+#endif
+static unsigned source_fps = 60;
+static unsigned frame_count = 300;
+static uint64_t start_ns;
+
+static uint64_t monotonic_ns(void)
+{
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    return (uint64_t)now.tv_sec * 1000000000ULL + now.tv_nsec;
+}
+
+static void wait_frame(unsigned frame)
+{
+    if (!frame)
+        start_ns = monotonic_ns();
+    uint64_t deadline = start_ns + (uint64_t)(frame + 1) * 1000000000ULL / source_fps;
+    struct timespec when = {.tv_sec = deadline / 1000000000ULL,
+                           .tv_nsec = deadline % 1000000000ULL};
+    while (clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &when, NULL) == EINTR) {}
+}
+
+/* Four-bit channels survive lossy video encoding; 12-bit ID wraps at 4096. */
+static float frame_color(unsigned frame, unsigned shift)
+{
+    return (float)(((frame >> shift) & 15) * 16 + 8) / 255.0f;
+}
 
 static Display *create_window(Window *window)
 {
@@ -24,6 +56,9 @@ static Display *create_window(Window *window)
         return NULL;
     *window = XCreateSimpleWindow(display, DefaultRootWindow(display), 0, 0,
                                   WIDTH, HEIGHT, 0, 0, 0);
+    /* Keep native-size tests independent of WM decorations/work-area limits. */
+    XSetWindowAttributes attributes = {.override_redirect = True};
+    XChangeWindowAttributes(display, *window, CWOverrideRedirect, &attributes);
     XStoreName(display, *window, "Clipper payload frame harness");
     XMapWindow(display, *window);
     XFlush(display);
@@ -46,11 +81,12 @@ static int run_opengl(void)
     Colormap colormap = XCreateColormap(display, RootWindow(display, visual->screen),
                                         visual->visual, AllocNone);
     XSetWindowAttributes window_attributes = {.colormap = colormap,
+                                               .override_redirect = True,
                                                .event_mask = ExposureMask};
     Window window = XCreateWindow(display, RootWindow(display, visual->screen),
                                   0, 0, WIDTH, HEIGHT, 0, visual->depth,
                                   InputOutput, visual->visual,
-                                  CWColormap | CWEventMask, &window_attributes);
+                                  CWColormap | CWEventMask | CWOverrideRedirect, &window_attributes);
     XStoreName(display, window, "Clipper OpenGL payload harness");
     XMapWindow(display, window);
     GLXContext context = glXCreateContext(display, visual, NULL, True);
@@ -58,12 +94,30 @@ static int run_opengl(void)
         fputs("could not create GLX context\n", stderr);
         return 1;
     }
-    for (int frame = 0; frame < FRAME_COUNT; frame++) {
-        float phase = (float)(frame % 100) / 100.0f;
-        glClearColor(phase, 0.2f, 1.0f - phase, 1.0f);
+    typedef void (*swap_interval_ext)(Display *, GLXDrawable, int);
+    swap_interval_ext set_interval = (swap_interval_ext)glXGetProcAddressARB(
+        (const GLubyte *)"glXSwapIntervalEXT");
+    if (set_interval)
+        set_interval(display, window, 0);
+    for (unsigned frame = 0; frame < frame_count; frame++) {
+        glClearColor(frame_color(frame, 0), frame_color(frame, 4), frame_color(frame, 8), 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+        /* Spatial/color sentinels outside the center frame-ID area. GL's
+         * origin is bottom-left; the encoded image must have red/green at
+         * the top and blue/white at the bottom, with no plane swap. */
+        static const float corners[4][3] = {
+            {1, 0, 0}, {0, 1, 0}, {0, 0, 1}, {1, 1, 1}
+        };
+        glEnable(GL_SCISSOR_TEST);
+        for (unsigned i = 0; i < 4; ++i) {
+            glScissor((i & 1) * WIDTH / 2, i < 2 ? HEIGHT * 3 / 4 : 0,
+                      WIDTH / 2, HEIGHT / 4);
+            glClearColor(corners[i][0], corners[i][1], corners[i][2], 1);
+            glClear(GL_COLOR_BUFFER_BIT);
+        }
+        glDisable(GL_SCISSOR_TEST);
         glXSwapBuffers(display, window);
-        usleep(16000);
+        wait_frame(frame);
     }
     glXMakeCurrent(display, None, NULL);
     glXDestroyContext(display, context);
@@ -184,6 +238,13 @@ static int run_vulkan(void)
                "vkGetPhysicalDeviceSurfaceFormatsKHR") || format_count == 0)
         return 1;
     VkExtent2D extent = capabilities.currentExtent;
+    for (unsigned i = 0; i < format_count; ++i) {
+        if (formats[i].format == VK_FORMAT_B8G8R8A8_UNORM ||
+            formats[i].format == VK_FORMAT_R8G8B8A8_UNORM) {
+            formats[0] = formats[i];
+            break;
+        }
+    }
     if (extent.width == UINT32_MAX)
         extent = (VkExtent2D){WIDTH, HEIGHT};
     uint32_t image_count = capabilities.minImageCount + 1;
@@ -194,6 +255,16 @@ static int run_vulkan(void)
         composite = (VkCompositeAlphaFlagBitsKHR)(capabilities.supportedCompositeAlpha &
                                                   -capabilities.supportedCompositeAlpha);
 
+    uint32_t mode_count = 0;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(physical, surface, &mode_count, NULL);
+    VkPresentModeKHR modes[32];
+    if (mode_count > 32)
+        mode_count = 32;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(physical, surface, &mode_count, modes);
+    VkPresentModeKHR present_mode = VK_PRESENT_MODE_FIFO_KHR;
+    for (unsigned i = 0; i < mode_count; ++i)
+        if (modes[i] == VK_PRESENT_MODE_IMMEDIATE_KHR)
+            present_mode = modes[i];
     VkSwapchainCreateInfoKHR swapchain_info = {
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
         .surface = surface,
@@ -206,7 +277,7 @@ static int run_vulkan(void)
         .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
         .preTransform = capabilities.currentTransform,
         .compositeAlpha = composite,
-        .presentMode = VK_PRESENT_MODE_FIFO_KHR,
+        .presentMode = present_mode,
         .clipped = VK_TRUE,
     };
     VkSwapchainKHR swapchain;
@@ -247,7 +318,7 @@ static int run_vulkan(void)
     if (!vk_ok(vkGetSwapchainImagesKHR(device, swapchain, &images_count, images), "vkGetSwapchainImagesKHR"))
         return 1;
 
-    for (int frame = 0; frame < FRAME_COUNT; frame++) {
+    for (unsigned frame = 0; frame < frame_count; frame++) {
         uint32_t image_index;
         VkResult acquired = vkAcquireNextImageKHR(device, swapchain, UINT64_MAX,
                                                    available, VK_NULL_HANDLE,
@@ -270,7 +341,8 @@ static int run_vulkan(void)
         };
         vkCmdPipelineBarrier(commands, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                              VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, NULL, 0, NULL, 1, &barrier);
-        VkClearColorValue color = {.float32 = {(float)(frame % 100) / 100.0f, 0.2f, 0.8f, 1.0f}};
+        VkClearColorValue color = {.float32 = {
+            frame_color(frame, 0), frame_color(frame, 4), frame_color(frame, 8), 1.0f}};
         vkCmdClearColorImage(commands, images[image_index], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                             &color, 1, &range);
         barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -304,8 +376,7 @@ static int run_vulkan(void)
         if (!vk_ok(vkQueuePresentKHR(queue, &present), "vkQueuePresentKHR"))
             return 1;
         vkQueueWaitIdle(queue);
-        vkQueueWaitIdle(queue);
-        usleep(16000);
+        wait_frame(frame);
     }
 
     vkDeviceWaitIdle(device);
@@ -323,9 +394,16 @@ static int run_vulkan(void)
 
 int main(int argc, char **argv)
 {
-    if (argc != 2 || (strcmp(argv[1], "opengl") && strcmp(argv[1], "vulkan"))) {
-        fputs("usage: frame-harness opengl|vulkan\n", stderr);
+    if (argc < 2 || argc > 4 || (strcmp(argv[1], "opengl") && strcmp(argv[1], "vulkan"))) {
+        fputs("usage: frame-harness opengl|vulkan [fps [seconds]]\n", stderr);
         return 64;
+    }
+    if (argc > 2) {
+        source_fps = (unsigned)atoi(argv[2]);
+        unsigned seconds = argc > 3 ? (unsigned)atoi(argv[3]) : 5;
+        if (!source_fps || source_fps > 1000 || !seconds || seconds > 60)
+            return 64;
+        frame_count = source_fps * seconds;
     }
     return strcmp(argv[1], "opengl") == 0 ? run_opengl() : run_vulkan();
 }
