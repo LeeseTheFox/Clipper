@@ -33,3 +33,22 @@ ln -sfn \
     "$include_dir/obsconfig.h"
 
 echo "clangd libobs headers: $module_name"
+
+# Only expose the SDK's Vulkan header namespaces. Adding its whole include
+# directory would mix the SDK's libc headers with the host compiler's libc.
+sdk_location=""
+for installation in --user --system; do
+    if sdk_location="$(flatpak "$installation" info --show-location org.freedesktop.Sdk//25.08 2>/dev/null)"; then
+        break
+    fi
+done
+if [[ -n "$sdk_location" && -d "$sdk_location/files/include/vulkan" ]]; then
+    ln -sfn "$sdk_location/files/include/vulkan" "$include_dir/vulkan"
+    ln -sfn "$sdk_location/files/include/vk_video" "$include_dir/vk_video"
+    echo "clangd Vulkan headers: Freedesktop SDK 25.08"
+else
+    echo "warning: install Freedesktop SDK 25.08 for frame-harness Vulkan diagnostics" >&2
+fi
+
+"$repo_root/venv/bin/python" "$script_dir/generate_native_test_headers.py" --output "$include_dir"
+echo "clangd native test headers: generated from packaged patches"

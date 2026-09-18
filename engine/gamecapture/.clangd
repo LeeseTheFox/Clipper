@@ -1,0 +1,4 @@
+CompileFlags:
+  Add:
+    # SDK Vulkan headers exposed by tools/configure_engine_clangd.sh.
+    - -I../../.flatpak-builder/clangd-include
