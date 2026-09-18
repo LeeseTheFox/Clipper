@@ -149,6 +149,9 @@ typedef struct {
     obs_encoder_t *venc;
     obs_encoder_t *aenc[CLIPPER_MAX_AUDIO_TRACKS];
     bool           buffer_active;
+    unsigned long long replay_session;
+    uint32_t replay_frame_baseline;
+    uint32_t replay_lag_baseline;
 
     /* Reused low-resolution preview readback resources. */
     gs_texrender_t *preview_texrender;
@@ -243,7 +246,15 @@ static void handle_signal(int sig)
 static void engine_log(int log_level, const char *msg, va_list args, void *p)
 {
     (void)p;
-    if (log_level <= LOG_WARNING || g_verbose) {
+    /* Keep this aggregate recorder result in ordinary logs. Most OBS info
+     * messages are intentionally hidden unless --verbose is requested, but
+     * direct VAAPI activation is otherwise impossible to verify after a
+     * normal replay session. The plugin emits it once during encoder teardown. */
+    bool direct_vaapi_summary = msg &&
+        (strstr(msg, "Clipper VAAPI direct:") != NULL ||
+         strstr(msg, "Clipper VAAPI direct imports:") != NULL ||
+         strstr(msg, "Clipper native capture:") != NULL);
+    if (log_level <= LOG_WARNING || g_verbose || direct_vaapi_summary) {
         fprintf(stderr, "[engine] [obs] %s: ",
                 log_level <= LOG_ERROR ? "ERROR" :
                 log_level <= LOG_WARNING ? "WARN" :
@@ -791,11 +802,41 @@ static bool start_replay_buffer_internal(engine_state_t *state, bool emit_event)
     }
 
     state->buffer_active = true;
+    state->replay_session++;
+    state->replay_frame_baseline = obs_get_total_frames();
+    state->replay_lag_baseline = obs_get_lagged_frames();
+    const char *resolved_id = obs_encoder_get_id(state->venc);
+    obs_module_t *module = resolved_id ? obs_encoder_get_module(resolved_id) : NULL;
+    fprintf(stderr,
+            "[engine] [replay] session=%llu requested_encoder=%s resolved_encoder=%s "
+            "plugin=%s instance_caps=0x%x output=%dx%d fps=%d "
+            "effective_input_path=unknown\n",
+            state->replay_session, state->video_encoder,
+            resolved_id ? resolved_id : "unknown",
+            module ? obs_get_module_file_name(module) : "unknown",
+            obs_encoder_get_caps(state->venc),
+            state->output_width, state->output_height, state->fps);
     fprintf(stderr, "[engine] [replay] Buffer active\n");
     if (emit_event)
         broadcast_status_changed(state, "active");
 
     return true;
+}
+
+static void log_replay_metrics(engine_state_t *state)
+{
+    /* OBS's uint32 counters wrap modulo 2^32. These are renderer counters,
+     * not delivered/encoded frames, and the timing is CPU-side, not GPU time.
+     * Sample at stop request, before asynchronous output drain begins. */
+    uint32_t frames = obs_get_total_frames() - state->replay_frame_baseline;
+    uint32_t lagged = obs_get_lagged_frames() - state->replay_lag_baseline;
+    fprintf(stderr,
+            "[engine] [replay] session=%llu stop_snapshot render_frames=%u "
+            "render_lagged_frames=%u render_lag_percent=%.3f "
+            "recent_cpu_frame_time_ns=%llu\n",
+            state->replay_session, frames, lagged,
+            frames ? 100.0 * lagged / frames : 0.0,
+            (unsigned long long)obs_get_average_frame_time_ns());
 }
 
 static void handle_get_status(engine_state_t *state, int fd)
@@ -1995,6 +2036,7 @@ static void handle_stop_replay(engine_state_t *state, int fd)
         return;
     }
 
+    log_replay_metrics(state);
     obs_output_stop(state->replay_output);
     state->buffer_active = false;
 
@@ -2484,6 +2526,7 @@ static void event_loop(engine_state_t *state)
                     
                     /* Auto-stop replay buffer */
                     if (state->buffer_active && state->replay_output) {
+                        log_replay_metrics(state);
                         obs_output_stop(state->replay_output);
                         state->buffer_active = false;
                         broadcast_status_changed(state, "idle");
@@ -3358,6 +3401,7 @@ static void libobs_shutdown(engine_state_t *state)
 {
     unsubscribe_display_portal_response(state);
     if (state->buffer_active && state->replay_output) {
+        log_replay_metrics(state);
         obs_output_stop(state->replay_output);
         state->buffer_active = false;
     }
