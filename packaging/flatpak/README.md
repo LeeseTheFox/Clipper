@@ -94,6 +94,65 @@ local test Flatpak and removes it afterward. These optional tests require a
 graphical session, ffmpeg, and locally installed Freedesktop 25.08 runtime/SDK
 for the sandbox mode. They do not change Steam or Clipper configuration.
 
+## Maintaining the capture patches
+
+The manifest orders patches against pinned OBS and obs-vkcapture sources; keep
+that order when rebasing. The direct-surface patch extends internal OBS encoder
+interfaces, so rebuild all bundled modules together. These patches are not
+compatible with an arbitrary host OBS installation.
+
+- VAAPI import caches retain graphics wrappers and their owning FFmpeg frames
+  context, never frame-buffer leases. FFmpeg decides when a surface is reusable.
+  Caches are bounded to 32 entries and use transient imports at capacity.
+- Direct conversion writes NV12 into leased encoder surfaces. Graphics precedes
+  the queue mutex; each queued lease retains its cache and a weak encoder identity.
+  GL completion fences must finish before encoding or releasing a lease. Destroy
+  imported wrappers before releasing their frames context. Unsupported formats,
+  consumers or allocation failures retain the ordinary conversion/copy path.
+- Native capture skips RGB composition only for an opaque, unfiltered, identity
+  game-capture scene at matching SDR dimensions. Preview requests run on the OBS
+  graphics task queue and materialize the scene when its RGB target is stale.
+- Lazy buffers preserve queue limits and backpressure, allocating fallback GPU
+  textures and CPU/readback buffers when first needed. PipeWire imports belong
+  to their stream buffers; per-frame synchronization is renewed independently.
+- Hook pacing uses `engine/gamecapture/copy_pacing.h`. CPY1 supplies a twice-FPS
+  copy budget; CPY2 aligns copies with the consumer's monotonic deadline. Old
+  peers retain compatible fixed-size messages. Neither path limits game FPS.
+
+For troubleshooting, explicit `0` disables each corresponding optimization in
+the engine environment: `CLIPPER_VAAPI_IMPORT_CACHE`,
+`CLIPPER_VAAPI_DIRECT_SURFACES`, `CLIPPER_NATIVE_CAPTURE`, and
+`CLIPPER_HOOK_COPY_PACING`. The smoke tool exposes matching `--no-...` options.
+Native capture requires direct surfaces; import-cache controls affect the
+ordinary copy path. Keep FFmpeg's default encoder queue depth.
+
+GNOME 51 supplies the FFmpeg VAAPI teardown fixes needed for repeated replay
+sessions. Its SDK also requires `-fno-link-libatomic` when linking the static host
+monitor. Test restart resource stability with:
+
+```bash
+./venv/bin/python tools/smoke_replay_saves.py \
+  --encoder ffmpeg_vaapi_tex --resolution 1920x1080 --fps 60 \
+  --cycles 20 --assert-stable-fds
+```
+
+For native capture, compile the frame harness with dimensions matching the output
+(for example `-DWIDTH=2560 -DHEIGHT=1440`), then run:
+
+```bash
+./venv/bin/python tools/game_capture_frame_smoke.py /absolute/path/to/harness \
+  --api opengl --encoder ffmpeg_vaapi_tex --resolution 2560x1440 \
+  --source-fps 240 --record-seconds 6 --check-color-chart \
+  --require-native-capture --check-preview
+```
+
+Run capture checks sequentially because the receiver socket is shared. The
+OpenGL chart checks color and orientation; Vulkan checks changing frame IDs.
+Native unit tests extract packaged C functions using
+`tools/generate_native_test_headers.py` and compile them against driver stubs.
+They cover guards and resource lifetimes, but hardware smoke tests are still
+needed for pixels and synchronization. These checks do not measure gameplay FPS.
+
 ## Before a Flathub submission
 
 - Make the project URL in AppStream metadata publicly reachable.
