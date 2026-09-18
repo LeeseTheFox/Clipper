@@ -1,0 +1,528 @@
+--- a/libobs/obs-encoder.h
++++ b/libobs/obs-encoder.h
+@@ -176,12 +176,25 @@
+ 
+ struct gs_texture;
+ 
++/* Clipper pinned-build extension. A lease owns its planes independently of
++ * encoder lifetime. All callbacks run with the graphics context held.
++ * finish seals rendered contents; release must also handle unsubmitted leases.
++ * The core keeps a lease until all repeated encodes of that frame complete. */
++struct encoder_surface {
++	struct gs_texture *tex[4];
++	void *opaque;
++	bool (*finish)(void *opaque);
++	void (*release)(void *opaque);
++};
++
+ /** Encoder input texture */
+ struct encoder_texture {
+ 	/** Shared texture handle, only set on Windows */
+ 	uint32_t handle;
+ 	/** Textures, length determined by format */
+ 	struct gs_texture *tex[4];
++	/* Only supplied to the provider that acquired this surface. */
++	void *surface;
+ };
+ 
+ /**
+@@ -347,6 +360,10 @@
+ 
+ 	/** Audio encoder only: Returns padding, in samples, that must be skipped at the start of the stream. */
+ 	uint32_t (*get_priming_samples)(void *data);
++
++	/* Optional, NV12-only Clipper direct-conversion prototype. On failure,
++	 * leave out empty and release any partially acquired resources. */
++	bool (*acquire_surface)(void *data, uint32_t width, uint32_t height, struct encoder_surface *out);
+ };
+ 
+ EXPORT void obs_register_encoder_s(const struct obs_encoder_info *info, size_t size);
+--- a/libobs/obs-internal.h
++++ b/libobs/obs-internal.h
+@@ -323,8 +323,20 @@
+ 	uint64_t lock_key;
+ 	int count;
+ 	bool released;
++	struct encoder_surface surface;
++	obs_weak_encoder_t *surface_owner;
+ };
+ 
++/* Graphics context required; does not dereference a stopped encoder. */
++static inline void release_tex_frame_surface(struct obs_tex_frame *frame)
++{
++	if (frame->surface.release)
++		frame->surface.release(frame->surface.opaque);
++	obs_weak_encoder_release(frame->surface_owner);
++	frame->surface_owner = NULL;
++	memset(&frame->surface, 0, sizeof(frame->surface));
++}
++
+ struct obs_task_info {
+ 	obs_task_t task;
+ 	void *param;
+--- a/libobs/obs-video.c
++++ b/libobs/obs-video.c
+@@ -540,6 +540,54 @@
+ 	profile_end(output_gpu_encoders_name);
+ }
+ 
++/* Reserve an ordinary queue slot before acquiring a lease: the direct path
++ * cannot grow the queue or bypass existing backpressure. No strong encoder
++ * reference is stored in the queue (which would create a teardown cycle). */
++static bool render_direct_surface(struct obs_core_video_mix *video, gs_texture_t *texture)
++{
++	const struct video_output_info *info = video_output_get_info(video->video);
++	if (!video->gpu_conversion || info->format != VIDEO_FORMAT_NV12 ||
++	    !video->vframe_info_buffer_gpu.size)
++		return false;
++
++	bool rendered = false;
++	pthread_mutex_lock(&video->gpu_encoder_mutex);
++	struct obs_vframe_info *vframe = deque_data(&video->vframe_info_buffer_gpu, 0);
++	if (video->gpu_encoders.num != 1 || vframe->count != 1)
++		goto done;
++	obs_encoder_t *encoder = video->gpu_encoders.array[0];
++	if (!encoder->info.acquire_surface || !encoder->info.encode_texture2)
++		goto done;
++	if (!video->gpu_encoder_avail_queue.size && !grow_gpu_encoding_texture_pool(video))
++		goto done;
++
++	struct encoder_surface surface = {0};
++	if (!encoder->info.acquire_surface(encoder->context.data, info->width, info->height, &surface))
++		goto done;
++
++	render_convert_texture(video, surface.tex, texture);
++	gs_set_render_target(NULL, NULL);
++	if (!surface.finish(surface.opaque)) {
++		surface.release(surface.opaque);
++		goto done;
++	}
++
++	struct obs_tex_frame tf;
++	deque_pop_front(&video->gpu_encoder_avail_queue, &tf, sizeof(tf));
++	tf.surface = surface;
++	tf.surface_owner = obs_encoder_get_weak_encoder(encoder);
++	tf.count = 1;
++	tf.timestamp = vframe->timestamp;
++	struct obs_vframe_info consumed;
++	deque_pop_front(&video->vframe_info_buffer_gpu, &consumed, sizeof(consumed));
++	deque_push_back(&video->gpu_encoder_queue, &tf, sizeof(tf));
++	os_sem_post(video->gpu_encode_semaphore);
++	rendered = true;
++done:
++	pthread_mutex_unlock(&video->gpu_encoder_mutex);
++	return rendered;
++}
++
+ static inline void render_video(struct obs_core_video_mix *video, bool raw_active, const bool gpu_active,
+ 				int cur_texture)
+ {
+@@ -565,11 +613,12 @@
+ 			gs_flush();
+ 		}
+ 
+-		if (video->gpu_conversion) {
++		bool direct = gpu_active && !raw_active && render_direct_surface(video, output_texture);
++		if (video->gpu_conversion && !direct) {
+ 			render_convert_texture(video, convert_textures, output_texture);
+ 		}
+ 
+-		if (gpu_active) {
++		if (gpu_active && !direct) {
+ 			gs_flush();
+ 			output_gpu_encoders(video, raw_active);
+ 		}
+--- a/libobs/obs-video-gpu-encode.c
++++ b/libobs/obs-video-gpu-encode.c
+@@ -152,9 +152,11 @@
+ 				struct encoder_texture tex = {0};
+ 
+ 				tex.handle = tf.handle;
+-				tex.tex[0] = tf.tex;
+-				tex.tex[1] = tf.tex_uv;
++				tex.tex[0] = tf.surface.opaque ? tf.surface.tex[0] : tf.tex;
++				tex.tex[1] = tf.surface.opaque ? tf.surface.tex[1] : tf.tex_uv;
+ 				tex.tex[2] = NULL;
++				if (obs_weak_encoder_references_encoder(tf.surface_owner, encoder))
++					tex.surface = tf.surface.opaque;
+ 				success = encoder->info.encode_texture2(encoder->context.data, &tex, encoder->cur_pts,
+ 									lock_key, &next_key, &pkt, &received);
+ 			} else {
+@@ -192,6 +194,14 @@
+ 
+ 		/* -------------- */
+ 
++		/* Respect render-thread lock order: graphics before queue mutex.
++		 * Also releases leases for frames skipped while waiting for audio. */
++		if (tf.count == 1 && tf.surface.opaque) {
++			obs_enter_graphics();
++			release_tex_frame_surface(&tf);
++			obs_leave_graphics();
++		}
++
+ 		pthread_mutex_lock(&video->gpu_encoder_mutex);
+ 
+ 		tf.lock_key = next_key;
+@@ -310,6 +320,7 @@
+ 		while (x.size) {                                    \
+ 			struct obs_tex_frame frame;                 \
+ 			deque_pop_front(&x, &frame, sizeof(frame)); \
++			release_tex_frame_surface(&frame);          \
+ 			gs_texture_destroy(frame.tex);              \
+ 			gs_texture_destroy(frame.tex_uv);           \
+ 		}                                                   \
+--- a/plugins/obs-ffmpeg/CMakeLists.txt
++++ b/plugins/obs-ffmpeg/CMakeLists.txt
+@@ -12,6 +12,11 @@
+ add_library(obs-ffmpeg MODULE)
+ add_library(OBS::ffmpeg ALIAS obs-ffmpeg)
+ 
++if(OS_LINUX OR OS_FREEBSD OR OS_OPENBSD)
++  find_package(OpenGL REQUIRED COMPONENTS OpenGL)
++  target_link_libraries(obs-ffmpeg PRIVATE OpenGL::OpenGL)
++endif()
++
+ add_subdirectory(ffmpeg-mux)
+ 
+ target_sources(
+--- a/plugins/obs-ffmpeg/obs-ffmpeg-vaapi.c
++++ b/plugins/obs-ffmpeg/obs-ffmpeg-vaapi.c
+@@ -32,6 +32,10 @@
+ 
+ #include <unistd.h>
+ #include <stdlib.h>
++#define GL_GLEXT_PROTOTYPES
++#include <GL/gl.h>
++#include <GL/glext.h>
++#include <util/platform.h>
+ 
+ #include <libavutil/opt.h>
+ #include <libavutil/pixdesc.h>
+@@ -76,6 +80,19 @@
+ 	uint32_t num_textures;
++	/* Valid only for these wrappers in their owning graphics context. */
++	graphics_t *validated_context;
++	uint32_t validated_width, validated_height;
+ };
+ 
++/* Unlike the copy-path cache, this cache can outlive the encoder while
++ * queued leases still refer to its wrappers. References are graphics-locked. */
++struct vaapi_direct_cache {
++	size_t refs;
++	AVBufferRef *context;
++	struct vaapi_import imports[CLIPPER_VAAPI_IMPORT_CACHE_SIZE];
++	size_t count;
++	unsigned long long hits, misses;
++};
++
+ struct vaapi_encoder {
+ 	obs_encoder_t *encoder;
+ 	enum codec_type codec;
+@@ -109,6 +126,12 @@
+ 	unsigned long long import_hits;
+ 	unsigned long long import_misses;
+ 	unsigned long long import_fallbacks;
++	bool direct_surfaces;
++	bool direct_failed;
++	unsigned long long direct_acquired;
++	unsigned long long direct_submitted;
++	unsigned long long copied_frames;
++	struct vaapi_direct_cache *direct_cache;
+ };
+ 
+ static const char *h264_vaapi_getname(void *unused)
+@@ -428,7 +451,8 @@
+ 	av_frame_free(&out->frame);
+ }
+ 
+-static bool vaapi_create_surface(struct vaapi_encoder *enc, struct vaapi_surface *out)
++static bool vaapi_create_surface_internal(struct vaapi_encoder *enc, struct vaapi_surface *out,
++					 struct vaapi_direct_cache *direct_cache)
+ {
+ 	int ret;
+ 	VAStatus vas;
+@@ -457,7 +481,20 @@
+ 	}
+ 
+ 	VASurfaceID id = (VASurfaceID)(uintptr_t)out->frame->data[3];
+-	if (enc->cache_imports) {
++	if (direct_cache) {
++		for (size_t i = 0; i < direct_cache->count; ++i) {
++			struct vaapi_import *entry = &direct_cache->imports[i];
++			if (entry->id != id)
++				continue;
++			memcpy(out->textures, entry->textures, sizeof(out->textures));
++			out->num_textures = entry->num_textures;
++			out->cached = true;
++			direct_cache->hits++;
++			return true;
++		}
++		direct_cache->misses++;
++	}
++	if (!direct_cache && enc->cache_imports) {
+ 		if (enc->import_context && enc->import_context->data != enc->vaframes_ref->data)
+ 			vaapi_clear_imports(enc);
+ 		if (!enc->import_context)
+@@ -508,14 +545,20 @@
+ 		close(desc.objects[i].fd);
+ 
+ 	if (ok) {
+-		if (enc->cache_imports && enc->import_context &&
++		if (direct_cache && direct_cache->count < CLIPPER_VAAPI_IMPORT_CACHE_SIZE) {
++			struct vaapi_import *entry = &direct_cache->imports[direct_cache->count++];
++			entry->id = id;
++			entry->num_textures = out->num_textures;
++			memcpy(entry->textures, out->textures, sizeof(entry->textures));
++			out->cached = true;
++		} else if (!direct_cache && enc->cache_imports && enc->import_context &&
+ 		    enc->num_imports < CLIPPER_VAAPI_IMPORT_CACHE_SIZE) {
+ 			struct vaapi_import *entry = &enc->imports[enc->num_imports++];
+ 			entry->id = id;
+ 			entry->num_textures = out->num_textures;
+ 			memcpy(entry->textures, out->textures, sizeof(entry->textures));
+ 			out->cached = true;
+-		} else if (enc->cache_imports) {
++		} else if (!direct_cache && enc->cache_imports) {
+ 			enc->import_fallbacks++;
+ 		}
+ 		return true;
+@@ -526,6 +569,151 @@
+ 	return false;
+ }
+ 
++static bool vaapi_create_surface(struct vaapi_encoder *enc, struct vaapi_surface *out)
++{
++	return vaapi_create_surface_internal(enc, out, NULL);
++}
++
++static void vaapi_direct_cache_release(struct vaapi_direct_cache *cache)
++{
++	if (!cache || --cache->refs)
++		return;
++	for (size_t i = 0; i < cache->count; ++i)
++		for (uint32_t j = 0; j < cache->imports[i].num_textures; ++j)
++			gs_texture_destroy(cache->imports[i].textures[j]);
++	av_buffer_unref(&cache->context);
++	bfree(cache);
++}
++
++struct vaapi_direct_surface {
++	struct vaapi_surface surface;
++	GLsync fence;
++	struct vaapi_direct_cache *cache;
++};
++
++/* A client-side wait, not a server-side glWaitSync: VA-API must not see
++ * outstanding GL writes. The encode thread waits after the render thread has
++ * submitted and flushed the fence. FFmpeg retains the frame for async encode. */
++static bool vaapi_direct_wait(struct vaapi_direct_surface *lease)
++{
++	if (!lease->fence)
++		return false;
++	GLenum result;
++	do {
++		result = glClientWaitSync(lease->fence, 0, 1000000000ULL);
++	} while (result == GL_TIMEOUT_EXPIRED);
++	return result == GL_ALREADY_SIGNALED || result == GL_CONDITION_SATISFIED;
++}
++
++static bool vaapi_direct_finish(void *opaque)
++{
++	struct vaapi_direct_surface *lease = opaque;
++	lease->fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
++	glFlush();
++	return lease->fence != NULL;
++}
++
++static void vaapi_direct_release(void *opaque)
++{
++	struct vaapi_direct_surface *lease = opaque;
++	/* Also covers a failed fence allocation after rendering. */
++	if (!vaapi_direct_wait(lease))
++		glFinish();
++	if (lease->fence)
++		glDeleteSync(lease->fence);
++	vaapi_destroy_surface(&lease->surface);
++	vaapi_direct_cache_release(lease->cache);
++	bfree(lease);
++}
++
++static bool vaapi_direct_validate(struct vaapi_surface *surface, struct vaapi_import *entry, uint32_t width, uint32_t height)
++{
++	graphics_t *context = gs_get_context();
++	if (entry && context && entry->validated_context == context &&
++	    entry->validated_width == width && entry->validated_height == height)
++		return true;
++	if (entry)
++		entry->validated_context = NULL;
++	bool valid = surface->num_textures == 2;
++	gs_texture_t *previous = gs_get_render_target();
++	for (uint32_t i = 0; valid && i < 2; ++i) {
++		gs_texture_t *tex = surface->textures[i];
++		valid = gs_texture_get_width(tex) == (width >> i) &&
++			gs_texture_get_height(tex) == (height >> i) &&
++			gs_texture_get_color_format(tex) == (i ? GS_R8G8 : GS_R8);
++		if (valid) {
++			gs_set_render_target(tex, NULL);
++			valid = gs_get_render_target() == tex &&
++				glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
++		}
++	}
++	gs_set_render_target(previous, NULL);
++	if (valid && entry) {
++		entry->validated_context = context;
++		entry->validated_width = width;
++		entry->validated_height = height;
++	}
++	return valid;
++}
++
++static bool vaapi_acquire_surface(void *data, uint32_t width, uint32_t height, struct encoder_surface *out)
++{
++	struct vaapi_encoder *enc = data;
++	if (!enc->direct_surfaces || enc->direct_failed || gs_get_device_type() != GS_DEVICE_OPENGL)
++		return false;
++	AVHWFramesContext *frames = (AVHWFramesContext *)enc->vaframes_ref->data;
++	if (frames->sw_format != AV_PIX_FMT_NV12 || width != (uint32_t)enc->context->width ||
++	    height != (uint32_t)enc->height || (width & 1) || (height & 1))
++		return false;
++
++	if (enc->direct_cache && enc->direct_cache->context->data != enc->vaframes_ref->data) {
++		vaapi_direct_cache_release(enc->direct_cache);
++		enc->direct_cache = NULL;
++	}
++	if (!enc->direct_cache) {
++		enc->direct_cache = bzalloc(sizeof(*enc->direct_cache));
++		enc->direct_cache->refs = 1;
++		enc->direct_cache->context = av_buffer_ref(enc->vaframes_ref);
++		if (!enc->direct_cache->context)
++			goto fail;
++	}
++	struct vaapi_direct_surface *lease = bzalloc(sizeof(*lease));
++	/* Only av_hwframe_get_buffer grants reuse; the cache never owns an
++	 * AVFrame buffer lease and cannot recycle an encoder-held surface. */
++	if (!vaapi_create_surface_internal(enc, &lease->surface, enc->direct_cache)) {
++		bfree(lease);
++		goto fail;
++	}
++	struct vaapi_surface *surface = &lease->surface;
++	struct vaapi_import *entry = NULL;
++	if (surface->cached) {
++		VASurfaceID id = (VASurfaceID)(uintptr_t)surface->frame->data[3];
++		for (size_t i = 0; i < enc->direct_cache->count; ++i) {
++			if (enc->direct_cache->imports[i].id == id) {
++				entry = &enc->direct_cache->imports[i];
++				break;
++			}
++		}
++	}
++	if (!vaapi_direct_validate(surface, entry, width, height)) {
++		vaapi_destroy_surface(surface);
++		bfree(lease);
++		goto fail;
++	}
++	memcpy(out->tex, surface->textures, sizeof(out->tex));
++	out->opaque = lease;
++	out->finish = vaapi_direct_finish;
++	out->release = vaapi_direct_release;
++	lease->cache = enc->direct_cache;
++	lease->cache->refs++;
++	enc->direct_acquired++;
++	return true;
++fail:
++	enc->direct_failed = true;
++	warn("Clipper VAAPI direct surfaces unavailable; using texture copies for this session");
++	return false;
++}
++
+ static inline void flush_remaining_packets(struct vaapi_encoder *enc)
+ {
+ 	int r_pkt = 1;
+@@ -547,8 +735,16 @@
+ 		flush_remaining_packets(enc);
+ 
+ 	av_packet_free(&enc->packet);
++	if (enc->direct_surfaces)
++		info("Clipper VAAPI direct: acquired=%llu submitted=%llu copied_frames=%llu disabled=%d",
++		     enc->direct_acquired, enc->direct_submitted, enc->copied_frames, enc->direct_failed);
+ 	avcodec_free_context(&enc->context);
+ 	obs_enter_graphics();
++	if (enc->direct_cache)
++		info("Clipper VAAPI direct imports: hits=%llu misses=%llu cached=%zu capacity=%d",
++		     enc->direct_cache->hits, enc->direct_cache->misses, enc->direct_cache->count,
++		     CLIPPER_VAAPI_IMPORT_CACHE_SIZE);
++	vaapi_direct_cache_release(enc->direct_cache);
+ 	vaapi_clear_imports(enc);
+ 	obs_leave_graphics();
+ 	if (enc->cache_imports)
+@@ -585,6 +781,8 @@
+ 	enc->encoder = encoder;
+ 	const char *cache = getenv("CLIPPER_VAAPI_IMPORT_CACHE");
+ 	enc->cache_imports = !cache || strcmp(cache, "0") != 0;
++	const char *direct = getenv("CLIPPER_VAAPI_DIRECT_SURFACES");
++	enc->direct_surfaces = !direct || strcmp(direct, "0") != 0;
+ 
+ 	enc->codec = codec;
+ 	enc->vaapi = avcodec_find_encoder_by_name(vaapi_encoder_name(codec));
+@@ -842,6 +1040,29 @@
+ 
+ 	obs_enter_graphics();
+ 
++	if (texture->surface) {
++		struct vaapi_direct_surface *lease = texture->surface;
++		/* An encoder may restart on the same OBS object while old frames
++		 * remain queued. Only submit leases from this exact frames context. */
++		if (lease->surface.frame->hw_frames_ctx->data == enc->vaframes_ref->data) {
++			bool ready = vaapi_direct_wait(lease);
++			obs_leave_graphics();
++			if (!ready)
++				return false;
++			AVFrame *frame = av_frame_clone(lease->surface.frame);
++			if (!frame)
++				return false;
++			enc->vframe->pts = pts;
++			bool ok = av_frame_copy_props(frame, enc->vframe) >= 0;
++			if (ok) {
++				enc->direct_submitted++;
++				ok = vaapi_encode_internal(enc, frame, packet, received_packet);
++			}
++			av_frame_free(&frame);
++			return ok;
++		}
++	}
++
+ 	// Destroyed piecemeal to avoid taking the graphics lock again.
+ 	if (!vaapi_create_surface(enc, &surface)) {
+ 		warn("vaapi_encode_tex: failed to create texture hw frame");
+@@ -866,6 +1087,7 @@
+ 	gs_flush();
+ 
+ 	obs_leave_graphics();
++	enc->copied_frames++;
+ 
+ 	enc->vframe->pts = pts;
+ 
+@@ -1299,6 +1521,7 @@
+ 	.get_name = h264_vaapi_getname,
+ 	.create = h264_vaapi_create_tex,
+ 	.destroy = vaapi_destroy,
++	.acquire_surface = vaapi_acquire_surface,
+ 	.encode_texture2 = vaapi_encode_tex,
+ 	.get_defaults = h264_vaapi_defaults,
+ 	.get_properties = h264_vaapi_properties,
+@@ -1331,6 +1554,7 @@
+ 	.get_name = av1_vaapi_getname,
+ 	.create = av1_vaapi_create_tex,
+ 	.destroy = vaapi_destroy,
++	.acquire_surface = vaapi_acquire_surface,
+ 	.encode_texture2 = vaapi_encode_tex,
+ 	.get_defaults = av1_vaapi_defaults,
+ 	.get_properties = av1_vaapi_properties,
+@@ -1364,6 +1588,7 @@
+ 	.get_name = hevc_vaapi_getname,
+ 	.create = hevc_vaapi_create_tex,
+ 	.destroy = vaapi_destroy,
++	.acquire_surface = vaapi_acquire_surface,
+ 	.encode_texture2 = vaapi_encode_tex,
+ 	.get_defaults = hevc_vaapi_defaults,
+ 	.get_properties = hevc_vaapi_properties,

@@ -1097,6 +1097,27 @@ done:
     return true;
 }
 
+typedef struct {
+    engine_state_t *state;
+    int width;
+    int height;
+    bool preserve_aspect;
+    bool ok;
+    bool resources_reused;
+    uint8_t *frame;
+    size_t frame_size;
+    uint32_t stride;
+} preview_capture_t;
+
+static void capture_preview_task(void *data)
+{
+    preview_capture_t *capture = data;
+    capture->ok = capture_preview_frame(
+        capture->state, capture->width, capture->height, capture->preserve_aspect,
+        &capture->width, &capture->height, &capture->frame, &capture->frame_size,
+        &capture->stride, &capture->resources_reused);
+}
+
 static void handle_get_preview_frame(engine_state_t *state, int fd, cJSON *json)
 {
     if (!state->buffer_active) {
@@ -1110,17 +1131,20 @@ static void handle_get_preview_frame(engine_state_t *state, int fd, cJSON *json)
         json, "height", PREVIEW_FRAME_DEFAULT_HEIGHT, PREVIEW_FRAME_MAX_HEIGHT);
     bool preserve_aspect = preview_bool_from_json(json, "preserve_aspect", false);
 
-    uint8_t *frame = NULL;
-    size_t frame_size = 0;
-    uint32_t stride = 0;
-    bool resources_reused = false;
-    if (!capture_preview_frame(state, width, height, preserve_aspect, &width, &height,
-                               &frame, &frame_size, &stride, &resources_reused)) {
+    /* Native capture materializes the RGB scene on demand. Run on the video
+     * thread so source ticks cannot invert the graphics/source mutex order.
+     * Do not hold the graphics context while waiting for this task. */
+    preview_capture_t capture = {
+        .state = state, .width = width, .height = height,
+        .preserve_aspect = preserve_aspect,
+    };
+    obs_queue_task(OBS_TASK_GRAPHICS, capture_preview_task, &capture, true);
+    if (!capture.ok) {
         send_error(state, fd, "preview frame unavailable");
         return;
     }
 
-    gchar *encoded = g_base64_encode(frame, frame_size);
+    gchar *encoded = g_base64_encode(capture.frame, capture.frame_size);
 
     if (!encoded) {
         send_error(state, fd, "failed to encode preview frame");
@@ -1135,12 +1159,12 @@ static void handle_get_preview_frame(engine_state_t *state, int fd, cJSON *json)
     }
 
     cJSON_AddBoolToObject(r, "ok", 1);
-    cJSON_AddNumberToObject(r, "width", width);
-    cJSON_AddNumberToObject(r, "height", height);
-    cJSON_AddNumberToObject(r, "stride", (double)stride);
+    cJSON_AddNumberToObject(r, "width", capture.width);
+    cJSON_AddNumberToObject(r, "height", capture.height);
+    cJSON_AddNumberToObject(r, "stride", (double)capture.stride);
     cJSON_AddStringToObject(r, "format", "BGRA");
     cJSON_AddStringToObject(r, "data", encoded);
-    cJSON_AddBoolToObject(r, "resources_reused", resources_reused);
+    cJSON_AddBoolToObject(r, "resources_reused", capture.resources_reused);
 
     send_to_client(state, fd, r);
     cJSON_Delete(r);

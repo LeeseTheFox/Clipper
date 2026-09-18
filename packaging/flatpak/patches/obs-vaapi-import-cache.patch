@@ -1,0 +1,153 @@
+--- a/plugins/obs-ffmpeg/obs-ffmpeg-vaapi.c
++++ b/plugins/obs-ffmpeg/obs-ffmpeg-vaapi.c
+@@ -31,6 +31,7 @@
+ #include <opts-parser.h>
+ 
+ #include <unistd.h>
++#include <stdlib.h>
+ 
+ #include <libavutil/opt.h>
+ #include <libavutil/pixdesc.h>
+@@ -65,6 +66,14 @@
+ 	AVFrame *frame;
+ 	gs_texture_t *textures[4];
+ 	uint32_t num_textures;
++	bool cached;
++};
++
++#define CLIPPER_VAAPI_IMPORT_CACHE_SIZE 32
++struct vaapi_import {
++	VASurfaceID id;
++	gs_texture_t *textures[4];
++	uint32_t num_textures;
+ };
+ 
+ struct vaapi_encoder {
+@@ -93,6 +102,13 @@
+ 	int height;
+ 	bool first_packet;
+ 	bool initialized;
++	bool cache_imports;
++	AVBufferRef *import_context;
++	struct vaapi_import imports[CLIPPER_VAAPI_IMPORT_CACHE_SIZE];
++	size_t num_imports;
++	unsigned long long import_hits;
++	unsigned long long import_misses;
++	unsigned long long import_fallbacks;
+ };
+ 
+ static const char *h264_vaapi_getname(void *unused)
+@@ -386,10 +402,24 @@
+ 	}
+ }
+ 
++/* Graphics context must be held. Retain the HW context, NOT AVFrame leases:
++ * FFmpeg's internal AVBufferPool retains surface allocations until uninit;
++ * av_hwframe_get_buffer alone decides when an encoder-held lease is reusable.
++ * This cache is private to one immutable frames context. */
++static void vaapi_clear_imports(struct vaapi_encoder *enc)
++{
++	for (size_t i = 0; i < enc->num_imports; ++i) {
++		for (uint32_t j = 0; j < enc->imports[i].num_textures; ++j)
++			gs_texture_destroy(enc->imports[i].textures[j]);
++	}
++	enc->num_imports = 0;
++	av_buffer_unref(&enc->import_context);
++}
++
+ static void vaapi_destroy_surface(struct vaapi_surface *out)
+ {
+ 	for (uint32_t i = 0; i < out->num_textures; ++i) {
+-		if (out->textures[i]) {
++		if (out->textures[i] && !out->cached) {
+ 			gs_texture_destroy(out->textures[i]);
+ 			out->textures[i] = NULL;
+ 		}
+@@ -426,6 +456,26 @@
+ 		goto fail;
+ 	}
+ 
++	VASurfaceID id = (VASurfaceID)(uintptr_t)out->frame->data[3];
++	if (enc->cache_imports) {
++		if (enc->import_context && enc->import_context->data != enc->vaframes_ref->data)
++			vaapi_clear_imports(enc);
++		if (!enc->import_context)
++			enc->import_context = av_buffer_ref(enc->vaframes_ref);
++		if (enc->import_context) {
++			for (size_t i = 0; i < enc->num_imports; ++i) {
++				if (enc->imports[i].id != id)
++					continue;
++				memcpy(out->textures, enc->imports[i].textures, sizeof(out->textures));
++				out->num_textures = enc->imports[i].num_textures;
++				out->cached = true;
++				enc->import_hits++;
++				return true;
++			}
++		}
++		enc->import_misses++;
++	}
++
+ 	vas = vaExportSurfaceHandle(enc->va_dpy, (uintptr_t)out->frame->data[3], VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_2,
+ 				    VA_EXPORT_SURFACE_WRITE_ONLY | VA_EXPORT_SURFACE_SEPARATE_LAYERS, &desc);
+ 	if (vas != VA_STATUS_SUCCESS) {
+@@ -457,8 +507,19 @@
+ 	for (uint32_t i = 0; i < desc.num_objects; ++i)
+ 		close(desc.objects[i].fd);
+ 
+-	if (ok)
++	if (ok) {
++		if (enc->cache_imports && enc->import_context &&
++		    enc->num_imports < CLIPPER_VAAPI_IMPORT_CACHE_SIZE) {
++			struct vaapi_import *entry = &enc->imports[enc->num_imports++];
++			entry->id = id;
++			entry->num_textures = out->num_textures;
++			memcpy(entry->textures, out->textures, sizeof(entry->textures));
++			out->cached = true;
++		} else if (enc->cache_imports) {
++			enc->import_fallbacks++;
++		}
+ 		return true;
++	}
+ 
+ fail:
+ 	vaapi_destroy_surface(out);
+@@ -487,6 +548,12 @@
+ 
+ 	av_packet_free(&enc->packet);
+ 	avcodec_free_context(&enc->context);
++	obs_enter_graphics();
++	vaapi_clear_imports(enc);
++	obs_leave_graphics();
++	if (enc->cache_imports)
++		info("Clipper VAAPI imports: hits=%llu misses=%llu transient_fallbacks=%llu capacity=%d",
++		     enc->import_hits, enc->import_misses, enc->import_fallbacks, CLIPPER_VAAPI_IMPORT_CACHE_SIZE);
+ 	av_frame_unref(enc->vframe);
+ 	av_frame_free(&enc->vframe);
+ 	av_buffer_unref(&enc->vaframes_ref);
+@@ -516,6 +583,8 @@
+ 
+ 	enc = bzalloc(sizeof(*enc));
+ 	enc->encoder = encoder;
++	const char *cache = getenv("CLIPPER_VAAPI_IMPORT_CACHE");
++	enc->cache_imports = !cache || strcmp(cache, "0") != 0;
+ 
+ 	enc->codec = codec;
+ 	enc->vaapi = avcodec_find_encoder_by_name(vaapi_encoder_name(codec));
+@@ -783,11 +852,15 @@
+ 	for (uint32_t i = 0; i < surface.num_textures; ++i) {
+ 		if (!texture->tex[i]) {
+ 			warn("vaapi_encode_tex: unexpected number of textures");
++			vaapi_destroy_surface(&surface);
+ 			obs_leave_graphics();
+-			goto fail;
++			return false;
+ 		}
+ 		gs_copy_texture(surface.textures[i], texture->tex[i]);
+-		gs_texture_destroy(surface.textures[i]);
++		if (!surface.cached) {
++			gs_texture_destroy(surface.textures[i]);
++			surface.textures[i] = NULL;
++		}
+ 	}
+ 
+ 	gs_flush();

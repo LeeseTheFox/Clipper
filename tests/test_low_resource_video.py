@@ -86,7 +86,7 @@ def test_engine_reuses_preview_gpu_resources_between_equal_size_requests():
     assert "preview_texrender" in source
     assert "preview_stagesurf" in source
     assert "ensure_preview_resources" in source
-    assert 'cJSON_AddBoolToObject(r, "resources_reused", resources_reused);' in source
+    assert 'cJSON_AddBoolToObject(r, "resources_reused", capture.resources_reused);' in source
 
 
 def test_engine_bounds_replay_memory_and_uses_realtime_software_presets():

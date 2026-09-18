@@ -1,0 +1,487 @@
+--- a/libobs/obs.c
++++ b/libobs/obs.c
+@@ -170,23 +170,26 @@
+ 	else
+ 		blog(LOG_INFO, "P010 texture support not available");
+ 
+-	video->convert_textures[0] = NULL;
+-	video->convert_textures[1] = NULL;
+-	video->convert_textures[2] = NULL;
+-	video->convert_textures_encode[0] = NULL;
+-	video->convert_textures_encode[1] = NULL;
+-	video->convert_textures_encode[2] = NULL;
+-	if (video->using_nv12_tex) {
+-		if (!gs_texture_create_nv12(&video->convert_textures_encode[0], &video->convert_textures_encode[1],
+-					    info->width, info->height, GS_RENDER_TARGET | GS_SHARED_KM_TEX)) {
+-			return false;
+-		}
+-	} else if (video->using_p010_tex) {
+-		if (!gs_texture_create_p010(&video->convert_textures_encode[0], &video->convert_textures_encode[1],
+-					    info->width, info->height, GS_RENDER_TARGET | GS_SHARED_KM_TEX)) {
+-			return false;
+-		}
++	return true;
++}
++
++/* Graphics context required. Publish only complete allocations, allowing a
++ * failed allocation to be retried without leaking partially created planes. */
++bool obs_ensure_conversion_textures(struct obs_core_video_mix *video, bool encode)
++{
++	const struct video_output_info *info = video_output_get_info(video->video);
++	if (encode) {
++		if (video->convert_textures_encode[0])
++			return true;
++		struct obs_tex_frame frame = {0};
++		if (!ensure_gpu_encoding_texture(video, &frame))
++			return false;
++		video->convert_textures_encode[0] = frame.tex;
++		video->convert_textures_encode[1] = frame.tex_uv;
++		return true;
+ 	}
++	if (video->convert_textures[0])
++		return true;
+ 
+ 	bool success = true;
+ 
+@@ -263,10 +266,6 @@
+ 				gs_texture_destroy(video->convert_textures[c]);
+ 				video->convert_textures[c] = NULL;
+ 			}
+-			if (video->convert_textures_encode[c]) {
+-				gs_texture_destroy(video->convert_textures_encode[c]);
+-				video->convert_textures_encode[c] = NULL;
+-			}
+ 		}
+ 	}
+ 
+@@ -349,6 +348,47 @@
+ 	return true;
+ }
+ 
++bool obs_ensure_raw_video_resources(struct obs_core_video_mix *video)
++{
++	if (video->copy_surfaces[0][0])
++		return true;
++
++	const struct video_output_info *info = video_output_get_info(video->video);
++	for (size_t i = 0; i < NUM_TEXTURES; i++) {
++		if (video->gpu_conversion) {
++			if (!obs_init_gpu_copy_surfaces(video, i))
++				goto fail;
++		} else {
++			video->copy_surfaces[i][0] = gs_stagesurface_create(
++				info->width, info->height, gs_texture_get_color_format(video->render_texture));
++			if (!video->copy_surfaces[i][0])
++				goto fail;
++		}
++#ifdef _WIN32
++		if (video->using_nv12_tex)
++			video->copy_surfaces_encode[i] = gs_stagesurface_create_nv12(info->width, info->height);
++		else if (video->using_p010_tex)
++			video->copy_surfaces_encode[i] = gs_stagesurface_create_p010(info->width, info->height);
++		if ((video->using_nv12_tex || video->using_p010_tex) && !video->copy_surfaces_encode[i])
++			goto fail;
++#endif
++	}
++	return true;
++
++fail:
++	for (size_t i = 0; i < NUM_TEXTURES; i++) {
++		for (size_t c = 0; c < NUM_CHANNELS; c++) {
++			gs_stagesurface_destroy(video->copy_surfaces[i][c]);
++			video->copy_surfaces[i][c] = NULL;
++		}
++#ifdef _WIN32
++		gs_stagesurface_destroy(video->copy_surfaces_encode[i]);
++		video->copy_surfaces_encode[i] = NULL;
++#endif
++	}
++	return false;
++}
++
+ static bool obs_init_textures(struct obs_core_video_mix *video)
+ {
+ 	const struct video_output_info *info = video_output_get_info(video->video);
+@@ -370,37 +410,6 @@
+ 		break;
+ 	}
+ 
+-	for (size_t i = 0; i < NUM_TEXTURES; i++) {
+-#ifdef _WIN32
+-		if (video->using_nv12_tex) {
+-			video->copy_surfaces_encode[i] = gs_stagesurface_create_nv12(info->width, info->height);
+-			if (!video->copy_surfaces_encode[i]) {
+-				success = false;
+-				break;
+-			}
+-		} else if (video->using_p010_tex) {
+-			video->copy_surfaces_encode[i] = gs_stagesurface_create_p010(info->width, info->height);
+-			if (!video->copy_surfaces_encode[i]) {
+-				success = false;
+-				break;
+-			}
+-		}
+-#endif
+-
+-		if (video->gpu_conversion) {
+-			if (!obs_init_gpu_copy_surfaces(video, i)) {
+-				success = false;
+-				break;
+-			}
+-		} else {
+-			video->copy_surfaces[i][0] = gs_stagesurface_create(info->width, info->height, format);
+-			if (!video->copy_surfaces[i][0]) {
+-				success = false;
+-				break;
+-			}
+-		}
+-	}
+-
+ 	enum gs_color_space space = GS_CS_SRGB;
+ 	switch (info->colorspace) {
+ 	case VIDEO_CS_2100_PQ:
+--- a/libobs/obs-video.c
++++ b/libobs/obs-video.c
+@@ -490,6 +490,11 @@
+ 	struct obs_tex_frame tf;
+ 	deque_pop_front(&video->gpu_encoder_avail_queue, &tf, sizeof(tf));
+ 
++	if (!ensure_gpu_encoding_texture(video, &tf)) {
++		deque_push_front(&video->gpu_encoder_avail_queue, &tf, sizeof(tf));
++		return false;
++	}
++
+ 	if (tf.released) {
+ #ifdef _WIN32
+ 		gs_texture_acquire_sync(tf.tex, tf.lock_key, GS_WAIT_INFINITE);
+@@ -709,8 +714,19 @@
+ 			gs_flush();
+ 		}
+ 
++		/* A startup frame without timing metadata cannot be queued yet.
++		 * Do not mistake it for a request to initialize the fallback. */
++		if (gpu_active && !raw_active && !video->vframe_info_buffer_gpu.size)
++			goto done;
++
+ 		bool direct = gpu_active && !raw_active && render_direct_surface(video, output_texture);
+ 		if (video->gpu_conversion && !direct) {
++			if (!obs_ensure_conversion_textures(video, gpu_active)) {
++				deque_free(&video->vframe_info_buffer_gpu);
++				deque_free(&video->vframe_info_buffer);
++				memset(video->textures_copied, 0, sizeof(video->textures_copied));
++				goto done;
++			}
+ 			render_convert_texture(video, convert_textures, output_texture);
+ 		}
+ 
+@@ -1034,7 +1050,13 @@
+ 
+ 	profile_start(output_frame_render_video_name);
+ 	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_RENDER_VIDEO, output_frame_render_video_name);
+-	render_video(video, raw_active, gpu_active, cur_texture);
++	if (!raw_active || obs_ensure_raw_video_resources(video)) {
++		render_video(video, raw_active, gpu_active, cur_texture);
++	} else {
++		deque_free(&video->vframe_info_buffer);
++		deque_free(&video->vframe_info_buffer_gpu);
++		memset(video->textures_copied, 0, sizeof(video->textures_copied));
++	}
+ 	GS_DEBUG_MARKER_END();
+ 	profile_end(output_frame_render_video_name);
+ 
+--- a/libobs/obs-video-gpu-encode.c
++++ b/libobs/obs-video-gpu-encode.c
+@@ -199,109 +199,123 @@
+ 		if (tf.count == 1 && tf.surface.opaque) {
+ 			obs_enter_graphics();
+ 			release_tex_frame_surface(&tf);
+ 			obs_leave_graphics();
+ 		}
+ 
+ 		pthread_mutex_lock(&video->gpu_encoder_mutex);
+ 
+ 		tf.lock_key = next_key;
+ 
+ 		if (--tf.count) {
+ 			tf.timestamp += interval;
+ 			deque_push_front(&video->gpu_encoder_queue, &tf, sizeof(tf));
+ 
+ 			video_output_inc_texture_skipped_frames(video->video);
+ 		} else {
+ 			deque_push_back(&video->gpu_encoder_avail_queue, &tf, sizeof(tf));
+ 		}
+ 
+ 		pthread_mutex_unlock(&video->gpu_encoder_mutex);
+ 
+ 		/* -------------- */
+ 
+ 		os_event_signal(video->gpu_encode_inactive);
+ 
+ 		for (size_t i = 0; i < encoders.num; i++)
+ 			obs_encoder_release(encoders.array[i]);
+ 
+ 		da_resize(encoders, 0);
+ 
+ 		profile_end(gpu_encode_thread_name);
+ 		profile_reenable_thread();
+ 	}
+ 
+ 	da_free(encoders);
+ 	return NULL;
+ }
+ 
+ bool grow_gpu_encoding_texture_pool(struct obs_core_video_mix *video)
+ {
+-	const struct video_output_info *info = video_output_get_info(video->video);
+ 	if (video->gpu_encoder_texture_count >= NUM_ENCODE_TEXTURES_MAX)
+ 		return false;
+ 
++	/* Capacity is shared by direct leases and fallback frames. */
++	struct obs_tex_frame frame = {.handle = (uint32_t)-1};
++	deque_push_back(&video->gpu_encoder_avail_queue, &frame, sizeof(frame));
++	video->gpu_encoder_texture_count++;
++	return true;
++}
++
++bool ensure_gpu_encoding_texture(struct obs_core_video_mix *video, struct obs_tex_frame *frame)
++{
++	if (frame->tex)
++		return true;
++
++	const struct video_output_info *info = video_output_get_info(video->video);
+ 	gs_texture_t *tex = NULL;
+ 	gs_texture_t *tex_uv = NULL;
+ 	bool created;
+ 	if (info->format == VIDEO_FORMAT_P010) {
+ 		created = gs_texture_create_p010(&tex, &tex_uv, info->width, info->height,
+ 					 GS_RENDER_TARGET | GS_SHARED_KM_TEX);
+ 	} else {
+ 		created = gs_texture_create_nv12(&tex, &tex_uv, info->width, info->height,
+ 					 GS_RENDER_TARGET | GS_SHARED_KM_TEX);
+ 	}
+ 	if (!created || !tex || !tex_uv) {
+ 		gs_texture_destroy(tex);
+ 		gs_texture_destroy(tex_uv);
+ 		return false;
+ 	}
+ 
+ #ifdef _WIN32
+ 	uint32_t handle = gs_texture_get_shared_handle(tex);
+ #else
+ 	uint32_t handle = (uint32_t)-1;
+ #endif
+ 
+-	struct obs_tex_frame frame = {.tex = tex, .tex_uv = tex_uv, .handle = handle};
+-	deque_push_back(&video->gpu_encoder_avail_queue, &frame, sizeof(frame));
+-	video->gpu_encoder_texture_count++;
++	frame->tex = tex;
++	frame->tex_uv = tex_uv;
++	frame->handle = handle;
++	frame->lock_key = 0;
++	frame->released = false;
+ 	return true;
+ }
+ 
+ bool init_gpu_encoding(struct obs_core_video_mix *video)
+ {
+ 
+ 	video->gpu_encode_stop = false;
+ 
+ 	video->gpu_encoder_texture_count = 0;
+ 	deque_reserve(&video->gpu_encoder_avail_queue,
+ 		      NUM_ENCODE_TEXTURES_MAX * sizeof(struct obs_tex_frame));
+ 	for (size_t i = 0; i < NUM_ENCODE_TEXTURES_MIN; i++) {
+ 		if (!grow_gpu_encoding_texture_pool(video))
+ 			return false;
+ 	}
+ 
+ 	if (os_sem_init(&video->gpu_encode_semaphore, 0) != 0)
+ 		return false;
+ 	if (os_event_init(&video->gpu_encode_inactive, OS_EVENT_TYPE_MANUAL) != 0)
+ 		return false;
+ 	if (pthread_create(&video->gpu_encode_thread, NULL, gpu_encode_thread, video) != 0)
+ 		return false;
+ 
+ 	os_event_signal(video->gpu_encode_inactive);
+ 
+ 	video->gpu_encode_thread_initialized = true;
+ 	return true;
+ }
+ 
+ void stop_gpu_encoding_thread(struct obs_core_video_mix *video)
+ {
+ 	if (video->gpu_encode_thread_initialized) {
+ 		os_atomic_set_bool(&video->gpu_encode_stop, true);
+ 		os_sem_post(video->gpu_encode_semaphore);
+ 		pthread_join(video->gpu_encode_thread, NULL);
+ 		video->gpu_encode_thread_initialized = false;
+ 	}
+ }
+ 
+ void free_gpu_encoding(struct obs_core_video_mix *video)
+--- a/libobs/obs-internal.h
++++ b/libobs/obs-internal.h
+@@ -411,6 +411,9 @@
+ }
+ 
+ extern bool grow_gpu_encoding_texture_pool(struct obs_core_video_mix *video);
++extern bool ensure_gpu_encoding_texture(struct obs_core_video_mix *video, struct obs_tex_frame *frame);
++extern bool obs_ensure_conversion_textures(struct obs_core_video_mix *video, bool encode);
++extern bool obs_ensure_raw_video_resources(struct obs_core_video_mix *video);
+ extern struct obs_core_video_mix *obs_create_video_mix(struct obs_video_info *ovi);
+ extern void obs_free_video_mix(struct obs_core_video_mix *video);
+ 
+--- a/libobs/media-io/video-io.c
++++ b/libobs/media-io/video-io.c
+@@ -74,24 +74,25 @@
+ 	pthread_mutex_t data_mutex;
+ 	bool stop;
+ 
+ 	os_sem_t *update_semaphore;
+ 	uint64_t frame_time;
+ 	volatile long skipped_frames;
+ 	volatile long total_frames;
+ 
+ 	pthread_mutex_t input_mutex;
+ 	DARRAY(struct video_input) inputs;
+ 
+ 	size_t available_frames;
++	bool cache_initialized;
+ 	size_t first_added;
+ 	size_t last_added;
+ 	struct cached_frame_info cache[MAX_CACHE_SIZE];
+ 
+ 	struct video_output *parent;
+ 
+ 	volatile bool raw_active;
+ 	volatile long gpu_refs;
+ };
+ 
+ /* ------------------------------------------------------------------------- */
+ 
+@@ -214,62 +215,65 @@
+ 	return NULL;
+ }
+ 
+ /* ------------------------------------------------------------------------- */
+ 
+ static inline bool valid_video_params(const struct video_output_info *info)
+ {
+ 	return info->height != 0 && info->width != 0 && info->fps_den != 0 && info->fps_num != 0;
+ }
+ 
+ static inline void init_cache(struct video_output *video)
+ {
+-	if (video->info.cache_size > MAX_CACHE_SIZE)
+-		video->info.cache_size = MAX_CACHE_SIZE;
++	/* Called with data_mutex held. Keep the cache across reconnects so
++	 * frames still being consumed retain their storage and queue indices. */
++	if (video->cache_initialized)
++		return;
+ 
+ 	for (size_t i = 0; i < video->info.cache_size; i++) {
+ 		struct video_frame *frame;
+ 		frame = (struct video_frame *)&video->cache[i];
+ 
+ 		video_frame_init(frame, video->info.format, video->info.width, video->info.height);
+ 	}
+ 
+ 	video->available_frames = video->info.cache_size;
++	video->cache_initialized = true;
+ }
+ 
+ int video_output_open(video_t **video, struct video_output_info *info)
+ {
+ 	struct video_output *out;
+ 
+ 	if (!valid_video_params(info))
+ 		return VIDEO_OUTPUT_INVALIDPARAM;
+ 
+ 	out = bzalloc(sizeof(struct video_output));
+ 	if (!out)
+ 		goto fail0;
+ 
+ 	memcpy(&out->info, info, sizeof(struct video_output_info));
++	if (out->info.cache_size > MAX_CACHE_SIZE)
++		out->info.cache_size = MAX_CACHE_SIZE;
+ 	out->frame_time = util_mul_div64(1000000000ULL, info->fps_den, info->fps_num);
+ 
+ 	if (pthread_mutex_init_recursive(&out->data_mutex) != 0)
+ 		goto fail0;
+ 	if (pthread_mutex_init_recursive(&out->input_mutex) != 0)
+ 		goto fail1;
+ 	if (os_sem_init(&out->update_semaphore, 0) != 0)
+ 		goto fail2;
+ 	if (pthread_create(&out->thread, NULL, video_thread, out) != 0)
+ 		goto fail3;
+ 
+-	init_cache(out);
+-
+ 	*video = out;
+ 	return VIDEO_OUTPUT_SUCCESS;
+ 
+ fail3:
+ 	os_sem_destroy(out->update_semaphore);
+ fail2:
+ 	pthread_mutex_destroy(&out->input_mutex);
+ fail1:
+ 	pthread_mutex_destroy(&out->data_mutex);
+ fail0:
+ 	bfree(out);
+ 	return VIDEO_OUTPUT_FAIL;
+@@ -424,24 +428,27 @@
+ 			input.conversion.height = video->info.height;
+ 			input.conversion.range = video->info.range;
+ 			input.conversion.colorspace = video->info.colorspace;
+ 		}
+ 
+ 		if (input.conversion.width == 0)
+ 			input.conversion.width = video->info.width;
+ 		if (input.conversion.height == 0)
+ 			input.conversion.height = video->info.height;
+ 
+ 		success = video_input_init(&input, video);
+ 		if (success) {
++			pthread_mutex_lock(&video->data_mutex);
++			init_cache(video);
++			pthread_mutex_unlock(&video->data_mutex);
+ 			if (video->inputs.num == 0) {
+ 				if (!os_atomic_load_long(&video->gpu_refs)) {
+ 					reset_frames(video);
+ 				}
+ 				os_atomic_set_bool(&video->raw_active, true);
+ 			}
+ 			da_push_back(video->inputs, &input);
+ 		}
+ 	}
+ 
+ 	pthread_mutex_unlock(&video->input_mutex);
+ 
+@@ -509,24 +516,27 @@
+ bool video_output_lock_frame(video_t *video, struct video_frame *frame, int count, uint64_t timestamp)
+ {
+ 	struct cached_frame_info *cfi;
+ 	bool locked;
+ 
+ 	if (!video)
+ 		return false;
+ 
+ 	video = get_root(video);
+ 
+ 	pthread_mutex_lock(&video->data_mutex);
+ 
++	/* Also support producers that lock a frame before connecting a consumer. */
++	init_cache(video);
++
+ 	if (video->available_frames == 0) {
+ 		video->cache[video->last_added].count += count;
+ 		video->cache[video->last_added].skipped += count;
+ 		locked = false;
+ 
+ 	} else {
+ 		if (video->available_frames != video->info.cache_size) {
+ 			if (++video->last_added == video->info.cache_size)
+ 				video->last_added = 0;
+ 		}
+ 
+ 		cfi = &video->cache[video->last_added];

@@ -1,0 +1,46 @@
+diff --git a/src/vkcapture.c b/src/vkcapture.c
+index 33a68d2..1a331ff 100644
+--- a/src/vkcapture.c
++++ b/src/vkcapture.c
+@@ -352,6 +352,32 @@ static void vkcapture_source_update(void *data, obs_data_t *settings)
+     }
+ }
+ 
++/* Borrowed only while the caller holds the OBS graphics context. Tick/import
++ * and destruction use that same context; DMA-BUF implicit synchronization is
++ * identical to the ordinary source shader's texture read. Never bypass the
++ * upload path or return a texture whose client has changed buffers. */
++static vkcapture_client_t *find_client_by_id(int id);
++
++static void vkcapture_native_texture(void *data, calldata_t *cd)
++{
++    vkcapture_source_t *ctx = data;
++    calldata_set_ptr(cd, "texture", NULL);
++    if (!ctx->texture || ctx->show_cursor || ctx->allow_transparency ||
++        ctx->tdata.color_space != VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
++        return;
++    enum gs_color_format format = gs_texture_get_color_format(ctx->texture);
++    if (format != GS_RGBA && format != GS_BGRA && format != GS_BGRX)
++        return;
++    pthread_mutex_lock(&server.mutex);
++    vkcapture_client_t *client = find_client_by_id(ctx->client_id);
++    if (client && client->buf_id == ctx->buf_id && !client->map_memory &&
++        client->import_failures != IMPORT_LINEAR_HOST_MAPPED) {
++        calldata_set_ptr(cd, "texture", ctx->texture);
++        calldata_set_bool(cd, "flip", ctx->tdata.flip);
++    }
++    pthread_mutex_unlock(&server.mutex);
++}
++
+ static void *vkcapture_source_create(obs_data_t *settings, obs_source_t *source)
+ {
+     ++source_instances;
+@@ -362,6 +388,8 @@ static void *vkcapture_source_create(obs_data_t *settings, obs_source_t *source)
+     vkcapture_source_update(ctx, settings);
+ 
+ 	proc_handler_t *ph = obs_source_get_proc_handler(source);
++	proc_handler_add(ph, "void clipper_native_texture(out ptr texture, out bool flip)",
++	                 vkcapture_native_texture, ctx);
+ 	proc_handler_add(
+ 		ph,
+ 		"void get_hooked(out bool hooked, out string executable)",

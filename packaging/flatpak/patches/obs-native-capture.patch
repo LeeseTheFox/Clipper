@@ -1,0 +1,292 @@
+diff --git a/libobs/data/format_conversion.effect b/libobs/data/format_conversion.effect
+index 6d1088c..7c2af11 100644
+--- a/libobs/data/format_conversion.effect
++++ b/libobs/data/format_conversion.effect
+@@ -42,6 +42,10 @@ uniform texture2d image1;
+ uniform texture2d image2;
+ uniform texture2d image3;
+ 
++// Reset after each Clipper native capture submission; ordinary conversion is unchanged.
++uniform float clipper_flip = 0.0;
++uniform float clipper_height;
++
+ sampler_state def_sampler {
+ 	Filter   = Linear;
+ 	AddressU = Clamp;
+@@ -112,6 +116,8 @@ VertTexPosWide VSTexPos_Left(uint id : VERTEXID)
+ 	float u_right = idHigh * 2.0;
+ 	float u_left = u_right - width_i;
+ 	float v = obs_glsl_compile ? (idLow * 2.0) : (1.0 - idLow * 2.0);
++	if (clipper_flip > 0.5)
++		v = 1.0 - v;
+ 
+ 	VertTexPosWide vert_out;
+ 	vert_out.uuv = float3(u_left, u_right, v);
+@@ -218,7 +224,10 @@ VertTexPos VS422Left_Reverse(uint id : VERTEXID)
+ 
+ float PS_Y(FragPos frag_in) : TARGET
+ {
+-	float3 rgb = image.Load(int3(frag_in.pos.xy, 0)).rgb;
++	float2 pos = frag_in.pos.xy;
++	if (clipper_flip > 0.5)
++		pos.y = clipper_height - pos.y;
++	float3 rgb = image.Load(int3(pos, 0)).rgb;
+ 	float y = dot(color_vec0.xyz, rgb) + color_vec0.w;
+ 	return y;
+ }
+diff --git a/libobs/obs-internal.h b/libobs/obs-internal.h
+index 55efa4b..fca4d76 100644
+--- a/libobs/obs-internal.h
++++ b/libobs/obs-internal.h
+@@ -342,6 +342,11 @@ struct obs_task_info {
+ 	void *param;
+ };
+ 
++/* Clipper: native-size, opaque SDR capture shortcut; graphics context held. */
++struct obs_core_video_mix;
++extern obs_source_t *obs_scene_native_capture(obs_source_t *source, uint32_t width, uint32_t height);
++extern void obs_ensure_mix_texture(struct obs_core_video_mix *video);
++
+ struct obs_core_video_mix {
+ 	struct obs_view *view;
+ 
+@@ -373,6 +378,9 @@ struct obs_core_video_mix {
+ 	struct deque gpu_encoder_queue;
+ 	struct deque gpu_encoder_avail_queue;
+ 	size_t gpu_encoder_texture_count;
++	uint64_t clipper_native_frames;
++	bool clipper_native_pending;
++	bool clipper_native_flip;
+ 	DARRAY(obs_encoder_t *) gpu_encoders;
+ 	os_sem_t *gpu_encode_semaphore;
+ 	os_event_t *gpu_encode_inactive;
+diff --git a/libobs/obs-scene.c b/libobs/obs-scene.c
+index 02fa144..e16ef1a 100644
+--- a/libobs/obs-scene.c
++++ b/libobs/obs-scene.c
+@@ -1093,6 +1093,44 @@ static void scene_video_render(void *data, gs_effect_t *effect)
+ 	UNUSED_PARAMETER(effect);
+ }
+ 
++/* Return a strong reference only for an identity, single-item scene. Pending
++ * transforms deliberately fall back so normal rendering updates scene state. */
++obs_source_t *obs_scene_native_capture(obs_source_t *source, uint32_t width, uint32_t height)
++{
++	obs_scene_t *scene = obs_scene_from_source(source);
++	if (!scene || scene->is_group || !obs_source_enabled(source) || obs_source_removed(source) ||
++	    obs_source_filter_count(source))
++		return NULL;
++	obs_source_t *capture = NULL;
++	video_lock(scene);
++	struct obs_scene_item *item = scene->first_item;
++	if (!item || item->next || !item->user_visible || !item->visible || item->removed ||
++	    item->is_group || item->is_scene || item->show_transition || item->hide_transition ||
++	    os_atomic_load_bool(&item->update_transform) || os_atomic_load_long(&item->defer_update) ||
++	    source_size_changed(item) || scene->last_width != width || scene->last_height != height ||
++	    crop_enabled(&item->crop) || crop_enabled(&item->bounds_crop) || item_texture_enabled(item) ||
++	    !default_blending_enabled(item))
++		goto done;
++	struct matrix4 identity;
++	matrix4_identity(&identity);
++	/* Numeric equality accepts signed zero, but no subpixel transforms. */
++	float actual[16], expected[16];
++	memcpy(actual, &item->draw_transform, sizeof(actual));
++	memcpy(expected, &identity, sizeof(expected));
++	for (size_t i = 0; i < 16; ++i)
++		if (actual[i] != expected[i])
++			goto done;
++	source = item->source;
++	if (!obs_source_enabled(source) || obs_source_removed(source) || obs_source_filter_count(source) ||
++	    obs_source_get_width(source) != width || obs_source_get_height(source) != height ||
++	    strcmp(obs_source_get_id(source), "vkcapture-source") != 0)
++		goto done;
++	capture = obs_source_get_ref(source);
++done:
++	video_unlock(scene);
++	return capture;
++}
++
+ static void set_visibility(struct obs_scene_item *item, bool vis)
+ {
+ 	pthread_mutex_lock(&item->actions_mutex);
+diff --git a/libobs/obs-video.c b/libobs/obs-video.c
+index 357cdf3..a99213f 100644
+--- a/libobs/obs-video.c
++++ b/libobs/obs-video.c
+@@ -202,6 +202,7 @@ static inline void render_main_texture(struct obs_core_video_mix *video)
+ 		obs_view_render(video->view);
+ 
+ 	video->texture_rendered = true;
++	video->clipper_native_pending = false;
+ 
+ 	pthread_mutex_lock(&obs->data.draw_callbacks_mutex);
+ 
+@@ -216,6 +217,35 @@ static inline void render_main_texture(struct obs_core_video_mix *video)
+ 	profile_end(render_main_texture_name);
+ }
+ 
++/* Preview requests can materialize the scene after a bypassed video tick.
++ * Preserve the caller's graphics state and never expose the stale RGB target. */
++void obs_ensure_mix_texture(struct obs_core_video_mix *video)
++{
++	if (!video || !video->clipper_native_pending || video->texture_rendered || !video->render_texture)
++		return;
++	/* Source ticks can take their own mutex before entering graphics. A caller
++	 * must queue its preview on OBS_TASK_GRAPHICS before taking graphics. */
++	if (!obs_in_task_thread(OBS_TASK_GRAPHICS))
++		return;
++	gs_texture_t *target = gs_get_render_target();
++	gs_zstencil_t *zs = gs_get_zstencil_target();
++	enum gs_color_space space = gs_get_color_space();
++	bool srgb = gs_framebuffer_srgb_enabled();
++	gs_viewport_push();
++	gs_projection_push();
++	gs_matrix_push();
++	gs_blend_state_push();
++	gs_matrix_identity();
++	gs_reset_blend_state();
++	render_main_texture(video);
++	gs_set_render_target_with_color_space(target, zs, space);
++	gs_enable_framebuffer_srgb(srgb);
++	gs_blend_state_pop();
++	gs_matrix_pop();
++	gs_projection_pop();
++	gs_viewport_pop();
++}
++
+ static inline gs_effect_t *get_scale_effect_internal(struct obs_core_video_mix *mix)
+ {
+ 	struct obs_core_video *video = &obs->video;
+@@ -372,6 +402,8 @@ static void render_convert_texture(struct obs_core_video_mix *video, gs_texture_
+ 		gs_effect_set_vec4(color_vec0, &vec0);
+ 		gs_effect_set_float(sdr_white_nits_over_maximum, multiplier);
+ 		gs_effect_set_float(hdr_lw, hdr_nominal_peak_level);
++		gs_effect_set_float(gs_effect_get_param_by_name(effect, "clipper_flip"), video->clipper_native_flip);
++		gs_effect_set_float(gs_effect_get_param_by_name(effect, "clipper_height"), gs_texture_get_height(texture));
+ 		render_convert_plane(effect, convert_textures[0], video->conversion_techs[0]);
+ 
+ 		if (convert_textures[1]) {
+@@ -383,6 +415,7 @@ static void render_convert_texture(struct obs_core_video_mix *video, gs_texture_
+ 			gs_effect_set_float(height_i, video->conversion_height_i);
+ 			gs_effect_set_float(sdr_white_nits_over_maximum, multiplier);
+ 			gs_effect_set_float(hdr_lw, hdr_nominal_peak_level);
++			gs_effect_set_float(gs_effect_get_param_by_name(effect, "clipper_flip"), video->clipper_native_flip);
+ 			render_convert_plane(effect, convert_textures[1], video->conversion_techs[1]);
+ 
+ 			if (convert_textures[2]) {
+@@ -392,6 +425,7 @@ static void render_convert_texture(struct obs_core_video_mix *video, gs_texture_
+ 				gs_effect_set_float(height_i, video->conversion_height_i);
+ 				gs_effect_set_float(sdr_white_nits_over_maximum, multiplier);
+ 				gs_effect_set_float(hdr_lw, hdr_nominal_peak_level);
++				gs_effect_set_float(gs_effect_get_param_by_name(effect, "clipper_flip"), video->clipper_native_flip);
+ 				render_convert_plane(effect, convert_textures[2], video->conversion_techs[2]);
+ 			}
+ 		}
+@@ -588,6 +622,68 @@ done:
+ 	return rendered;
+ }
+ 
++/* Called with channels_mutex held. Audio-only output channels do not draw. */
++static bool native_capture_single_video_channel(struct obs_view *view)
++{
++	for (size_t i = 1; i < MAX_CHANNELS; ++i)
++		if (view->channels[i] && (obs_source_get_output_flags(view->channels[i]) & OBS_SOURCE_VIDEO))
++			return false;
++	return view->channels[0] != NULL;
++}
++
++static bool render_native_capture(struct obs_core_video_mix *video)
++{
++	const char *setting = getenv("CLIPPER_NATIVE_CAPTURE");
++	const struct video_output_info *info = video_output_get_info(video->video);
++	if ((setting && strcmp(setting, "0") == 0) || !video_output_matches_base_resolution(video) ||
++	    info->format != VIDEO_FORMAT_NV12 || info->colorspace != VIDEO_CS_709 ||
++	    info->range != VIDEO_RANGE_FULL || video->render_space != GS_CS_SRGB ||
++	    gs_get_device_type() != GS_DEVICE_OPENGL || obs->video.mixes.num != 1)
++		return false;
++	pthread_mutex_lock(&obs->data.draw_callbacks_mutex);
++	bool callbacks = obs->data.draw_callbacks.num || obs->data.rendered_callbacks.num;
++	pthread_mutex_unlock(&obs->data.draw_callbacks_mutex);
++	pthread_mutex_lock(&obs->data.displays_mutex);
++	bool displays = obs->data.first_display != NULL;
++	pthread_mutex_unlock(&obs->data.displays_mutex);
++	if (callbacks || displays)
++		return false;
++
++	obs_source_t *scene = NULL;
++	pthread_mutex_lock(&video->view->channels_mutex);
++	if (native_capture_single_video_channel(video->view))
++		scene = obs_source_get_ref(video->view->channels[0]);
++	pthread_mutex_unlock(&video->view->channels_mutex);
++	if (!scene)
++		return false;
++	obs_source_t *source = obs_scene_native_capture(scene, info->width, info->height);
++	obs_source_release(scene);
++	if (!source)
++		return false;
++
++	calldata_t cd;
++	calldata_init(&cd);
++	bool rendered = false;
++	if (proc_handler_call(obs_source_get_proc_handler(source), "clipper_native_texture", &cd)) {
++		gs_texture_t *texture = calldata_ptr(&cd, "texture");
++		if (texture && gs_texture_get_width(texture) == info->width &&
++		    gs_texture_get_height(texture) == info->height) {
++			video->clipper_native_flip = calldata_bool(&cd, "flip");
++			rendered = render_direct_surface(video, texture);
++			video->clipper_native_flip = false;
++		}
++	}
++	calldata_free(&cd);
++	obs_source_release(source);
++	if (rendered) {
++		video->texture_rendered = false;
++		video->clipper_native_pending = true;
++		if (!video->clipper_native_frames++)
++			blog(LOG_INFO, "Clipper native capture: bypassing RGB scene render");
++	}
++	return rendered;
++}
++
+ static inline void render_video(struct obs_core_video_mix *video, bool raw_active, const bool gpu_active,
+ 				int cur_texture)
+ {
+@@ -596,6 +692,9 @@ static inline void render_video(struct obs_core_video_mix *video, bool raw_activ
+ 	gs_enable_depth_test(false);
+ 	gs_set_cull_mode(GS_NEITHER);
+ 
++	if (gpu_active && !raw_active && render_native_capture(video))
++		goto done;
++
+ 	render_main_texture(video);
+ 
+ 	if (raw_active || gpu_active) {
+@@ -629,6 +728,7 @@ static inline void render_video(struct obs_core_video_mix *video, bool raw_activ
+ 		}
+ 	}
+ 
++done:
+ 	gs_set_render_target(NULL, NULL);
+ 	gs_enable_blending(true);
+ 
+diff --git a/libobs/obs.c b/libobs/obs.c
+index 2e5ea64..97a3595 100644
+--- a/libobs/obs.c
++++ b/libobs/obs.c
+@@ -798,6 +798,9 @@ static void obs_free_render_textures(struct obs_core_video_mix *video)
+ 
+ void obs_free_video_mix(struct obs_core_video_mix *video)
+ {
++	if (video && video->clipper_native_frames)
++		blog(LOG_INFO, "Clipper native capture: bypassed_frames=%llu",
++		     (unsigned long long)video->clipper_native_frames);
+ 	if (video->video) {
+ 		video_output_close(video->video);
+ 		video->video = NULL;
+@@ -2248,6 +2251,7 @@ gs_texture_t *obs_get_main_texture(void)
+ 	struct obs_core_video_mix *video;
+ 
+ 	video = obs->data.main_canvas->mix;
++	obs_ensure_mix_texture(video);
+ 	if (!video->texture_rendered)
+ 		return NULL;

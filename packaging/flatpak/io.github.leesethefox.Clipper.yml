@@ -170,6 +170,14 @@ modules:
         path: patches/obs-low-resource-video.patch
       - type: patch
         path: patches/obs-replay-save-result.patch
+      - type: patch
+        path: patches/obs-vaapi-import-cache.patch
+      - type: patch
+        path: patches/obs-vaapi-direct-surfaces.patch
+      - type: patch
+        path: patches/obs-native-capture.patch
+      - type: patch
+        path: patches/obs-lazy-video-buffers.patch
 
   # Build the receiver and portable game hooks from the same patched source.
   - name: obs-vkcapture
@@ -195,6 +203,8 @@ modules:
         path: patches/obs-vkcapture-copy-pacing.patch
       - type: patch
         path: patches/obs-vkcapture-consumer-pacing.patch
+      - type: patch
+        path: patches/obs-vkcapture-native-texture.patch
       - type: file
         path: ../../engine/gamecapture/copy_pacing.h
         dest: src
