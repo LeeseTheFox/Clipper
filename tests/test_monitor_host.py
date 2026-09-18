@@ -193,6 +193,29 @@ def _probe(monitor_binary: Path, config_path: Path, proc_root: Path) -> dict:
     return json.loads(completed.stdout)
 
 
+@pytest.mark.parametrize("rules,expected", [
+    ([], 0),
+    ([{"match_mode": "executable", "executable_path": "/games/example"}], 1),
+])
+def test_exact_and_obs_only_scans_skip_unused_fields(tmp_path, monitor_binary, rules, expected):
+    proc_root = tmp_path / "proc"
+    proc_root.mkdir()
+    _add_proc(proc_root, "123", comm="example", exe="/games/example")
+    # Reading either FIFO would block. They are irrelevant to these matchers.
+    for field in ("cmdline", "environ"):
+        path = proc_root / "123" / field
+        path.unlink()
+        os.mkfifo(path)
+    config = tmp_path / "config.json"
+    _write_config(config, rules)
+    result = subprocess.run(
+        [str(monitor_binary), "--probe"], check=True, capture_output=True, text=True,
+        env={"CLIPPER_CONFIG_FILE": str(config), "CLIPPER_PROC_ROOT": str(proc_root)},
+        timeout=5,
+    )
+    assert json.loads(result.stdout)["matches"] == expected
+
+
 def _list_processes(monitor_binary: Path, proc_root: Path) -> list[dict]:
     completed = subprocess.run(
         [str(monitor_binary), "--list-processes"],

@@ -774,8 +774,31 @@ static void read_flatpak_identity(process_info_t *proc, const char *path)
     fclose(file);
 }
 
+enum process_fields {
+    PROCESS_CMDLINE = 1 << 0,
+    PROCESS_ENVIRON = 1 << 1,
+    PROCESS_FLATPAK = 1 << 2,
+    PROCESS_CWD = 1 << 3,
+    PROCESS_ALL = (1 << 4) - 1,
+};
+
+static unsigned required_process_fields(const monitor_config_t *config)
+{
+    unsigned fields = 0;
+    for (size_t i = 0; i < config->rule_count; ++i) {
+        const monitor_rule_t *rule = &config->rules[i];
+        if (rule->flatpak_id[0])
+            fields |= PROCESS_FLATPAK | PROCESS_ENVIRON;
+        /* Exact matching returns before the legacy name/path/Steam helpers. */
+        if (!rule->appid[0] && strcmp(rule->match_mode, "executable") == 0)
+            continue;
+        fields |= PROCESS_CMDLINE | PROCESS_ENVIRON | PROCESS_CWD;
+    }
+    return fields;
+}
+
 static bool read_processes(process_info_t *processes, size_t max_processes,
-                           size_t *count_out)
+                           size_t *count_out, unsigned fields)
 {
     const char *root = proc_root();
     DIR *dir = opendir(root);
@@ -805,16 +828,24 @@ static bool read_processes(process_info_t *processes, size_t max_processes,
         read_namespace_pids(proc, path);
         snprintf(path, sizeof(path), "%s/%s/comm", root, entry->d_name);
         read_text_field(proc->comm, sizeof(proc->comm), path);
-        snprintf(path, sizeof(path), "%s/%s/cmdline", root, entry->d_name);
-        read_text_field(proc->cmdline, sizeof(proc->cmdline), path);
-        snprintf(path, sizeof(path), "%s/%s/environ", root, entry->d_name);
-        read_text_field(proc->environ, sizeof(proc->environ), path);
-        snprintf(path, sizeof(path), "%s/%s/root/.flatpak-info", root, entry->d_name);
-        read_flatpak_identity(proc, path);
+        if (fields & PROCESS_CMDLINE) {
+            snprintf(path, sizeof(path), "%s/%s/cmdline", root, entry->d_name);
+            read_text_field(proc->cmdline, sizeof(proc->cmdline), path);
+        }
+        if (fields & PROCESS_ENVIRON) {
+            snprintf(path, sizeof(path), "%s/%s/environ", root, entry->d_name);
+            read_text_field(proc->environ, sizeof(proc->environ), path);
+        }
+        if (fields & PROCESS_FLATPAK) {
+            snprintf(path, sizeof(path), "%s/%s/root/.flatpak-info", root, entry->d_name);
+            read_flatpak_identity(proc, path);
+        }
         snprintf(path, sizeof(path), "%s/%s/exe", root, entry->d_name);
         read_link_field(proc->exe, sizeof(proc->exe), path);
-        snprintf(path, sizeof(path), "%s/%s/cwd", root, entry->d_name);
-        read_link_field(proc->cwd, sizeof(proc->cwd), path);
+        if (fields & PROCESS_CWD) {
+            snprintf(path, sizeof(path), "%s/%s/cwd", root, entry->d_name);
+            read_link_field(proc->cwd, sizeof(proc->cwd), path);
+        }
 
         if (proc->comm[0] || proc->cmdline[0] || proc->environ[0] ||
             proc->exe[0] || proc->cwd[0]) {
@@ -1065,7 +1096,7 @@ static int list_processes(void)
         return 2;
     }
 
-    if (!read_processes(processes, MAX_PROCESSES, &count)) {
+    if (!read_processes(processes, MAX_PROCESSES, &count, PROCESS_ALL)) {
         fprintf(stderr, "[clipper-monitor] could not read process snapshot: %s\n",
                 strerror(errno));
         free(processes);
@@ -1165,7 +1196,8 @@ static int run_once(bool require_socket)
     processes = calloc(MAX_PROCESSES, sizeof(process_info_t));
     if (!processes)
         return 2;
-    if (!read_processes(processes, MAX_PROCESSES, &process_count)) {
+    if (!read_processes(processes, MAX_PROCESSES, &process_count,
+                        required_process_fields(&config))) {
         fprintf(stderr, "[clipper-monitor] could not read process snapshot: %s\n",
                 strerror(errno));
         free(processes);
@@ -1226,9 +1258,9 @@ static int run_service(void)
     if (!load_config(&config))
         return 2;
     stamp = current_config_stamp();
+    process_info_t *processes = NULL;
 
     for (;;) {
-        process_info_t *processes;
         size_t process_count = 0;
         config_stamp_t current_stamp = current_config_stamp();
         if (!config_stamp_equal(stamp, current_stamp)) {
@@ -1246,11 +1278,14 @@ static int run_service(void)
         if (fd < 0)
             fd = connect_monitor_socket();
 
-        processes = calloc(MAX_PROCESSES, sizeof(process_info_t));
+        /* Only read_processes' populated entries are initialized/touched. */
+        if (!processes)
+            processes = malloc(MAX_PROCESSES * sizeof(process_info_t));
         if (!processes) {
             fprintf(stderr, "[clipper-monitor] could not allocate process snapshot: %s\n",
                     strerror(errno));
-        } else if (!read_processes(processes, MAX_PROCESSES, &process_count)) {
+        } else if (!read_processes(processes, MAX_PROCESSES, &process_count,
+                                   required_process_fields(&config))) {
             fprintf(stderr, "[clipper-monitor] could not read process snapshot: %s\n",
                     strerror(errno));
         } else {
@@ -1309,12 +1344,12 @@ static int run_service(void)
                 }
             }
         }
-        free(processes);
         loops++;
         if (max_loops > 0 && loops >= max_loops)
             break;
         usleep((useconds_t)sleep_ms * 1000);
     }
+    free(processes);
     if (fd >= 0)
         close(fd);
     return 0;
