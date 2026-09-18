@@ -34,6 +34,9 @@ MANIFEST
 repo/
 .flatpak-builder/
 
+# Personal performance experiments and measurements
+/perf_testing/
+
 # PyInstaller
 *.manifest
 *.spec

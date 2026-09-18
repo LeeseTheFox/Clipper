@@ -315,6 +315,7 @@ modules:
           - build-dir-download
           - repo
           - venv
+          - perf_testing
           - engine/monitor/clipper-monitor-host
           - engine/src/clipper-engine
           - engine/src/obs-ffmpeg-mux
