@@ -104,7 +104,8 @@ def waveform_decode_command(source, track, channel_count: int) -> list[str]:
         (
             f"aformat={format_options},"
             f"asetnsamples=n={bucket_samples}:pad=0,"
-            "astats=metadata=1:reset=1,"
+            "astats=metadata=1:reset=1:measure_perchannel=none:"
+            "measure_overall=Min_level+Max_level,"
             "ametadata=mode=print:file=-"
         ),
         "-f",
