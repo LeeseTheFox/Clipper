@@ -25,6 +25,11 @@
     <binary>clipper</binary>
   </provides>
   <releases>
+    <release version="1.0.6" date="2026-09-19">
+      <description>
+        <p>Improve rendering, capture performance, and interface polish.</p>
+      </description>
+    </release>
     <release version="1.0.5" date="2026-09-11">
       <description>
         <p>Add game details, better process detection, and improved clip and audio handling.</p>
