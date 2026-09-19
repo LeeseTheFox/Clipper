@@ -1,0 +1,34 @@
+--- a/libobs/obs-video.c
++++ b/libobs/obs-video.c
+@@ -691,7 +691,31 @@
++/* A headless inactive mix has no GPU consumer. Keep source ticks and graphics
++ * tasks running, but materialize its RGB scene only if a preview requests it.
++ * Observers and multiple mixes retain the ordinary eager-render semantics. */
++static bool clipper_defer_idle_render(struct obs_core_video_mix *video, bool raw_active, bool gpu_active)
++{
++	const char *setting = getenv("CLIPPER_IDLE_RENDER");
++	if (raw_active || gpu_active || obs->video.mixes.num != 1 ||
++	    (setting && strcmp(setting, "0") == 0))
++		return false;
++	pthread_mutex_lock(&obs->data.draw_callbacks_mutex);
++	bool callbacks = obs->data.draw_callbacks.num || obs->data.rendered_callbacks.num;
++	pthread_mutex_unlock(&obs->data.draw_callbacks_mutex);
++	pthread_mutex_lock(&obs->data.displays_mutex);
++	bool displays = obs->data.first_display != NULL;
++	pthread_mutex_unlock(&obs->data.displays_mutex);
++	if (callbacks || displays)
++		return false;
++	video->texture_rendered = false;
++	video->clipper_native_pending = true;
++	return true;
++}
++
+ static inline void render_video(struct obs_core_video_mix *video, bool raw_active, const bool gpu_active,
+ 				int cur_texture)
+ {
++	if (clipper_defer_idle_render(video, raw_active, gpu_active))
++		return;
+ 	gs_begin_scene();
+ 
+ 	gs_enable_depth_test(false);
+ 	gs_set_cull_mode(GS_NEITHER);

@@ -177,6 +177,8 @@ modules:
       - type: patch
         path: patches/obs-native-capture.patch
       - type: patch
+        path: patches/obs-idle-render.patch
+      - type: patch
         path: patches/obs-lazy-video-buffers.patch
       - type: patch
         path: patches/obs-pipewire-import-cache.patch

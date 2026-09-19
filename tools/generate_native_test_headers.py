@@ -8,6 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 HEADERS = {
+    "idle_render_under_test.h": (("obs-idle-render.patch", "clipper_defer_idle_render"),),
     "native_capture_under_test.h": (
         ("obs-native-capture.patch", "obs_scene_native_capture"),
         ("obs-native-capture.patch", "native_capture_single_video_channel"),
