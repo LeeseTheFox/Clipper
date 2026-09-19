@@ -331,8 +331,8 @@ _EDITOR_CSS = """
     min-height: 24px;
     padding: 0 4px;
     border-radius: 6px;
-    background-color: alpha(@accent_color, 0.18);
-    border: 1px solid alpha(@accent_color, 0.28);
+    background-color: color-mix(in srgb, var(--accent-color) 18%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent-color) 28%, transparent);
     color: @window_fg_color;
     font-weight: 700;
 }

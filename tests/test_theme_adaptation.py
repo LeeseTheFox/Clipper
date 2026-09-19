@@ -78,7 +78,7 @@ def test_editor_css_parses_and_uses_theme_aware_surfaces():
         "@view_bg_color",
         "@card_bg_color",
         "@headerbar_bg_color",
-        "@accent_color",
+        "var(--accent-color)",
         "@error_color",
     ):
         assert color_name in _EDITOR_CSS
@@ -287,8 +287,21 @@ def test_clip_and_game_metadata_use_restrained_value_highlights():
 
     assert ".clipper-metadata-chip" in window_source
     assert ".clipper-accent-chip" in window_source
+    accent_rule = window_source.split(".clipper-accent-chip {", 2)[2].split("}", 1)[0]
+    assert "color: var(--accent-color);" in accent_rule
+    assert "@accent_color" not in accent_rule
+    assert "var(--accent-color) 12%" in accent_rule
+    assert "var(--accent-color) 18%" in accent_rule
     assert 'duration_label.add_css_class("clipper-accent-chip")' in clips_source
     assert 'game_box.add_css_class("clipper-metadata-chip")' in clips_source
     assert 'source_box.add_css_class("clipper-metadata-chip")' in games_source
     assert 'capture_label.add_css_class("clipper-accent-chip")' in games_source
     assert 'add_button.add_css_class("suggested-action")' in games_source
+
+
+def test_editor_track_badges_use_adjusted_accent_color():
+    badge_rule = _EDITOR_CSS.split(".editor-track-badge {", 1)[1].split("}", 1)[0]
+
+    assert "@accent_color" not in badge_rule
+    assert "var(--accent-color) 18%" in badge_rule
+    assert "var(--accent-color) 28%" in badge_rule

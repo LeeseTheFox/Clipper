@@ -659,9 +659,9 @@ class MainWindow(Adw.ApplicationWindow):
             }
 
             .clipper-accent-chip {
-                color: @accent_color;
-                background-color: alpha(@accent_color, 0.12);
-                border: 1px solid alpha(@accent_color, 0.18);
+                color: var(--accent-color);
+                background-color: color-mix(in srgb, var(--accent-color) 12%, transparent);
+                border: 1px solid color-mix(in srgb, var(--accent-color) 18%, transparent);
                 font-weight: 600;
             }
 
