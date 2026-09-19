@@ -124,6 +124,27 @@ int main(void)
     REJECT(capture.id, "other");
     assert(capture.refs == 1);
 #undef REJECT
+    /* Full-frame up/downscales qualify, but letterboxing and transforms do not. */
+    capture.width = 960;
+    capture.height = 540;
+    item.draw_transform.v[0] = 2560.0f / 960;
+    item.draw_transform.v[5] = 1440.0f / 540;
+    assert(obs_scene_native_capture(&source, 2560, 1440) == &capture);
+    item.draw_transform.v[12] = 0.25f;
+    assert(!obs_scene_native_capture(&source, 2560, 1440));
+    item.draw_transform.v[12] = 0;
+    capture.height = 600;
+    assert(!obs_scene_native_capture(&source, 2560, 1440));
+    capture.width = 3840;
+    capture.height = 2160;
+    item.draw_transform.v[0] = 2560.0f / 3840;
+    item.draw_transform.v[5] = 1440.0f / 2160;
+    assert(obs_scene_native_capture(&source, 2560, 1440) == &capture);
+    capture.width = 0;
+    assert(!obs_scene_native_capture(&source, 2560, 1440));
+    capture.width = 3840;
+    item.draw_transform.v[0] = -item.draw_transform.v[0];
+    assert(!obs_scene_native_capture(&source, 2560, 1440));
     gs_texture_t texture = {GS_BGRA};
     vkcapture_source_t ctx = {.texture = &texture, .client_id = 1, .buf_id = 1};
     calldata_t cd = {0};

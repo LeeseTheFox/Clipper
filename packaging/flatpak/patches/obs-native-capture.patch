@@ -2,18 +2,19 @@ diff --git a/libobs/data/format_conversion.effect b/libobs/data/format_conversio
 index 6d1088c..7c2af11 100644
 --- a/libobs/data/format_conversion.effect
 +++ b/libobs/data/format_conversion.effect
-@@ -42,6 +42,10 @@ uniform texture2d image1;
+@@ -42,6 +42,11 @@ uniform texture2d image1;
  uniform texture2d image2;
  uniform texture2d image3;
  
 +// Reset after each Clipper native capture submission; ordinary conversion is unchanged.
 +uniform float clipper_flip = 0.0;
 +uniform float clipper_height;
++uniform float2 clipper_output_size;
 +
  sampler_state def_sampler {
  	Filter   = Linear;
  	AddressU = Clamp;
-@@ -112,6 +116,8 @@ VertTexPosWide VSTexPos_Left(uint id : VERTEXID)
+@@ -112,6 +117,8 @@ VertTexPosWide VSTexPos_Left(uint id : VERTEXID)
  	float u_right = idHigh * 2.0;
  	float u_left = u_right - width_i;
  	float v = obs_glsl_compile ? (idLow * 2.0) : (1.0 - idLow * 2.0);
@@ -22,8 +23,55 @@ index 6d1088c..7c2af11 100644
  
  	VertTexPosWide vert_out;
  	vert_out.uuv = float3(u_left, u_right, v);
-@@ -218,7 +224,10 @@ VertTexPos VS422Left_Reverse(uint id : VERTEXID)
+@@ -218,7 +225,57 @@ VertTexPos VS422Left_Reverse(uint id : VERTEXID)
  
++// Match the opaque scene's bilinear sampling, including output-edge clamping.
++float3 clipper_scaled_rgb(float2 pos)
++{
++	float2 uv = clamp(pos, float2(0.5, 0.5), clipper_output_size - 0.5) / clipper_output_size;
++	if (clipper_flip > 0.5)
++		uv.y = 1.0 - uv.y;
++	return image.Sample(def_sampler, uv).rgb;
++}
++
++float PS_ClipperScaledY(FragPos frag_in) : TARGET
++{
++	return dot(color_vec0.xyz, clipper_scaled_rgb(frag_in.pos.xy)) + color_vec0.w;
++}
++
++float2 PS_ClipperScaledUV(FragPos frag_in) : TARGET
++{
++	// Reproduce the left-sited 4:2:0 filter over scaled RGB pixels.
++	float2 pos = frag_in.pos.xy * 2.0;
++	float3 rgb = (clipper_scaled_rgb(pos + float2(-1.5, -0.5)) +
++	              clipper_scaled_rgb(pos + float2(-1.5,  0.5)) +
++	              clipper_scaled_rgb(pos + float2(-0.5, -0.5)) * 2.0 +
++	              clipper_scaled_rgb(pos + float2(-0.5,  0.5)) * 2.0 +
++	              clipper_scaled_rgb(pos + float2( 0.5, -0.5)) +
++	              clipper_scaled_rgb(pos + float2( 0.5,  0.5))) * 0.125;
++	return float2(dot(color_vec1.xyz, rgb) + color_vec1.w,
++	              dot(color_vec2.xyz, rgb) + color_vec2.w);
++}
++
++// Separate techniques keep ordinary/native conversion shaders unchanged.
++technique Clipper_Scaled_Y
++{
++	pass
++	{
++		vertex_shader = VSPos(id);
++		pixel_shader = PS_ClipperScaledY(frag_in);
++	}
++}
++
++technique Clipper_Scaled_UV
++{
++	pass
++	{
++		vertex_shader = VSPos(id);
++		pixel_shader = PS_ClipperScaledUV(frag_in);
++	}
++}
++
  float PS_Y(FragPos frag_in) : TARGET
  {
 -	float3 rgb = image.Load(int3(frag_in.pos.xy, 0)).rgb;
@@ -42,7 +90,7 @@ index 55efa4b..fca4d76 100644
  	void *param;
  };
  
-+/* Clipper: native-size, opaque SDR capture shortcut; graphics context held. */
++/* Clipper: full-frame, opaque SDR capture shortcut; graphics context held. */
 +struct obs_core_video_mix;
 +extern obs_source_t *obs_scene_native_capture(obs_source_t *source, uint32_t width, uint32_t height);
 +extern void obs_ensure_mix_texture(struct obs_core_video_mix *video);
@@ -50,13 +98,14 @@ index 55efa4b..fca4d76 100644
  struct obs_core_video_mix {
  	struct obs_view *view;
  
-@@ -373,6 +378,9 @@ struct obs_core_video_mix {
+@@ -373,6 +378,10 @@ struct obs_core_video_mix {
  	struct deque gpu_encoder_queue;
  	struct deque gpu_encoder_avail_queue;
  	size_t gpu_encoder_texture_count;
 +	uint64_t clipper_native_frames;
 +	bool clipper_native_pending;
 +	bool clipper_native_flip;
++	bool clipper_native_scaled;
  	DARRAY(obs_encoder_t *) gpu_encoders;
  	os_sem_t *gpu_encode_semaphore;
  	os_event_t *gpu_encode_inactive;
@@ -64,11 +113,11 @@ diff --git a/libobs/obs-scene.c b/libobs/obs-scene.c
 index 02fa144..e16ef1a 100644
 --- a/libobs/obs-scene.c
 +++ b/libobs/obs-scene.c
-@@ -1093,6 +1093,44 @@ static void scene_video_render(void *data, gs_effect_t *effect)
+@@ -1093,6 +1093,49 @@ static void scene_video_render(void *data, gs_effect_t *effect)
  	UNUSED_PARAMETER(effect);
  }
  
-+/* Return a strong reference only for an identity, single-item scene. Pending
++/* Return a strong reference only for a full-frame, single-item scene. Pending
 + * transforms deliberately fall back so normal rendering updates scene state. */
 +obs_source_t *obs_scene_native_capture(obs_source_t *source, uint32_t width, uint32_t height)
 +{
@@ -86,18 +135,23 @@ index 02fa144..e16ef1a 100644
 +	    crop_enabled(&item->crop) || crop_enabled(&item->bounds_crop) || item_texture_enabled(item) ||
 +	    !default_blending_enabled(item))
 +		goto done;
++	source = item->source;
++	uint32_t source_width = obs_source_get_width(source);
++	uint32_t source_height = obs_source_get_height(source);
++	if (!source_width || !source_height || !width || !height)
++		goto done;
 +	struct matrix4 identity;
 +	matrix4_identity(&identity);
 +	/* Numeric equality accepts signed zero, but no subpixel transforms. */
 +	float actual[16], expected[16];
 +	memcpy(actual, &item->draw_transform, sizeof(actual));
 +	memcpy(expected, &identity, sizeof(expected));
++	expected[0] = (float)width / source_width;
++	expected[5] = (float)height / source_height;
 +	for (size_t i = 0; i < 16; ++i)
 +		if (actual[i] != expected[i])
 +			goto done;
-+	source = item->source;
 +	if (!obs_source_enabled(source) || obs_source_removed(source) || obs_source_filter_count(source) ||
-+	    obs_source_get_width(source) != width || obs_source_get_height(source) != height ||
 +	    strcmp(obs_source_get_id(source), "vkcapture-source") != 0)
 +		goto done;
 +	capture = obs_source_get_ref(source);
@@ -157,24 +211,33 @@ index 357cdf3..a99213f 100644
  static inline gs_effect_t *get_scale_effect_internal(struct obs_core_video_mix *mix)
  {
  	struct obs_core_video *video = &obs->video;
-@@ -372,6 +402,8 @@ static void render_convert_texture(struct obs_core_video_mix *video, gs_texture_
+@@ -372,6 +402,13 @@ static void render_convert_texture(struct obs_core_video_mix *video, gs_texture_
  		gs_effect_set_vec4(color_vec0, &vec0);
  		gs_effect_set_float(sdr_white_nits_over_maximum, multiplier);
  		gs_effect_set_float(hdr_lw, hdr_nominal_peak_level);
 +		gs_effect_set_float(gs_effect_get_param_by_name(effect, "clipper_flip"), video->clipper_native_flip);
 +		gs_effect_set_float(gs_effect_get_param_by_name(effect, "clipper_height"), gs_texture_get_height(texture));
- 		render_convert_plane(effect, convert_textures[0], video->conversion_techs[0]);
++		struct vec2 output_size;
++		const struct video_output_info *info = video_output_get_info(video->video);
++		vec2_set(&output_size, (float)info->width, (float)info->height);
++		gs_effect_set_vec2(gs_effect_get_param_by_name(effect, "clipper_output_size"), &output_size);
+-		render_convert_plane(effect, convert_textures[0], video->conversion_techs[0]);
++		render_convert_plane(effect, convert_textures[0],
++			video->clipper_native_scaled ? "Clipper_Scaled_Y" : video->conversion_techs[0]);
  
  		if (convert_textures[1]) {
-@@ -383,6 +415,7 @@ static void render_convert_texture(struct obs_core_video_mix *video, gs_texture_
+@@ -383,6 +420,9 @@ static void render_convert_texture(struct obs_core_video_mix *video, gs_texture_
  			gs_effect_set_float(height_i, video->conversion_height_i);
  			gs_effect_set_float(sdr_white_nits_over_maximum, multiplier);
  			gs_effect_set_float(hdr_lw, hdr_nominal_peak_level);
 +			gs_effect_set_float(gs_effect_get_param_by_name(effect, "clipper_flip"), video->clipper_native_flip);
- 			render_convert_plane(effect, convert_textures[1], video->conversion_techs[1]);
++			gs_effect_set_vec2(gs_effect_get_param_by_name(effect, "clipper_output_size"), &output_size);
+-			render_convert_plane(effect, convert_textures[1], video->conversion_techs[1]);
++			render_convert_plane(effect, convert_textures[1],
++				video->clipper_native_scaled ? "Clipper_Scaled_UV" : video->conversion_techs[1]);
  
  			if (convert_textures[2]) {
-@@ -392,6 +425,7 @@ static void render_convert_texture(struct obs_core_video_mix *video, gs_texture_
+@@ -392,6 +431,7 @@ static void render_convert_texture(struct obs_core_video_mix *video, gs_texture_
  				gs_effect_set_float(height_i, video->conversion_height_i);
  				gs_effect_set_float(sdr_white_nits_over_maximum, multiplier);
  				gs_effect_set_float(hdr_lw, hdr_nominal_peak_level);
@@ -182,7 +245,7 @@ index 357cdf3..a99213f 100644
  				render_convert_plane(effect, convert_textures[2], video->conversion_techs[2]);
  			}
  		}
-@@ -588,6 +622,68 @@ done:
+@@ -588,6 +628,71 @@ done:
  	return rendered;
  }
  
@@ -230,11 +293,14 @@ index 357cdf3..a99213f 100644
 +	bool rendered = false;
 +	if (proc_handler_call(obs_source_get_proc_handler(source), "clipper_native_texture", &cd)) {
 +		gs_texture_t *texture = calldata_ptr(&cd, "texture");
-+		if (texture && gs_texture_get_width(texture) == info->width &&
-+		    gs_texture_get_height(texture) == info->height) {
++		if (texture && gs_texture_get_width(texture) == obs_source_get_width(source) &&
++		    gs_texture_get_height(texture) == obs_source_get_height(source)) {
 +			video->clipper_native_flip = calldata_bool(&cd, "flip");
++			video->clipper_native_scaled = gs_texture_get_width(texture) != info->width ||
++				gs_texture_get_height(texture) != info->height;
 +			rendered = render_direct_surface(video, texture);
 +			video->clipper_native_flip = false;
++			video->clipper_native_scaled = false;
 +		}
 +	}
 +	calldata_free(&cd);
@@ -251,7 +317,7 @@ index 357cdf3..a99213f 100644
  static inline void render_video(struct obs_core_video_mix *video, bool raw_active, const bool gpu_active,
  				int cur_texture)
  {
-@@ -596,6 +692,9 @@ static inline void render_video(struct obs_core_video_mix *video, bool raw_activ
+@@ -596,6 +701,9 @@ static inline void render_video(struct obs_core_video_mix *video, bool raw_activ
  	gs_enable_depth_test(false);
  	gs_set_cull_mode(GS_NEITHER);
  
@@ -261,7 +327,7 @@ index 357cdf3..a99213f 100644
  	render_main_texture(video);
  
  	if (raw_active || gpu_active) {
-@@ -629,6 +728,7 @@ static inline void render_video(struct obs_core_video_mix *video, bool raw_activ
+@@ -629,6 +737,7 @@ static inline void render_video(struct obs_core_video_mix *video, bool raw_activ
  		}
  	}
  
@@ -283,7 +349,7 @@ index 2e5ea64..97a3595 100644
  	if (video->video) {
  		video_output_close(video->video);
  		video->video = NULL;
-@@ -2248,6 +2251,7 @@ gs_texture_t *obs_get_main_texture(void)
+@@ -2248,5 +2251,6 @@ gs_texture_t *obs_get_main_texture(void)
  	struct obs_core_video_mix *video;
  
  	video = obs->data.main_canvas->mix;
