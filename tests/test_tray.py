@@ -97,27 +97,6 @@ def make_tray(status: str = ClipperTray.STATUS_IDLE) -> ClipperTray:
     return tray
 
 
-def test_idle_tray_state_is_neutral():
-    tray = make_tray(ClipperTray.STATUS_IDLE)
-
-    assert tray._icon_name() == "io.github.leesethefox.Clipper-symbolic"
-    assert tray._sni_status_name() == "Active"
-
-
-def test_recording_tray_state_keeps_regular_icon():
-    tray = make_tray(ClipperTray.STATUS_RECORDING)
-
-    assert tray._icon_name() == "io.github.leesethefox.Clipper-symbolic"
-    assert tray._sni_status_name() == "Active"
-
-
-def test_unknown_tray_state_falls_back_to_idle_presentation():
-    tray = make_tray("unexpected")
-
-    assert tray._icon_name() == "io.github.leesethefox.Clipper-symbolic"
-    assert tray._sni_status_name() == "Active"
-
-
 def test_icon_pixmap_property_is_empty_so_host_recolours_symbolic_icon():
     tray = make_tray()
 
@@ -155,12 +134,13 @@ def test_status_change_with_same_icon_only_updates_tooltip_and_menu():
 
 
 def test_icon_name_property_exposes_symbolic_icon_for_host_recolouring():
-    tray = make_tray()
-
-    value = tray._on_sni_get_property(None, None, None, None, "IconName")
-
-    assert value.signature == "s"
-    assert value.value == "io.github.leesethefox.Clipper-symbolic"
+    for state in (ClipperTray.STATUS_IDLE, ClipperTray.STATUS_RECORDING, "unexpected"):
+        tray = make_tray(state)
+        value = tray._on_sni_get_property(None, None, None, None, "IconName")
+        assert value.signature == "s"
+        assert value.value == "io.github.leesethefox.Clipper-symbolic", state
+        status = tray._on_sni_get_property(None, None, None, None, "Status")
+        assert status.value == "Active", state
 
 
 def test_flatpak_uses_the_status_notifier_hosts_icon_theme(monkeypatch):
@@ -181,20 +161,6 @@ def test_native_run_uses_the_status_notifier_hosts_icon_theme(monkeypatch):
 
     assert value.signature == "s"
     assert value.value == ""
-
-
-def test_visibility_action_label_shows_clipper_when_window_is_hidden():
-    tray = make_tray()
-    tray._window_visible_callback = lambda: False
-
-    assert tray._visibility_action_label() == "Show Clipper"
-
-
-def test_visibility_action_label_hides_clipper_when_window_is_visible():
-    tray = make_tray()
-    tray._window_visible_callback = lambda: True
-
-    assert tray._visibility_action_label() == "Hide Clipper"
 
 
 def test_setup_registers_object_path_without_claiming_dynamic_bus_name(monkeypatch):
@@ -271,6 +237,12 @@ def test_refresh_menu_emits_visibility_item_property_update():
     assert visibility_props["label"].value == "Hide Clipper"
     assert removed == []
     assert tray._connection.signals[1]["signal_name"] == "LayoutUpdated"
+
+    tray._connection.signals.clear()
+    tray._window_visible_callback = lambda: False
+    tray.refresh_menu()
+    updated, _removed = tray._connection.signals[0]["parameters"].value
+    assert updated[0][1]["label"].value == "Show Clipper"
 
 
 def test_about_to_show_reports_menu_needs_update():

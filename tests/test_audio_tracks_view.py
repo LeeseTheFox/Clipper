@@ -147,53 +147,6 @@ class SwitchStub:
         self.active = bool(active)
 
 
-class LabelStub:
-    def __init__(self):
-        self.text = ""
-        self.tooltip_text = ""
-        self.xalign = None
-        self.hexpand = False
-        self.width_chars = None
-        self.ellipsize = None
-        self.single_line_mode = False
-
-    def set_text(self, text):
-        self.text = text
-
-    def set_tooltip_text(self, text):
-        self.tooltip_text = text
-
-    def set_xalign(self, xalign):
-        self.xalign = xalign
-
-    def set_hexpand(self, hexpand):
-        self.hexpand = bool(hexpand)
-
-    def set_width_chars(self, width_chars):
-        self.width_chars = width_chars
-
-    def set_ellipsize(self, ellipsize):
-        self.ellipsize = ellipsize
-
-    def set_single_line_mode(self, single_line_mode):
-        self.single_line_mode = bool(single_line_mode)
-
-
-class ListItemStub:
-    def __init__(self, text=""):
-        self.child = None
-        self.item = types.SimpleNamespace(get_string=lambda: text)
-
-    def set_child(self, child):
-        self.child = child
-
-    def get_child(self):
-        return self.child
-
-    def get_item(self):
-        return self.item
-
-
 class EngineClientStub:
     def __init__(
         self,
@@ -373,27 +326,6 @@ def test_generic_playback_media_name_is_not_added_to_application_label():
 
     assert "App: ExampleApp" in dropdown.model
     assert "App: ExampleApp - Playback" not in dropdown.model
-
-
-def test_dropdown_labels_shrink_and_ellipsize_long_window_titles(monkeypatch):
-    view, _dropdown = _make_view()
-    monkeypatch.setattr(audio_tracks_module.Gtk, "Label", LabelStub, raising=False)
-    long_title = (
-        "App: Browser - A very long window title that should not force "
-        "Clipper wider than its normal window"
-    )
-    list_item = ListItemStub(long_title)
-
-    view._setup_dropdown_label(None, list_item)
-    view._bind_dropdown_label(None, list_item)
-
-    label = list_item.child
-    assert label is not None
-    assert label.text == long_title
-    assert label.tooltip_text is None
-    assert label.width_chars == 1
-    assert label.ellipsize == audio_tracks_module.Pango.EllipsizeMode.MIDDLE
-    assert label.single_line_mode is True
 
 
 def test_discovered_input_devices_are_microphone_device_options():

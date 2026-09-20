@@ -682,10 +682,6 @@ def test_settings_capability_probe_retries_until_engine_connects():
     assert view._encoder_row.sensitive is True
 
 
-def test_recording_formats_exclude_containers_without_multi_track_audio():
-    assert settings_module._FORMAT_VALUES == ["mkv", "mp4", "mov", "ts"]
-
-
 def test_runtime_recording_formats_are_limited_to_supported_containers():
     view = _make_view(connected=True)
     response = dict(view._engine_client.response)
@@ -910,18 +906,6 @@ def test_rate_control_visibility_switches_mode_specific_rows():
     assert view._quality_row.visible is False
     assert view._bitrate_row.visible is True
     assert view._max_bitrate_row.visible is True
-
-
-def test_bitrate_row_copy_matches_rate_control_mode():
-    view = _make_view()
-
-    view._update_rate_control_visibility("cbr")
-    assert view._bitrate_row.title == "Constant bitrate"
-    assert view._bitrate_row.subtitle == "Fixed video bitrate used for the entire recording"
-
-    view._update_rate_control_visibility("vbr")
-    assert view._bitrate_row.title == "Target bitrate"
-    assert view._bitrate_row.subtitle == "Target video bitrate the encoder will aim for"
 
 
 def test_cqp_slider_uses_reversed_clean_quality_range():

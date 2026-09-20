@@ -7,7 +7,6 @@ from types import SimpleNamespace
 import pytest
 from editor_waveform import (
     ANALYSIS_RATE,
-    WAVEFORM_VERSION,
     pcm_peak_buckets,
     waveform_channel_count,
     waveform_decode_command,
@@ -74,10 +73,6 @@ def test_pcm_peak_buckets_ignores_incomplete_trailing_sample():
 def test_unknown_waveform_channel_count_falls_back_to_mono():
     assert waveform_channel_count(SimpleNamespace(channels=0)) == 1
     assert waveform_channel_count(SimpleNamespace()) == 1
-
-
-def test_full_band_waveforms_use_a_new_cache_generation():
-    assert WAVEFORM_VERSION == 2
 
 
 @pytest.mark.parametrize("channels", [1, 2, 6])

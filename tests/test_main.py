@@ -824,33 +824,6 @@ def test_factory_reset_refreshes_window_and_reopens_setup():
     assert setup_calls == [True]
 
 
-def test_window_has_no_host_monitor_controls(monkeypatch):
-    app = make_status_application()
-    app._monitor_manager = MonitorManagerStub(available=False)
-    app._refresh_tray_menu = lambda: None
-    created = {}
-
-    class MainWindowStub:
-        def __init__(self, **kwargs):
-            created.update(kwargs)
-
-        def set_engine_status(self, _status):
-            pass
-
-        def connect(self, *_args):
-            pass
-
-        def present(self):
-            pass
-
-    monkeypatch.setattr(main_module, "MainWindow", MainWindowStub)
-
-    app.do_activate()
-
-    assert not any(key.startswith("monitor_") for key in created)
-    assert "hotkey_configure_callback" not in created
-
-
 def test_background_activation_starts_services_without_creating_window(monkeypatch):
     app = make_status_application()
     app._start_hidden = True
@@ -2109,49 +2082,6 @@ def test_obs_monitor_event_notifies_when_hidden_and_resets_after_exit():
         "It is advised to close OBS Studio or Clipper before recording."
     )
     assert withdrawn == ["obs-studio-conflict"]
-
-
-def test_obs_warning_uses_red_acknowledge_response(monkeypatch):
-    app = make_status_application()
-    app.window = object()
-    calls = []
-
-    class AlertDialogStub:
-        @classmethod
-        def new(cls, title, body):
-            calls.append(("new", title, body))
-            return cls()
-
-        def add_response(self, response_id, label):
-            calls.append(("add", response_id, label))
-
-        def set_response_appearance(self, response_id, appearance):
-            calls.append(("appearance", response_id, appearance))
-
-        def set_close_response(self, response_id):
-            calls.append(("close", response_id))
-
-        def set_default_response(self, response_id):
-            calls.append(("default", response_id))
-
-        def present(self, window):
-            calls.append(("present", window))
-
-    monkeypatch.setattr(main_module.Adw, "AlertDialog", AlertDialogStub)
-    monkeypatch.setattr(
-        main_module.Adw,
-        "ResponseAppearance",
-        types.SimpleNamespace(DESTRUCTIVE="destructive"),
-        raising=False,
-    )
-
-    app._show_obs_conflict_dialog()
-
-    assert ("add", "acknowledge", "Acknowledge") in calls
-    assert ("appearance", "acknowledge", "destructive") in calls
-    assert ("close", "acknowledge") in calls
-    assert ("default", "acknowledge") in calls
-    assert app._obs_conflict_dialog_shown is True
 
 
 def test_language_change_saves_and_offers_foreground_restart(monkeypatch):

@@ -243,9 +243,7 @@ def test_non_steam_launch_option_is_only_visible_for_game_capture():
 
     dialog._update_game_capture_launch_option_visibility()
     assert dialog.game_capture_launch_option_box.visible is False
-    assert requested_sizes[-1] == (400, 500)
 
     dialog.capture_mode_dropdown.selected = 1
     dialog._on_capture_mode_changed(dialog.capture_mode_dropdown, None)
     assert dialog.game_capture_launch_option_box.visible is True
-    assert requested_sizes[-1] == (400, 596)

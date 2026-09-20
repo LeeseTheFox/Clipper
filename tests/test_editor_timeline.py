@@ -13,29 +13,6 @@ from editor_timeline import (
     waveform_sample_step,
 )
 
-LEGACY_BASE_PIXELS_PER_SECOND = 110.0
-
-
-@pytest.mark.parametrize(
-    ("zoom", "legacy_zoom"),
-    ((1.0, 0.67), (0.10, 0.067)),
-)
-def test_zoom_density_matches_the_previous_scale_at_the_requested_levels(
-    zoom,
-    legacy_zoom,
-):
-    duration_us = 20_000_000
-
-    assert timeline_clip_width(zoom, duration_us) == timeline_clip_width(
-        legacy_zoom,
-        duration_us,
-        base_pixels_per_second=LEGACY_BASE_PIXELS_PER_SECOND,
-    )
-
-
-def test_zoom_base_is_calibrated_to_the_previous_67_percent_density():
-    assert BASE_PIXELS_PER_SECOND == pytest.approx(110.0 * 0.67)
-
 
 def test_short_timeline_keeps_requested_zoom_below_viewport_width():
     duration_us = 20_000_000

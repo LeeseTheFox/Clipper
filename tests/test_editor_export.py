@@ -524,19 +524,6 @@ def test_process_wide_capability_probe_runs_only_once(monkeypatch):
     assert editor_export.export_encoder_capability_result() is expected
 
 
-def test_clipper_defers_export_capability_probe_until_after_application_startup():
-    source = (Path(__file__).resolve().parents[1] / "ui" / "main.py").read_text(
-        encoding="utf-8"
-    )
-    startup = source.split("    def do_startup", 1)[1].split(
-        "    def _presentation_state", 1
-    )[0]
-
-    assert "GLib.timeout_add_seconds" in startup
-    assert "from editor_export" not in startup
-    assert "def _start_export_capability_probe" in source
-
-
 @pytest.mark.parametrize(
     ("video_codec", "encoder"),
     (

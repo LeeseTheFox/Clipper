@@ -152,24 +152,3 @@ def test_clipper_video_sink_detaches_gtk_sink_after_link_failure(monkeypatch):
     assert result == video_output.ClipperVideoSink(direct_sink, direct_sink, False)
     assert direct_sink.parent is None
     assert direct_sink not in sink_bin.children
-
-
-def test_bt1886_shader_maps_clipper_mid_gray_to_srgb_without_moving_endpoints():
-    def transform(code_value):
-        encoded = code_value / 255
-        linear = encoded**video_output.BT1886_GAMMA
-        if linear < video_output.SRGB_LINEAR_THRESHOLD:
-            output = video_output.SRGB_LINEAR_SCALE * linear
-        else:
-            output = (
-                video_output.SRGB_POWER_SCALE
-                * linear ** (1 / video_output.BT1886_GAMMA)
-                - video_output.SRGB_POWER_OFFSET
-            )
-        return round(output * 255)
-
-    assert transform(0) == 0
-    assert transform(128) == 121
-    assert transform(255) == 255
-    assert "pow(max(rgba.rgb" in video_output.BT1886_TO_SRGB_FRAGMENT
-    assert "step(vec3(0.0031308), linear_rgb)" in video_output.BT1886_TO_SRGB_FRAGMENT

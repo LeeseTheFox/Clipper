@@ -15,7 +15,6 @@ from steam import (
     CLIPPER_WRAPPER,
     AmbiguousSteamAccountError,
     CaptureProviderUnverifiedError,
-    SteamGame,
     SteamInstallation,
     SteamProcessCheckError,
     SteamRestartError,
@@ -115,31 +114,8 @@ def steam_not_running(monkeypatch):
 # ---------------------------------------------------------------------------
 
 
-def test_vkv_parse_basic_key_value():
-    assert vkv_parse('"key" "value"') == {"key": "value"}
-
-
-def test_vkv_parse_nested():
-    text = '"outer"\n{\n\t"inner"\t\t"val"\n}'
-    assert vkv_parse(text) == {"outer": {"inner": "val"}}
-
-
-def test_vkv_parse_comments_ignored():
-    text = '// This is a comment\n"key" "value"'
-    assert vkv_parse(text) == {"key": "value"}
-
-
-def test_vkv_parse_inline_comment_ignored():
-    text = '"k1" "v1" // inline\n"k2" "v2"'
-    assert vkv_parse(text) == {"k1": "v1", "k2": "v2"}
-
-
 def test_vkv_parse_empty_string():
     assert vkv_parse("") == {}
-
-
-def test_vkv_parse_empty_block():
-    assert vkv_parse('"key"\n{}') == {"key": {}}
 
 
 def test_vkv_parse_duplicate_keys_last_wins():
@@ -147,25 +123,20 @@ def test_vkv_parse_duplicate_keys_last_wins():
     assert vkv_parse(text) == {"k": "second"}
 
 
-def test_vkv_parse_keys_lowercased():
-    result = vkv_parse('"MyKey" "Value"')
-    assert "mykey" in result
-    assert "MyKey" not in result
-
-
-def test_vkv_parse_values_preserve_case():
-    result = vkv_parse('"key" "Hello World"')
-    assert result["key"] == "Hello World"
-
-
-def test_vkv_parse_deeply_nested():
-    text = '"a"\n{\n\t"b"\n\t{\n\t\t"c"\t\t"deep"\n\t}\n}'
-    assert vkv_parse(text) == {"a": {"b": {"c": "deep"}}}
-
-
-def test_vkv_parse_multiple_top_level_pairs():
-    text = '"k1" "v1"\n"k2" "v2"'
-    assert vkv_parse(text) == {"k1": "v1", "k2": "v2"}
+def test_vkv_parse_normalizes_keys_but_preserves_nested_values():
+    """Steam files can mix comments, key casing, nested and empty blocks."""
+    text = '''
+        // Steam configuration
+        "Root" {
+            "Child" { "LaunchOptions" "MANGOHUD=1 %command%" }
+            "Empty" {}
+        }
+        "Name" "Hello World" // Inline comment
+    '''
+    assert vkv_parse(text) == {
+        "root": {"child": {"launchoptions": "MANGOHUD=1 %command%"}, "empty": {}},
+        "name": "Hello World",
+    }
 
 
 def test_vkv_parse_escape_sequence_in_value():
@@ -174,75 +145,14 @@ def test_vkv_parse_escape_sequence_in_value():
     assert vkv_parse(text) == {"key": 'val"ue'}
 
 
-def test_vkv_parse_realistic_localconfig():
-    """A realistic localconfig.vdf snippet round-trips correctly."""
-    text = (
-        '"UserLocalConfigStore"\n'
-        "{\n"
-        '\t"Software"\n'
-        "\t{\n"
-        '\t\t"Valve"\n'
-        "\t\t{\n"
-        '\t\t\t"Steam"\n'
-        "\t\t\t{\n"
-        '\t\t\t\t"apps"\n'
-        "\t\t\t\t{\n"
-        '\t\t\t\t\t"730"\n'
-        "\t\t\t\t\t{\n"
-        '\t\t\t\t\t\t"LaunchOptions"\t\t"obs-gamecapture %command%"\n'
-        "\t\t\t\t\t}\n"
-        "\t\t\t\t}\n"
-        "\t\t\t}\n"
-        "\t\t}\n"
-        "\t}\n"
-        "}\n"
-    )
-    result = vkv_parse(text)
-    opts = result["userlocalconfigstore"]["software"]["valve"]["steam"]["apps"]["730"][
-        "launchoptions"
-    ]
-    assert opts == "obs-gamecapture %command%"
-
-
 # ---------------------------------------------------------------------------
 # 2. vkv_dump — output format and round-trips
 # ---------------------------------------------------------------------------
 
 
-def test_vkv_dump_flat_contains_key_and_value():
-    text = vkv_dump({"key": "value"})
-    assert '"key"' in text
-    assert '"value"' in text
-
-
-def test_vkv_dump_nested_contains_braces():
-    text = vkv_dump({"outer": {"inner": "val"}})
-    assert "{" in text and "}" in text
-    assert '"inner"' in text
-
-
-def test_vkv_dump_roundtrip_flat():
-    data = {"a": "1", "b": "2"}
-    assert vkv_parse(vkv_dump(data)) == data
-
-
 def test_vkv_dump_roundtrip_nested():
-    data = {"root": {"child": {"leaf": "value"}, "sibling": "other"}}
+    data = {"root": {"child": {"leaf": "Value"}, "sibling": "other", "empty": {}}}
     assert vkv_parse(vkv_dump(data)) == data
-
-
-def test_vkv_dump_roundtrip_empty_nested():
-    data = {"key": {}}
-    assert vkv_parse(vkv_dump(data)) == data
-
-
-def test_vkv_dump_indentation_increases_with_depth():
-    text = vkv_dump({"outer": {"inner": "val"}})
-    # Inner key should be indented more than outer key
-    outer_indent = len(text.split('"outer"')[0].split("\n")[-1])
-    inner_line = [ln for ln in text.splitlines() if '"inner"' in ln][0]
-    inner_indent = len(inner_line) - len(inner_line.lstrip("\t"))
-    assert inner_indent > outer_indent
 
 
 # ---------------------------------------------------------------------------
@@ -271,7 +181,7 @@ def test_get_installed_games_single_game(tmp_path):
     assert len(games) == 1
     assert games[0].appid == "730"
     assert games[0].name == "Counter-Strike 2"
-    assert "cs2" in games[0].install_path
+    assert games[0].install_path == str(steam_root / "steamapps/common/cs2")
 
 
 def test_get_installed_games_includes_local_steam_artwork(tmp_path):
@@ -399,25 +309,6 @@ def test_get_installed_games_sorted_by_name(tmp_path):
     assert games[1].name == "Zebra Game"
 
 
-def test_get_installed_games_returns_steam_game_dataclass(tmp_path):
-    steam_root = _make_fake_steam(
-        tmp_path,
-        games=[{"appid": "1", "name": "Test", "installdir": "test"}],
-    )
-    games = get_installed_games(steam_root)
-    assert isinstance(games[0], SteamGame)
-
-
-def test_get_installed_games_install_path_under_common(tmp_path):
-    steam_root = _make_fake_steam(
-        tmp_path,
-        games=[{"appid": "1", "name": "MyGame", "installdir": "mygame"}],
-    )
-    games = get_installed_games(steam_root)
-    assert "common" in games[0].install_path
-    assert "mygame" in games[0].install_path
-
-
 def test_get_installed_games_skips_corrupt_acf(tmp_path):
     """A garbled ACF file must not crash the scan."""
     steam_root = _make_fake_steam(
@@ -452,11 +343,6 @@ def test_discover_native_and_flatpak_installations_and_deduplicate_symlink(tmp_p
 # ---------------------------------------------------------------------------
 # 4. get_launch_options
 # ---------------------------------------------------------------------------
-
-
-def test_get_launch_options_returns_existing_value(tmp_path):
-    steam_root = _make_fake_steam(tmp_path, launch_options={"730": "obs-gamecapture %command%"})
-    assert get_launch_options("730", steam_root) == "obs-gamecapture %command%"
 
 
 def test_get_launch_options_returns_empty_for_missing_appid(tmp_path):
@@ -543,25 +429,7 @@ def test_set_launch_options_persists_to_disk(tmp_path, steam_not_running):
     steam_root = _make_fake_steam(tmp_path, launch_options={})
     set_launch_options("730", "obs-gamecapture %command%", steam_root)
     assert get_launch_options("730", steam_root) == "obs-gamecapture %command%"
-
-
-def test_set_launch_options_no_tmp_leftover(tmp_path, steam_not_running):
-    """Atomic write must leave no .tmp files behind."""
-    steam_root = _make_fake_steam(tmp_path, launch_options={})
-    set_launch_options("730", "test", steam_root)
-
-    userconfig_dir = steam_root / "userdata" / "12345678" / "config"
-    assert list(userconfig_dir.glob("*.tmp")) == []
-
-
-def test_set_launch_options_localconfig_is_valid_vkv_after_write(tmp_path, steam_not_running):
-    """The written file must be parseable VKV."""
-    steam_root = _make_fake_steam(tmp_path, launch_options={})
-    set_launch_options("730", "test", steam_root)
-
-    userconfig = steam_root / "userdata" / "12345678" / "config" / "localconfig.vdf"
-    data = vkv_parse(userconfig.read_text(encoding="utf-8"))
-    assert isinstance(data, dict) and data  # non-empty, valid
+    assert not list((steam_root / "userdata/12345678/config").glob("*.tmp"))
 
 
 def test_set_launch_options_preserves_other_apps(tmp_path, steam_not_running):
@@ -574,12 +442,6 @@ def test_set_launch_options_preserves_other_apps(tmp_path, steam_not_running):
 
     assert get_launch_options("730", steam_root) == "new-730"
     assert get_launch_options("440", steam_root) == "original-440"
-
-
-def test_set_launch_options_overwrites_existing(tmp_path, steam_not_running):
-    steam_root = _make_fake_steam(tmp_path, launch_options={"730": "old-option"})
-    set_launch_options("730", "new-option", steam_root)
-    assert get_launch_options("730", steam_root) == "new-option"
 
 
 def test_set_launch_options_raises_if_steam_running(tmp_path, monkeypatch):
@@ -617,14 +479,6 @@ def test_inject_idempotent_returns_false(tmp_path, steam_not_running):
     )
     added = inject_capture_wrapper("730", steam_root, wrapper_path="/usr/bin/obs-gamecapture")
     assert added is False
-
-
-def test_inject_no_double_add(tmp_path, steam_not_running):
-    steam_root = _make_fake_steam(tmp_path, launch_options={"730": ""})
-    inject_capture_wrapper("730", steam_root, wrapper_path="/usr/bin/obs-gamecapture")
-    with pytest.raises(CaptureProviderUnverifiedError):
-        inject_capture_wrapper("730", steam_root)
-    assert get_launch_options("730", steam_root).count("/usr/bin/obs-gamecapture") == 1
 
 
 def test_inject_raises_if_steam_running(tmp_path, monkeypatch):
@@ -753,12 +607,6 @@ def test_remove_raises_if_steam_running(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 
 
-def test_is_steam_running_returns_bool():
-    """`_is_steam_running()` must return a plain bool without raising."""
-    result = _is_steam_running()
-    assert isinstance(result, bool)
-
-
 def test_is_steam_running_uses_host_processes_in_flatpak(monkeypatch):
     class HostManager:
         def available(self):
@@ -880,38 +728,6 @@ def test_restart_steam_around_stops_when_shutdown_fails(monkeypatch):
 
     with pytest.raises(SteamRestartError, match="shutdown failed"):
         restart_steam_around(lambda: None)
-
-
-def test_steam_running_mock_triggers_runtime_error(monkeypatch):
-    """When the mock says Steam is running, set_launch_options must raise."""
-    monkeypatch.setattr(steam_mod, "_is_steam_running", lambda *args, **kwargs: True)
-
-    # We need a valid steam root for this check to reach the RuntimeError.
-    # Use a dummy path — the error fires before any I/O.
-    import tempfile
-
-    with tempfile.TemporaryDirectory() as td:
-        root = Path(td) / "steam"
-        (root / "steamapps").mkdir(parents=True)
-        lc_text = (
-            '"UserLocalConfigStore"\n{\n\t"Software"\n\t{\n\t\t"Valve"\n\t\t{\n'
-            '\t\t\t"Steam"\n\t\t\t{\n\t\t\t\t"apps"\n\t\t\t\t{\n'
-            "\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n}\n"
-        )
-        uc = root / "userdata" / "1" / "config"
-        uc.mkdir(parents=True)
-        (uc / "localconfig.vdf").write_text(lc_text, encoding="utf-8")
-
-        with pytest.raises(RuntimeError, match="[Ss]team"):
-            set_launch_options("730", "test", root)
-
-
-def test_steam_not_running_mock_allows_write(monkeypatch, tmp_path):
-    """When the mock says Steam is not running, set_launch_options succeeds."""
-    monkeypatch.setattr(steam_mod, "_is_steam_running", lambda *args, **kwargs: False)
-    steam_root = _make_fake_steam(tmp_path, launch_options={})
-    set_launch_options("730", "hello", steam_root)
-    assert get_launch_options("730", steam_root) == "hello"
 
 
 def _bundled_wrapper() -> str:

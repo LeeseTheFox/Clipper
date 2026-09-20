@@ -21,8 +21,6 @@ from editor_model import AudioTrack, EditorProject, Source
 from editor_window import EditorWindow
 from gi.repository import Adw
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
-
 
 @pytest.fixture
 def export_dialog(monkeypatch, tmp_path):
@@ -92,7 +90,6 @@ def test_export_uses_native_adwaita_dialog_and_forward_quality_scale(export_dial
     assert dialog._options().output_width is None
     assert dialog._options().output_height is None
     assert dialog._options().audio_codec == "aac"
-    assert dialog.video_codec_row.get_subtitle() == "Encoder implementation"
     assert dialog.hardware_acceleration_row.get_active() is False
     assert dialog.hardware_acceleration_row.get_sensitive() is False
     assert dialog.hardware_acceleration_row.get_subtitle() == (
@@ -101,12 +98,6 @@ def test_export_uses_native_adwaita_dialog_and_forward_quality_scale(export_dial
     assert dialog.hardware_acceleration_row.get_tooltip_text() == (
         "libx264 — software encoding; hardware unavailable"
     )
-    assert dialog.rate_control_row.get_subtitle() == "Encoder bitrate and quality mode"
-    assert dialog.quality_row.get_subtitle() == (
-        "Lower number = better quality, larger file size"
-    )
-    assert dialog.audio_codec_row.get_subtitle() == "Audio compression format"
-    assert dialog.resolution_row.get_subtitle() == "Preserves the source aspect ratio"
     assert dialog.audio_layout_row.get_tooltip_text() == "Keep separate tracks"
     assert [
         dialog.resolution_row.get_model().get_string(index)
@@ -358,9 +349,6 @@ def test_completed_export_keeps_preserved_options_editable_for_another_export(
     assert dialog.options_page.get_visible() is True
     assert dialog.progress_revealer.get_reveal_child() is True
     assert dialog.export_button.get_visible() is False
-    assert dialog.export_progress.get_show_text() is False
-    assert dialog.export_progress.get_valign().value_nick == "center"
-    assert dialog.progress_percentage.get_valign().value_nick == "center"
     assert dialog.progress_cancel_button.get_label() == "Cancel"
     assert dialog.progress_show_button.get_visible() is False
 
@@ -524,18 +512,6 @@ def test_cancelling_close_notifies_session_end_caller():
 
     assert cancelled == [True]
     assert window._close_cancelled_callback is None
-
-
-def test_editor_routes_export_progress_and_cancellation_to_dialog():
-    source = (REPO_ROOT / "ui" / "editor_window.py").read_text(encoding="utf-8")
-
-    assert "self.export_status_revealer" not in source
-    assert "export_dialog.update_export_progress(progress)" in source
-    assert "exporter.finish(report_progress)" in source
-    assert "self._cancel_export," in source
-    assert "exporter.cancel()" in source
-    assert "if self._block_close_during_export():" in source
-    assert "dialog.present(self)" in source
 
 
 def test_starting_export_saves_current_draft_before_snapshotting(monkeypatch):

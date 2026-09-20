@@ -40,6 +40,41 @@ This file gives coding agents the minimum repo-specific instructions needed to w
 - This script runs pytest, Pyright, and Ruff, prints compact summaries, and shows any failures with their reasons. It is the preferred method for validating Python changes.
 - Run it without arguments so the complete test suite runs immediately. Optional pytest targets are available for focused iteration, but usually there's no point in using them if you intend to run the full suite afterward anyways.
 
+## Long-Term Test Policy
+
+- Read `tests/README.md` before adding or changing tests. Keep only tests with
+  a durable regression-protection purpose, not tests added merely because code
+  changed or to increase test count or coverage percentages.
+- Before adding a case, identify the plausible production failure it catches,
+  its user-visible consequence or operational risk, and why existing tests do
+  not already catch it. Make that purpose clear in the test name; add a short
+  comment when the protected invariant is not obvious.
+- Exercise production behavior and assert meaningful outcomes. Prioritize data
+  integrity, capture/export correctness, security, platform contracts, error
+  recovery, resource ownership and asynchronous lifecycle ordering.
+- Extend an existing behavioral test when it already covers the same contract.
+  Keep separate cases or parameters only for distinct failure modes, boundaries
+  or supported platform/protocol variants; avoid multiplying equivalent inputs.
+- Do not add source-substring snapshots, tests of copied test-side algorithms,
+  assertions that only confirm mock setup, trivial constant/getter checks, or
+  duplicates of lint/type checks. Mock dependencies, not the behavior being
+  verified.
+- Do not freeze incidental wording, widget hierarchy, CSS values, private helper
+  structure or current dependency versions. Assert the stable contract instead.
+  Static checks are appropriate for explicit repository-wide policies such as
+  gettext, icon usage, restricted permissions and pinned downloads, but must
+  enforce the policy rather than repeat today's implementation.
+- Temporary diagnostic tests do not belong in the permanent suite unless they
+  meet these criteria. When reviewing tests in scope, remove or consolidate
+  redundant or obsolete cases while preserving distinct regression protection.
+  Never remove a meaningful test merely because it fails or to reach a count.
+- Use the smallest reliable test that detects the real failure. Do not claim
+  mocked or source-level checks prove rendering, GPU or packaging behavior;
+  use the relevant integration, smoke or manual check when required.
+- Update the purpose map in `tests/README.md` when adding/removing a test module
+  or materially changing its coverage. In the handoff, explain the distinct
+  protection added or why removed coverage was redundant or obsolete.
+
 ## Release Automation
 
 - Pushing a tag matching `v*` to GitHub starts `.github/workflows/release.yml`.

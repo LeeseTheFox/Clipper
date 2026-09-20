@@ -1,11 +1,11 @@
 from types import SimpleNamespace
 
+import language_row
 import setup_window as _setup_window_module
+from i18n import Language
 from setup_window import (
     SetupWindow,
-    _encoder_label,
     _initial_setup_resolution,
-    _resolution_label,
 )
 
 
@@ -68,22 +68,6 @@ class StackStub:
         self.visible_child = child
 
 
-def test_setup_labels_present_resolution_and_runtime_codec_clearly():
-    assert _resolution_label("2560x1440") == "2560 × 1440"
-    assert _encoder_label(
-        {"id": "ffmpeg_vaapi", "name": "FFmpeg VAAPI", "codec": "h264"}
-    ) == "FFmpeg VAAPI (h264)"
-
-
-def test_new_setup_prefers_detected_native_resolution():
-    assert (
-        _initial_setup_resolution(
-            "1920x1080", "2560x1440", config_was_loaded=False
-        )
-        == "2560x1440"
-    )
-
-
 def test_setup_preserves_resolution_from_existing_config():
     assert (
         _initial_setup_resolution(
@@ -113,7 +97,10 @@ def test_new_setup_selects_and_saves_detected_native_resolution(monkeypatch):
     setup.destroy()
 
 
-def test_setup_welcome_page_has_the_catalog_driven_language_picker():
+def test_setup_welcome_page_has_the_catalog_driven_language_picker(monkeypatch):
+    monkeypatch.setattr(
+        language_row, "available_languages", lambda: [Language("uk", "Українська")]
+    )
     config = ConfigStub()
     selected = []
     setup = SetupWindow(
@@ -127,14 +114,12 @@ def test_setup_welcome_page_has_the_catalog_driven_language_picker():
     model = setup._language_row.get_model()
     assert [model.get_string(index) for index in range(model.get_n_items())] == [
         "System language",
-        "English",
-        "Русский",
         "Українська",
     ]
 
     setup._language_row.set_selected(1)
 
-    assert selected == [("en", setup)]
+    assert selected == [("uk", setup)]
     setup.destroy()
 
 

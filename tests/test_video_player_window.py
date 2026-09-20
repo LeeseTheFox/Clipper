@@ -12,7 +12,6 @@ from video_output import ClipperVideoSink
 from video_player_window import (
     _PLAYER_CSS,
     VideoPlayerWindow,
-    _volume_icon_name,
     discover_video_dimensions,
     fit_video_window_size,
 )
@@ -51,38 +50,12 @@ def test_player_controls_float_over_video_and_follow_hover():
     assert isinstance(video_overlay, Gtk.Overlay)
     assert video_overlay.get_child() is window._picture
     assert window._controls_revealer.get_reveal_child() is False
-    assert window._controls_revealer.get_halign() == Gtk.Align.FILL
-    assert window._controls_revealer.get_valign() == Gtk.Align.END
-    assert window._controls_revealer.get_margin_start() == 16
-    assert window._controls_revealer.get_margin_end() == 16
-    assert window._controls_revealer.get_margin_bottom() == 16
 
     window._on_video_hover_enter()
     assert window._controls_revealer.get_reveal_child() is True
 
     window._on_video_hover_leave()
     assert window._controls_revealer.get_reveal_child() is False
-    window.destroy()
-
-
-def test_player_transport_is_one_line_with_time_next_to_playback():
-    window = VideoPlayerWindow()
-    children = []
-    child = window._controls.get_first_child()
-    while child is not None:
-        children.append(child)
-        child = child.get_next_sibling()
-
-    assert window._controls.get_orientation() == Gtk.Orientation.HORIZONTAL
-    assert children == [
-        window._play_button,
-        window._time_label,
-        window._seek_scale,
-        window._volume_control,
-        window._fullscreen_button,
-    ]
-    assert window._time_label.has_css_class("monospace") is False
-    assert window._time_label.has_css_class("caption") is False
     window.destroy()
 
 
@@ -213,27 +186,6 @@ def test_seek_hold_pauses_without_movement_and_resumes_only_previous_playback():
     window.destroy()
 
 
-def test_gtk_range_dragging_state_drives_both_seek_hold_edges():
-    calls = []
-    state = {"dragging": False}
-    window = SimpleNamespace(
-        _seek_range_dragging=False,
-        _begin_seek_hold=lambda: calls.append("press"),
-        _end_seek_hold=lambda: calls.append("release"),
-    )
-    scale = SimpleNamespace(
-        has_css_class=lambda name: name == "dragging" and state["dragging"]
-    )
-
-    state["dragging"] = True
-    VideoPlayerWindow._on_seek_css_classes_changed(window, scale, None)
-    VideoPlayerWindow._on_seek_css_classes_changed(window, scale, None)
-    state["dragging"] = False
-    VideoPlayerWindow._on_seek_css_classes_changed(window, scale, None)
-
-    assert calls == ["press", "release"]
-
-
 def test_real_scale_dragging_class_pauses_and_resumes_pipeline():
     state = {"current": Gst.State.PLAYING}
     calls = []
@@ -348,16 +300,6 @@ def test_seek_worker_prerolls_every_superseding_commit_before_resume(monkeypatch
     window.destroy()
 
 
-def test_player_uses_requested_volume_icons():
-    assert _volume_icon_name(0) == "speaker-0-symbolic"
-    assert _volume_icon_name(0.01) == "speaker-2-symbolic"
-    assert _volume_icon_name(1 / 3) == "speaker-2-symbolic"
-    assert _volume_icon_name(0.34) == "speaker-2-symbolic"
-    assert _volume_icon_name(2 / 3) == "speaker-2-symbolic"
-    assert _volume_icon_name(0.67) == "speaker-3-symbolic"
-    assert _volume_icon_name(1) == "speaker-3-symbolic"
-
-
 def test_fullscreen_toggle_and_video_double_click_use_the_same_action():
     calls = []
     window = SimpleNamespace(
@@ -374,15 +316,6 @@ def test_fullscreen_toggle_and_video_double_click_use_the_same_action():
     VideoPlayerWindow._on_video_pressed(window, None, 1, 0, 0)
     VideoPlayerWindow._on_video_pressed(window, None, 2, 0, 0)
     assert calls == ["fullscreen", "playback", "playback", "double-click"]
-
-
-def test_single_video_click_toggles_playback_immediately():
-    calls = []
-    window = SimpleNamespace(_toggle_playback=lambda: calls.append("playback"))
-
-    VideoPlayerWindow._on_video_pressed(window, None, 1, 0, 0)
-
-    assert calls == ["playback"]
 
 
 def test_escape_leaves_fullscreen_before_it_closes_the_player():
@@ -408,10 +341,6 @@ def test_player_control_css_parses_cleanly():
     provider.load_from_string(_PLAYER_CSS)
 
     assert errors == []
-    assert ".clipper-player-timeline trough" in _PLAYER_CSS
-    assert ".clipper-player-timeline highlight" in _PLAYER_CSS
-    assert ".clipper-player-timeline slider" in _PLAYER_CSS
-    assert ".clipper-player-volume slider" in _PLAYER_CSS
 
 
 def test_player_resizes_when_the_paintable_reports_video_dimensions():

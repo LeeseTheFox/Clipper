@@ -417,16 +417,6 @@ def test_timeline_source_contains_async_preparation_state_changes():
     }
 
 
-def test_timeline_video_sink_allows_brief_cut_transition_lateness():
-    sink = FakeProperties()
-
-    editor_preview._configure_timeline_video_sink(sink)
-
-    assert sink.properties == {
-        "max-lateness": editor_preview.TIMELINE_VIDEO_MAX_LATENESS_NS,
-    }
-
-
 def test_timeline_prerolls_only_the_current_segment_before_playback():
     composition = TimelineComposition.__new__(TimelineComposition)
     composition.output_start_us = 3_100_000
@@ -476,34 +466,6 @@ def test_timeline_prepares_only_the_immediate_next_segment():
     composition._prepare_next_branch(1)
 
     assert appended == [(2, 2_000_000)]
-
-
-def test_timeline_keeps_source_contiguous_splits_as_independent_branches():
-    setting = {"a0": AudioSetting(gain=0.8)}
-    composition = TimelineComposition.__new__(TimelineComposition)
-    composition.project = SimpleNamespace(
-        segments=[
-            SimpleNamespace(source_start_us=0, source_end_us=100_000, audio=setting),
-            SimpleNamespace(
-                source_start_us=100_000,
-                source_end_us=133_334,
-                audio={"a0": AudioSetting(gain=0.8)},
-            ),
-            SimpleNamespace(
-                source_start_us=133_334,
-                source_end_us=183_335,
-                audio={"a0": AudioSetting(gain=0.8)},
-            ),
-            SimpleNamespace(
-                source_start_us=300_000,
-                source_end_us=500_000,
-                audio=setting,
-            ),
-        ]
-    )
-
-    assert composition._coalesced_end_index(0) == 0
-    assert composition._coalesced_end_index(3) == 3
 
 
 def test_timeline_ready_window_counts_playback_time_across_dense_splits():

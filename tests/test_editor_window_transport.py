@@ -47,15 +47,6 @@ def test_video_double_click_toggles_fullscreen_without_changing_playback_state()
     assert calls == ["playback", "playback", "fullscreen"]
 
 
-def test_single_video_click_toggles_playback_immediately():
-    calls = []
-    window = SimpleNamespace(_toggle_playback=lambda: calls.append("playback"))
-
-    EditorWindow._on_video_pressed(window, None, 1, 0, 0)
-
-    assert calls == ["playback"]
-
-
 def test_transport_combines_position_and_duration_like_the_player():
     window = SimpleNamespace(
         time_label=FakeLabel(),

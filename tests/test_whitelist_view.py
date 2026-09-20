@@ -259,13 +259,3 @@ def test_placeholder_color_is_stable_for_the_same_game_identity():
         f"clipper-placeholder-{color}"
         for color in whitelist_module._GAME_PLACEHOLDER_COLORS
     }
-
-
-def test_game_source_icons_follow_the_gtk_theme_color():
-    view = object.__new__(WhitelistView)
-
-    icon = view._new_action_icon(whitelist_module.STEAM, size=18)
-
-    assert icon.icon_name == "steam-symbolic"
-    assert icon.pixel_size == 18
-    assert icon.css_classes == ["clipper-secondary-label"]

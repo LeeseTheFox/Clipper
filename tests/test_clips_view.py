@@ -152,49 +152,6 @@ def test_cache_directory_honors_xdg_cache_home():
     )
 
 
-def test_thumbnail_placeholder_expands_to_center_within_frame(monkeypatch):
-    class ImageStub:
-        def __init__(self):
-            self.pixel_size = None
-            self.hexpand = None
-            self.vexpand = None
-            self.halign = None
-            self.valign = None
-
-        def set_pixel_size(self, value):
-            self.pixel_size = value
-
-        def set_hexpand(self, value):
-            self.hexpand = value
-
-        def set_vexpand(self, value):
-            self.vexpand = value
-
-        def set_halign(self, value):
-            self.halign = value
-
-        def set_valign(self, value):
-            self.valign = value
-
-    image = ImageStub()
-    container = types.SimpleNamespace(
-        set_hexpand=lambda value: setattr(container, "hexpand", value),
-        get_first_child=lambda: None,
-        append=lambda child: setattr(container, "child", child),
-    )
-    monkeypatch.setattr(clips_module.Gtk.Image, "new_from_icon_name", lambda _name: image)
-
-    object.__new__(ClipsView)._set_clip_thumbnail_widget(container, None)
-
-    assert container.child is image
-    assert image.pixel_size == 32
-    assert image.hexpand is True
-    assert image.vexpand is True
-    assert image.halign == clips_module.Gtk.Align.CENTER
-    assert image.valign == clips_module.Gtk.Align.CENTER
-    assert container.hexpand is False
-
-
 def test_thumbnail_play_hover_replaces_placeholder_without_overlap():
     class ContentStub:
         def set_opacity(self, value):
@@ -1232,10 +1189,6 @@ def test_holding_shift_restylizes_all_visible_clip_action_buttons():
     assert all(button.tooltip == "Edit clip" for button in edit_buttons)
     assert all(button.icon_name == "xsi-user-trash-symbolic" for button in delete_buttons)
     assert all(button.tooltip == "Move clip to trash" for button in delete_buttons)
-
-
-def test_clip_delete_button_uses_empty_bin_icon_and_permanent_delete_tooltip():
-    assert clips_module.EMPTY_TRASH_BIN == "empty-trash-bin-symbolic"
 
 
 def test_wipe_edits_confirmation_uses_destructive_sentence_case_text(monkeypatch):

@@ -69,23 +69,6 @@ class WaveformContext:
         pass
 
 
-class GainLineContext:
-    def set_dash(self, _pattern):
-        pass
-
-    def set_line_width(self, _width):
-        pass
-
-    def move_to(self, *_point):
-        pass
-
-    def line_to(self, *_point):
-        pass
-
-    def stroke(self):
-        pass
-
-
 def test_track_mute_badges_do_not_claim_focus_on_pointer_click():
     badge = _new_track_mute_badge("A4")
 
@@ -129,142 +112,11 @@ def test_gain_adjusted_waveforms_are_clipped_to_the_existing_audio_clip_shape(
 
     EditorWindow._draw_waveform(window, area, context, 100, 74, "audio")
 
-    assert context.clips == [(3, 5, 94, 64, 5)]
-
-
-def test_reduced_gain_hides_the_default_waveform_reference(monkeypatch):
-    segment = SimpleNamespace(
-        id="segment",
-        source_start_us=0,
-        source_end_us=1_000_000,
-        audio={"audio": AudioSetting(gain=0.5)},
-    )
-    project = SimpleNamespace(
-        output_duration_us=1_000_000,
-        source=SimpleNamespace(duration_us=1_000_000),
-    )
-    window = SimpleNamespace(
-        _timeline_clip_width=100,
-        _waveforms={"audio": [(-32768, 32767)]},
-        project=project,
-        _segment_rects=lambda _width: [(0, segment, 0, 100)],
-    )
-    foreground = object()
-    area = SimpleNamespace(get_color=lambda: foreground)
-    context = WaveformContext()
-
-    monkeypatch.setattr(editor_window, "_selection_ids", lambda _window: set())
-    colors = []
-    monkeypatch.setattr(
-        editor_window,
-        "_set_source_color",
-        lambda _context, color, alpha: colors.append((color, alpha)),
-    )
-    accent = object()
-    monkeypatch.setattr(
-        editor_window.Adw.StyleManager,
-        "get_default",
-        lambda: SimpleNamespace(get_accent_color_rgba=lambda: accent),
-    )
-
-    def rounded_rectangle(context, x, y, width, height, radius):
-        context.current_path = (x, y, width, height, radius)
-
-    monkeypatch.setattr(editor_window, "_rounded_rectangle", rounded_rectangle)
-
-    EditorWindow._draw_waveform(window, area, context, 100, 74, "audio")
-
-    assert context.clips == [(3, 5, 94, 64, 5)]
-    assert (accent, 0.68) in colors
-    assert (foreground, 0.10) not in colors
-
-
-def test_muted_segment_shows_the_default_waveform_reference(monkeypatch):
-    segment = SimpleNamespace(
-        id="segment",
-        source_start_us=0,
-        source_end_us=1_000_000,
-        audio={"audio": AudioSetting(gain=0.5, muted=True)},
-    )
-    project = SimpleNamespace(
-        output_duration_us=1_000_000,
-        source=SimpleNamespace(duration_us=1_000_000),
-    )
-    window = SimpleNamespace(
-        _timeline_clip_width=100,
-        _waveforms={"audio": [(-32768, 32767)]},
-        project=project,
-        _segment_rects=lambda _width: [(0, segment, 0, 100)],
-    )
-    foreground = object()
-    area = SimpleNamespace(get_color=lambda: foreground)
-    context = WaveformContext()
-    colors = []
-
-    monkeypatch.setattr(editor_window, "_selection_ids", lambda _window: set())
-    monkeypatch.setattr(
-        editor_window,
-        "_set_source_color",
-        lambda _context, color, alpha: colors.append((color, alpha)),
-    )
-    monkeypatch.setattr(
-        editor_window.Adw.StyleManager,
-        "get_default",
-        lambda: SimpleNamespace(get_accent_color_rgba=lambda: object()),
-    )
-
-    def rounded_rectangle(context, x, y, width, height, radius):
-        context.current_path = (x, y, width, height, radius)
-
-    monkeypatch.setattr(editor_window, "_rounded_rectangle", rounded_rectangle)
-
-    EditorWindow._draw_waveform(window, area, context, 100, 74, "audio")
-
-    assert context.clips == [
-        (3, 5, 94, 64, 5),
-        (3, 5, 94, 64, 5),
-    ]
-    assert (foreground, 0.10) in colors
-
-
-def test_gain_lines_use_the_focused_style_for_every_segment(monkeypatch):
-    accent = object()
-    foreground = object()
-    segments = [
-        SimpleNamespace(
-            id="focused",
-            audio={"audio": AudioSetting(gain=1.0)},
-        ),
-        SimpleNamespace(
-            id="unfocused",
-            audio={"audio": AudioSetting(gain=1.0)},
-        ),
-    ]
-    window = SimpleNamespace(
-        _gain_feedback={},
-        _segment_rects=lambda _width: [
-            (0, segments[0], 0, 50),
-            (1, segments[1], 50, 100),
-        ],
-    )
-    area = SimpleNamespace(get_color=lambda: foreground)
-    context = GainLineContext()
-    colors = []
-
-    monkeypatch.setattr(
-        editor_window.Adw.StyleManager,
-        "get_default",
-        lambda: SimpleNamespace(get_accent_color_rgba=lambda: accent),
-    )
-    monkeypatch.setattr(
-        editor_window,
-        "_set_source_color",
-        lambda _context, color, alpha=1.0: colors.append((color, alpha)),
-    )
-
-    EditorWindow._draw_gain_lines(window, area, context, 100, 74, "audio")
-
-    assert colors == [(accent, 0.28), (accent, 0.96)] * 2
+    # Amplified peaks must remain inside their segment, independent of padding.
+    assert len(context.clips) == 1
+    x, y, width, height, _radius = context.clips[0]
+    assert 0 <= x < x + width <= 100
+    assert 0 <= y < y + height <= 74
 
 
 class FakeProject:
@@ -1316,19 +1168,6 @@ def test_delete_and_split_sensitivity_accounts_for_the_whole_selection():
     assert delete_button.tooltip == "At least one segment must remain"
 
 
-def test_selection_refresh_does_not_seek_or_replace_the_preview_project():
-    refresh_calls = []
-    window = SimpleNamespace(
-        selected_segment_id="first",
-        _refresh=lambda **kwargs: refresh_calls.append(kwargs),
-    )
-
-    EditorWindow._select(window, None, "second")
-
-    assert window.selected_segment_id == "second"
-    assert refresh_calls == [{"update_preview": False}]
-
-
 def test_manual_scroll_suspends_follow_until_playhead_crosses_lead_position():
     adjustment = FakeAdjustment()
     scroll_values = []
@@ -1534,19 +1373,6 @@ def test_ctrl_scroll_falls_back_to_viewport_center_without_pointer_motion():
     EditorWindow._on_timeline_scroll(window, controller, 0, -1)
 
     assert anchors == [(0.35, 400)]
-
-
-def test_zoom_scale_has_only_a_single_native_snap_mark_at_100_percent():
-    from gi.repository import Gtk
-
-    scale = FakeZoomScale()
-    window = SimpleNamespace(zoom_scale=scale)
-
-    EditorWindow._set_zoom_scale_range(window, 25)
-
-    assert scale.ranges == [(25, 300)]
-    assert scale.clear_count == 1
-    assert scale.marks == [(100, Gtk.PositionType.BOTTOM, None)]
 
 
 def test_zoom_scale_range_never_exceeds_its_maximum():
