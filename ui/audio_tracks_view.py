@@ -779,6 +779,8 @@ class AudioTracksView(Gtk.Box):
                         and str(learned_from.get("install_path") or "") == install_path
                     ):
                         return copy.deepcopy(source)
+                    if learned_from.get("steam_appid") or learned_from.get("install_path"):
+                        continue
 
                 source_terms = self._runtime_source_terms(source)
                 if any(
@@ -1114,7 +1116,7 @@ class AudioTracksView(Gtk.Box):
                 and all(source.get("kind") == "game_app" for source in sources)
             ):
                 continue
-            if self._source_list_matches(whitelist_sources, sources):
+            if whitelist_sources == sources:
                 continue
 
             track["label"] = _("Whitelisted games")
@@ -1126,6 +1128,12 @@ class AudioTracksView(Gtk.Box):
         return changed
 
     def on_whitelist_changed(self):
+        """Persist aggregate sources and report whether live routing changed."""
+        active_routes_before = tuple(
+            tuple(self._source_key(source) for source in track.get("sources", []))
+            for track in self._audio["tracks"]
+            if track.get("enabled")
+        )
         previous_signature = self._source_options_signature()
         self._build_source_options()
         tracks_changed = self._sync_whitelisted_game_tracks()
@@ -1133,6 +1141,16 @@ class AudioTracksView(Gtk.Box):
             self._rebuild_source_models()
         if tracks_changed:
             self._save_audio(reveal_restart_banner=False)
+        active_routes_after = tuple(
+            tuple(self._source_key(source) for source in track.get("sources", []))
+            for track in self._audio["tracks"]
+            if track.get("enabled")
+        )
+        return (
+            tracks_changed
+            and self._audio["mode"] == "split_tracks"
+            and active_routes_before != active_routes_after
+        )
 
     def cleanup(self) -> None:
         """Stop the pactl watcher and outstanding refresh timers."""

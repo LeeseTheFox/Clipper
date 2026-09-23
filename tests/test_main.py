@@ -1804,6 +1804,23 @@ def test_restart_exit_code_does_not_mark_window_crashed():
     assert app._window_engine_status == "ready"
 
 
+def test_audio_route_restart_replaces_running_engine_before_ipc_connects():
+    entry = {"name": "Game", "appid": "123", "capture_mode": "display_capture"}
+    engine_manager = EngineManagerStub(running=True)
+    app = make_status_application(engine_manager=engine_manager)
+    app._config = ConfigStub(False, whitelist=[entry])
+    app._engine_client = EngineClientStub()
+    app._engine_client.disconnected = True
+    app._monitor_active_rules = {"steam-123": {"event": "process_started"}}
+    app._log = lambda _message: None
+    app._show_toast = lambda _message: None
+
+    app._restart_engine()
+
+    assert engine_manager.terminated is True
+    assert engine_manager.start_calls == ["display_capture"]
+
+
 def test_concurrent_capability_probes_keep_temporary_engine_until_all_finish():
     engine_manager = EngineManagerStub(running=True)
     app = make_status_application(engine_manager=engine_manager)

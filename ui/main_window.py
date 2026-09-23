@@ -399,8 +399,15 @@ class MainWindow(Adw.ApplicationWindow):
         self._preferences_dialog.present(self)
 
     def _on_whitelist_changed(self) -> None:
-        if self.audio_view is not None:
-            self.audio_view.on_whitelist_changed()
+        self._ensure_view("audio")
+        if self.audio_view is None or not self.audio_view.on_whitelist_changed():
+            return
+        if (
+            self._engine_restart_required_callback is not None
+            and self._engine_restart_required_callback()
+            and self._engine_restart_requested_callback is not None
+        ):
+            self._engine_restart_requested_callback()
 
     def show_toast(self, message):
         """Show a toast notification"""

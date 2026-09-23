@@ -94,17 +94,17 @@ msgstr "System audio"
 msgid "Microphone"
 msgstr "Microphone"
 
-#: ui/audio_tracks_view.py:672 ui/audio_tracks_view.py:996
-#: ui/audio_tracks_view.py:1120
+#: ui/audio_tracks_view.py:672 ui/audio_tracks_view.py:998
+#: ui/audio_tracks_view.py:1122
 msgid "Whitelisted games"
 msgstr "Whitelisted games"
 
-#: ui/audio_tracks_view.py:685 ui/audio_tracks_view.py:1012
+#: ui/audio_tracks_view.py:685 ui/audio_tracks_view.py:1014
 #, python-format
 msgid "App: %(name)s"
 msgstr "App: %(name)s"
 
-#: ui/audio_tracks_view.py:1010
+#: ui/audio_tracks_view.py:1012
 #, python-format
 msgid "Game: %(name)s"
 msgstr "Game: %(name)s"
@@ -1427,7 +1427,7 @@ msgstr "Exporting…"
 msgid "Exported to %(name)s"
 msgstr "Exported to %(name)s"
 
-#: ui/editor_window.py:3959 ui/main.py:2011 ui/settings_view.py:1719
+#: ui/editor_window.py:3959 ui/main.py:2013 ui/settings_view.py:1719
 msgid "Unknown error"
 msgstr "Unknown error"
 
@@ -1786,91 +1786,91 @@ msgstr "Could not send restart command to Clipper engine"
 msgid "Engine will start when a whitelisted game is running"
 msgstr "Engine will start when a whitelisted game is running"
 
-#: ui/main.py:1022
+#: ui/main.py:1024
 #, python-format
 msgid "Engine restart failed: %(error)s"
 msgstr "Engine restart failed: %(error)s"
 
-#: ui/main.py:1140
+#: ui/main.py:1142
 msgid "X11 capture uses the primary X11 display without a system picker."
 msgstr "X11 capture uses the primary X11 display without a system picker."
 
-#: ui/main.py:1149
+#: ui/main.py:1151
 msgid "The system display picker is already open."
 msgstr "The system display picker is already open."
 
-#: ui/main.py:1159
+#: ui/main.py:1161
 msgid "Stop the active game capture before changing the target display."
 msgstr "Stop the active game capture before changing the target display."
 
-#: ui/main.py:1218
+#: ui/main.py:1220
 msgid "Could not disable automatic startup"
 msgstr "Could not disable automatic startup"
 
-#: ui/main.py:1225
+#: ui/main.py:1227
 msgid "PipeWire restore token cleared"
 msgstr "PipeWire restore token cleared"
 
-#: ui/main.py:1292
+#: ui/main.py:1294
 msgid "Clip captured"
 msgstr "Clip captured"
 
-#: ui/main.py:1293
+#: ui/main.py:1295
 msgid "Your clip has been saved."
 msgstr "Your clip has been saved."
 
-#: ui/main.py:1299
+#: ui/main.py:1301
 msgid ""
 "Could not write the clip. Check the save folder and available disk space."
 msgstr ""
 "Could not write the clip. Check the save folder and available disk space."
 
-#: ui/main.py:1301
+#: ui/main.py:1303
 #, python-format
 msgid "Failed to save clip: %(error)s"
 msgstr "Failed to save clip: %(error)s"
 
-#: ui/main.py:1337
+#: ui/main.py:1339
 #, python-format
 msgid "Could not open clip editor: %(error)s"
 msgstr "Could not open clip editor: %(error)s"
 
-#: ui/main.py:1816
+#: ui/main.py:1818
 #, python-format
 msgid "Could not start Clipper engine: %(error)s"
 msgstr "Could not start Clipper engine: %(error)s"
 
-#: ui/main.py:1881 ui/settings_view.py:1718
+#: ui/main.py:1883 ui/settings_view.py:1718
 #, python-format
 msgid "Engine shutdown failed: %(error)s"
 msgstr "Engine shutdown failed: %(error)s"
 
-#: ui/main.py:1920 ui/main.py:1956
+#: ui/main.py:1922 ui/main.py:1958
 msgid "Display selection was cancelled."
 msgstr "Display selection was cancelled."
 
-#: ui/main.py:1925
+#: ui/main.py:1927
 msgid "Capture display selected successfully."
 msgstr "Capture display selected successfully."
 
-#: ui/main.py:1929
+#: ui/main.py:1931
 msgid "No display was selected before the picker timed out."
 msgstr "No display was selected before the picker timed out."
 
-#: ui/main.py:2010
+#: ui/main.py:2012
 #, python-format
 msgid "Display capture sync failed: %(error)s"
 msgstr "Display capture sync failed: %(error)s"
 
-#: ui/main.py:2098
+#: ui/main.py:2100
 msgid "🦊 Leese"
 msgstr "🦊 Leese"
 
-#: ui/main.py:2102
+#: ui/main.py:2104
 msgid "© 2026 Leese"
 msgstr "© 2026 Leese"
 
-#: ui/main.py:2108
+#: ui/main.py:2110
 msgid "GitHub"
 msgstr "GitHub"
 
@@ -1894,7 +1894,7 @@ msgstr "Crashed"
 msgid "Clipper"
 msgstr "Clipper"
 
-#: ui/main_window.py:136 ui/main_window.py:433
+#: ui/main_window.py:136 ui/main_window.py:440
 msgid "Engine status"
 msgstr "Engine status"
 
@@ -1955,11 +1955,11 @@ msgstr "Clips"
 msgid "Games"
 msgstr "Games"
 
-#: ui/main_window.py:474
+#: ui/main_window.py:481
 msgid "Waiting for frame"
 msgstr "Waiting for frame"
 
-#: ui/main_window.py:567
+#: ui/main_window.py:574
 msgid "Preview unavailable"
 msgstr "Preview unavailable"
 

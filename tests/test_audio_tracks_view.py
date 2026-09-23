@@ -2,6 +2,7 @@ import importlib.util
 import sys
 import types
 from pathlib import Path
+from typing import Any
 
 
 def _load_audio_tracks_module():
@@ -181,7 +182,7 @@ class EngineClientStub:
 
 class ConfigStub:
     def __init__(self, data):
-        self.data = data
+        self.data: dict[str, Any] = data
         self.saved = []
 
     def get(self, key, default=None):
@@ -421,6 +422,53 @@ def test_empty_whitelisted_games_track_populates_when_first_game_is_added():
     assert config.saved[-1][0] == "audio"
 
 
+def test_adding_and_removing_game_updates_unopened_audio_view_and_live_engine():
+    from main_window import MainWindow
+
+    config = ConfigStub({"whitelist": []})
+    view, _dropdown = _make_view(config=config)
+    view._audio["tracks"][0].update(
+        {"label": "Whitelisted games", "source_role": "whitelisted_games", "enabled": True}
+    )
+    created_views = []
+    restarts = []
+
+    class WindowStub:
+        audio_view = None
+        _engine_restart_required_callback = staticmethod(lambda: True)
+        _engine_restart_requested_callback = staticmethod(lambda: restarts.append(True))
+
+        def _ensure_view(self, name):
+            created_views.append(name)
+            self.audio_view = view
+
+    window = WindowStub()
+    config.data["whitelist"] = [
+        {"name": "Game", "appid": "123", "executable_name": "game.exe"}
+    ]
+    MainWindow._on_whitelist_changed(window)
+
+    assert created_views == ["audio"]
+    assert config.data["audio"]["tracks"][0]["sources"][0]["match"]["value"] == "game.exe"
+    assert restarts == [True]
+
+    config.data["whitelist"] = []
+    MainWindow._on_whitelist_changed(window)
+    assert config.data["audio"]["tracks"][0]["sources"] == []
+    assert restarts == [True, True]
+
+    MainWindow._on_whitelist_changed(window)
+    assert restarts == [True, True]
+
+    view._audio["mode"] = "single_mix"
+    config.data["whitelist"] = [
+        {"name": "Game", "appid": "123", "executable_name": "game.exe"}
+    ]
+    MainWindow._on_whitelist_changed(window)
+    assert config.data["audio"]["tracks"][0]["sources"][0]["match"]["value"] == "game.exe"
+    assert restarts == [True, True]
+
+
 def test_whitelisted_games_selection_survives_removing_all_games():
     config = ConfigStub(
         {
@@ -443,6 +491,27 @@ def test_whitelisted_games_selection_survives_removing_all_games():
     assert view._audio["tracks"][0]["label"] == "Whitelisted games"
     assert view._audio["tracks"][0]["sources"] == []
     assert dropdown.selected == dropdown.model.index("Whitelisted games")
+
+
+def test_removing_game_with_shared_selector_updates_remaining_source_owner():
+    config = ConfigStub(
+        {
+            "whitelist": [
+                {"name": "First game", "appid": "123", "audio_process": "wine-preloader"},
+                {"name": "Second game", "appid": "456", "audio_process": "wine-preloader"},
+            ]
+        }
+    )
+    view, dropdown = _make_view(config=config)
+    view._on_track_source(0, dropdown.model.index("Whitelisted games"))
+    assert len(view._audio["tracks"][0]["sources"]) == 1
+
+    config.data["whitelist"] = config.data["whitelist"][1:]
+    assert view.on_whitelist_changed() is False
+
+    source = config.data["audio"]["tracks"][0]["sources"][0]
+    assert source["display_name"] == "Second game"
+    assert source["learned_from"]["steam_appid"] == "456"
 
 
 def test_split_tracks_show_default_row_when_no_tracks_added():

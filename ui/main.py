@@ -1011,7 +1011,9 @@ class ClipperApplication(Adw.Application):
             self._show_toast(_("Engine will start when a whitelisted game is running"))
             return
 
-        if self._start_engine_for_capture(capture_mode_for_entry(running_entry)):
+        if self._start_engine_for_capture(
+            capture_mode_for_entry(running_entry), force_restart=True
+        ):
             self._show_toast(reason)
 
     def _on_engine_restart_response(self, response: dict, reason: str) -> None:

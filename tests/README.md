@@ -69,7 +69,7 @@ process matching intentionally cover separate production implementations.
 | --- | --- |
 | audio_source_discovery | Identify real playback applications and microphones without system-client noise. |
 | audio_source_watcher | Refresh discovery for relevant audio events only. |
-| audio_tracks_view | Preserve routing and offline selections, update gain live, release inactive discovery work. |
+| audio_tracks_view | Preserve routing and offline selections, synchronize whitelist routes when games change, update gain live, release inactive discovery work. |
 | autostart | Honor portal approval and native desktop-file ownership; report registration failures. |
 | capture_modes | Migrate legacy capture labels and persist stable mode IDs. |
 | clips_view | Rename and delete safely, retain drafts and game metadata, bound asynchronous gallery/cache work. |
@@ -106,7 +106,7 @@ process matching intentionally cover separate production implementations.
 | lazy_video_buffers | Execute allocation/reuse/failure cleanup against the shipped C patch helpers. |
 | log_window | Stop subscriptions and scheduled refreshes after the window closes. |
 | logs | Preserve useful diagnostics, bound history and carry logs through process handoff. |
-| main | Coordinate startup/setup, tray lifecycle, recording, portal decisions, updates and session shutdown. |
+| main | Coordinate startup/setup, tray lifecycle, recording, engine restarts, portal decisions, updates and session shutdown. |
 | main_window_preferences | Pass catalog language IDs through preferences and track both physical Shift keys. |
 | monitor_host | Execute C host process detection, fixed Steam operations, scope isolation and live rule reloads. |
 | monitor_ipc | Validate incoming events and restrict socket access. |
