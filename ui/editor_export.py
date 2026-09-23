@@ -1181,20 +1181,42 @@ class ExportProcess:
                 "-v",
                 "error",
                 "-show_entries",
-                "format=duration:stream=index,codec_type,codec_name:frame=width,height",
-                "-read_intervals",
-                "%+#1",
-                "-show_frames",
+                "format=duration:stream=index,codec_type,codec_name",
                 "-of",
                 "json",
                 str(self.partial),
             ],
             timeout=30,
         )
+        expected_dimensions = _export_frame_dimensions(self.project, self.options)
+        # AAC priming can put an audio packet before the first video packet.
+        # Probe the video stream on its own so a one-packet read decodes a frame.
+        frame_result = (
+            run_media_tool(
+                [
+                    "ffprobe",
+                    "-v",
+                    "error",
+                    "-select_streams",
+                    "v:0",
+                    "-read_intervals",
+                    "%+#1",
+                    "-show_frames",
+                    "-show_entries",
+                    "frame=width,height",
+                    "-of",
+                    "json",
+                    str(self.partial),
+                ],
+                timeout=30,
+            )
+            if expected_dimensions is not None
+            else None
+        )
         try:
             probe = json.loads(result.stdout)
             streams = probe["streams"]
-            frames = probe.get("frames", [])
+            frames = json.loads(frame_result.stdout).get("frames", []) if frame_result else []
             duration_us = round(float(probe["format"]["duration"]) * 1_000_000)
         except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
             self.cleanup()
@@ -1214,7 +1236,6 @@ class ExportProcess:
         tolerance_us = max(150_000, self.project.source.frame_duration_us * 2)
         video_codec = VIDEO_CODECS[self.options.video_codec].probe_codec
         audio_codec = AUDIO_CODECS[self.options.audio_codec].probe_codec
-        expected_dimensions = _export_frame_dimensions(self.project, self.options)
         frame_dimensions_match = (
             expected_dimensions is None
             or (
@@ -1234,7 +1255,8 @@ class ExportProcess:
             _LOG.error("Output validation mismatch: expected video=%s dimensions=%s "
                        "audio=%s tracks=%s duration_us=%s; actual=%s",
                        video_codec, expected_dimensions, audio_codec, expected_audio,
-                       self.project.output_duration_us, probe)
+                       self.project.output_duration_us,
+                       {**probe, "frames": frames})
             self.cleanup()
             raise RuntimeError(_("The exported file did not match the selected options"))
 

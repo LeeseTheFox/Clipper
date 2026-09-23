@@ -1,5 +1,7 @@
 import io
 import json
+import shutil
+import subprocess
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -858,16 +860,64 @@ def test_export_validation_decodes_a_frame_to_catch_surface_padding(
             {"index": 0, "codec_type": "video", "codec_name": "h264"},
             {"index": 1, "codec_type": "audio", "codec_name": "aac"},
         ],
-        "frames": [{"width": 1920, "height": 1080}],
         "format": {"duration": "5.000000"},
     }
+    frames = {"frames": [{"width": 1920, "height": 1080}]}
     monkeypatch.setattr(
         "editor_export.run_media_tool",
-        lambda *_args, **_kwargs: SimpleNamespace(stdout=json.dumps(payload)),
+        lambda command, **_kwargs: SimpleNamespace(
+            stdout=json.dumps(frames if "-select_streams" in command else payload)
+        ),
     )
 
     exporter._validate_partial()
 
-    payload["frames"][0]["height"] = 1088
+    frames["frames"][0]["height"] = 1088
     with pytest.raises(RuntimeError, match="did not match the selected options"):
         exporter._validate_partial()
+
+
+def test_aac_priming_packet_does_not_hide_the_first_video_frame(tmp_path):
+    if shutil.which("ffmpeg") is None or shutil.which("ffprobe") is None:
+        pytest.skip("FFmpeg and FFprobe are required")
+    encoded = tmp_path / "audio-first.mkv"
+    subprocess.run(
+        [
+            "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+            "-f", "lavfi", "-i", "testsrc2=size=320x180:rate=30:duration=1",
+            "-f", "lavfi", "-i", "sine=sample_rate=48000:duration=1",
+            "-map", "0:v", "-map", "1:a",
+            "-c:v", "libx264", "-preset", "ultrafast",
+            "-c:a", "aac", "-f", "matroska", str(encoded),
+        ],
+        check=True,
+        capture_output=True,
+        timeout=30,
+    )
+    first_packet = subprocess.run(
+        [
+            "ffprobe", "-v", "error", "-read_intervals", "%+#1",
+            "-show_entries", "packet=codec_type", "-show_packets",
+            "-of", "json", str(encoded),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert json.loads(first_packet.stdout)["packets"][0]["codec_type"] == "audio"
+
+    source = Source(
+        str(encoded), encoded.stat().st_size, encoded.stat().st_mtime_ns,
+        1_000_000, 0, [AudioTrack("a0", 0, 1, "Audio")],
+        width=320, height=180,
+    )
+    exporter = ExportProcess(
+        EditorProject.new(source), ExportOptions(tmp_path, "validated")
+    )
+    shutil.copyfile(encoded, exporter.partial)
+
+    try:
+        exporter._validate_partial()
+    finally:
+        exporter.cleanup()

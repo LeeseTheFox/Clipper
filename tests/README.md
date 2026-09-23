@@ -78,7 +78,7 @@ process matching intentionally cover separate production implementations.
 | dialogs | Expose the appropriate capture instructions and copy the actual launch option. |
 | display_auth | Recover valid X11 authorization after session credentials change. |
 | editor_drafts | Save, restore, rename and reject stale or malformed edits without losing usable history. |
-| editor_export | Preserve aspect ratio, timing, audio and codec contracts; validate output and clean failed exports. |
+| editor_export | Preserve aspect ratio, timing, audio and codec contracts; validate output despite AAC priming packet order and clean failed exports. |
 | editor_export_dialog | Keep selected options, require overwrite confirmation, handle progress/cancel and block unsafe close. |
 | editor_history | Maintain undo/redo branches, saved state and bounded/coalesced history. |
 | editor_media | Preserve valid sample aspect ratio and reject invalid probe metadata. |

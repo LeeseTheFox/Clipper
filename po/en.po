@@ -767,11 +767,11 @@ msgstr "Could not start FFmpeg: %(error)s"
 msgid "Export was not started"
 msgstr "Export was not started"
 
-#: ui/editor_export.py:1202
+#: ui/editor_export.py:1224
 msgid "The exported file could not be validated"
 msgstr "The exported file could not be validated"
 
-#: ui/editor_export.py:1239
+#: ui/editor_export.py:1261
 msgid "The exported file did not match the selected options"
 msgstr "The exported file did not match the selected options"
 

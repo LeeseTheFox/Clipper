@@ -773,11 +773,11 @@ msgstr "Не вдалося запустити FFmpeg: %(error)s"
 msgid "Export was not started"
 msgstr "Експорт не розпочато"
 
-#: ui/editor_export.py:1202
+#: ui/editor_export.py:1224
 msgid "The exported file could not be validated"
 msgstr "Не вдалося перевірити експортований файл"
 
-#: ui/editor_export.py:1239
+#: ui/editor_export.py:1261
 msgid "The exported file did not match the selected options"
 msgstr "Експортований файл не відповідає вибраним параметрам"
 
