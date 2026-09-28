@@ -1761,10 +1761,11 @@ static void add_pactl_recording_source(cJSON *sources, cJSON *source_item)
         driver && string_contains_ci(driver, "pipewire") ? "pipewire" : "pulse");
 }
 
-static void add_pactl_recording_sources(cJSON *sources)
+/* The item callback borrows its input; this helper owns the parsed list. */
+static void add_pactl_sources(cJSON *sources, const char *command,
+                              void (*add_source)(cJSON *, cJSON *))
 {
-    char *json_text = read_command_output(
-        "pactl -f json list sources 2>/dev/null", 1024 * 1024);
+    char *json_text = read_command_output(command, 1024 * 1024);
     if (!json_text)
         return;
 
@@ -1781,10 +1782,16 @@ static void add_pactl_recording_sources(cJSON *sources)
     cJSON *source_item = NULL;
     cJSON_ArrayForEach(source_item, root) {
         if (cJSON_IsObject(source_item))
-            add_pactl_recording_source(sources, source_item);
+            add_source(sources, source_item);
     }
 
     cJSON_Delete(root);
+}
+
+static void add_pactl_recording_sources(cJSON *sources)
+{
+    add_pactl_sources(sources, "pactl -f json list sources 2>/dev/null",
+                      add_pactl_recording_source);
 }
 
 static void add_pactl_sink_input_source(cJSON *sources, cJSON *sink_input)
@@ -1824,28 +1831,8 @@ static void add_pactl_sink_input_source(cJSON *sources, cJSON *sink_input)
 
 static void add_pactl_sink_inputs(cJSON *sources)
 {
-    char *json_text = read_command_output(
-        "pactl -f json list sink-inputs 2>/dev/null", 1024 * 1024);
-    if (!json_text)
-        return;
-
-    cJSON *root = cJSON_Parse(json_text);
-    free(json_text);
-    if (!root)
-        return;
-
-    if (!cJSON_IsArray(root)) {
-        cJSON_Delete(root);
-        return;
-    }
-
-    cJSON *sink_input = NULL;
-    cJSON_ArrayForEach(sink_input, root) {
-        if (cJSON_IsObject(sink_input))
-            add_pactl_sink_input_source(sources, sink_input);
-    }
-
-    cJSON_Delete(root);
+    add_pactl_sources(sources, "pactl -f json list sink-inputs 2>/dev/null",
+                      add_pactl_sink_input_source);
 }
 
 static void add_pactl_client_source(cJSON *sources, cJSON *client)
@@ -1886,28 +1873,8 @@ static void add_pactl_client_source(cJSON *sources, cJSON *client)
 
 static void add_pactl_clients(cJSON *sources)
 {
-    char *json_text = read_command_output(
-        "pactl -f json list clients 2>/dev/null", 1024 * 1024);
-    if (!json_text)
-        return;
-
-    cJSON *root = cJSON_Parse(json_text);
-    free(json_text);
-    if (!root)
-        return;
-
-    if (!cJSON_IsArray(root)) {
-        cJSON_Delete(root);
-        return;
-    }
-
-    cJSON *client = NULL;
-    cJSON_ArrayForEach(client, root) {
-        if (cJSON_IsObject(client))
-            add_pactl_client_source(sources, client);
-    }
-
-    cJSON_Delete(root);
+    add_pactl_sources(sources, "pactl -f json list clients 2>/dev/null",
+                      add_pactl_client_source);
 }
 
 static void handle_list_audio_sources(engine_state_t *state, int fd)
