@@ -69,7 +69,7 @@ process matching intentionally cover separate production implementations.
 | --- | --- |
 | audio_source_discovery | Identify real playback applications and microphones without system-client noise. |
 | audio_source_watcher | Refresh discovery for relevant audio events only. |
-| audio_tracks_view | Preserve routing and offline selections, synchronize whitelist routes when games change, update gain live, release inactive discovery work. |
+| audio_tracks_view | Preserve routing and offline selections, synchronize whitelist routes when games change, bound synchronous executable inference, tolerate unavailable game libraries, update gain live, release inactive discovery work. |
 | autostart | Honor portal approval and native desktop-file ownership; report registration failures. |
 | capture_modes | Migrate legacy capture labels and persist stable mode IDs. |
 | clips_view | Rename and delete safely, retain drafts and game metadata, bound asynchronous gallery/cache work. |
@@ -83,7 +83,7 @@ process matching intentionally cover separate production implementations.
 | editor_history | Maintain undo/redo branches, saved state and bounded/coalesced history. |
 | editor_media | Preserve valid sample aspect ratio and reject invalid probe metadata. |
 | editor_model | Maintain segment boundaries, time mappings and independent audio settings; preserve a final segment. |
-| editor_preview | Keep cuts, seek/playback, live gain, decoder lifetime and stale callbacks consistent. |
+| editor_preview | Keep cuts, seek/playback, live gain, decoder lifetime and stale callbacks consistent; release partial audio outputs after construction failures. |
 | editor_timeline | Maintain click/playhead/zoom mappings, scroll limits and bounded waveform sampling. |
 | editor_waveform | Preserve channel peaks and chunk boundaries; compare actual FFmpeg output across audio formats. |
 | editor_window_shortcuts | Dispatch editor actions correctly, including physical keys under non-Latin layouts. |
@@ -117,7 +117,7 @@ process matching intentionally cover separate production implementations.
 | release_notes | Generate accurate categorized history from actual Git repositories and semantic tags. |
 | release_version | Reject malformed tags and mismatched application release versions. |
 | settings_view | Apply settings correctly, respect platform approval, handle capability races and clamp encoder controls. |
-| setup_window | Persist setup choices, respect existing settings and complete or skip setup consistently. |
+| setup_window | Persist setup choices within engine-supported clip limits, respect existing settings, retry incomplete encoder discovery, reject responses after close, and complete or skip setup consistently. |
 | shortcut_dialog | Validate accelerator syntax and present the correct shortcut collection for each window. |
 | sound_feedback | Play the bundled asset with bounded gain and tolerate missing/unavailable media. |
 | startup_benchmark | Measure the right processes and decode desktop presentation/handoff state accurately. |
