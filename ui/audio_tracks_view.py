@@ -943,7 +943,7 @@ class AudioTracksView(Gtk.Box):
         if not isinstance(media_name, str) or not media_name.strip():
             return False
         normalized = "".join(ch for ch in media_name.casefold() if ch.isalnum())
-        if normalized in {"audio", "audiostream", "playback", "unknown"}:
+        if normalized in {"audio", "audiostream", "null", "playback", "unknown"}:
             return False
         return self._normalize_match_term(media_name) != self._normalize_match_term(display_name)
 

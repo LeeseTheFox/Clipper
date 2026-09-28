@@ -4,6 +4,8 @@ import types
 from pathlib import Path
 from typing import Any
 
+import pytest
+
 
 def _load_audio_tracks_module():
     module_name = "test_audio_tracks_view_isolated"
@@ -309,7 +311,8 @@ def test_audio_source_response_adds_application_to_dropdown_model():
     assert "App: Zen - Video" in dropdown.model
 
 
-def test_generic_playback_media_name_is_not_added_to_application_label():
+@pytest.mark.parametrize("media_name", ["Playback", "(null)"])
+def test_generic_or_null_media_name_is_not_added_to_application_label(media_name):
     view, dropdown = _make_view()
 
     view._on_audio_sources(
@@ -321,14 +324,14 @@ def test_generic_playback_media_name_is_not_added_to_application_label():
                     "display_name": "ExampleApp",
                     "app_name": "Chromium",
                     "binary": "ExampleApp",
-                    "media_name": "Playback",
+                    "media_name": media_name,
                 }
             ],
         }
     )
 
     assert "App: ExampleApp" in dropdown.model
-    assert "App: ExampleApp - Playback" not in dropdown.model
+    assert f"App: ExampleApp - {media_name}" not in dropdown.model
 
 
 def test_discovered_input_devices_are_microphone_device_options():
