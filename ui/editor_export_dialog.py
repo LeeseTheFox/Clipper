@@ -32,32 +32,31 @@ from editor_export import (
 from gi.repository import Adw, Gio, GLib, Gtk, Pango
 from icon_names import EXPORT_LINEAR
 from icon_widgets import TintedIcon
+from quality_controls import BITRATE_MAX as _BITRATE_MAX
+from quality_controls import BITRATE_MIN as _BITRATE_MIN
 from quality_controls import (
-    CBR_BITRATE_SUBTITLE,
-    CBR_BITRATE_TITLE,
     CQP_DEFAULT,
     CQP_HIGH_QUALITY,
     CQP_LOW_QUALITY,
-    CQP_MEDIUM_QUALITY,
     MAX_BITRATE_SUBTITLE,
     MAX_BITRATE_TITLE,
-    QUALITY_SUBTITLE,
     RATE_CONTROL_LABELS,
     RATE_CONTROL_SUBTITLE,
     VBR_BITRATE_SUBTITLE,
     VBR_BITRATE_TITLE,
-    cqp_to_slider_value,
+    create_bitrate_row,
+    create_quality_row,
     slider_value_to_cqp,
+    sync_max_bitrate,
+    update_rate_control_rows,
 )
+from recording_controls import create_combo_row
 from text_helpers import middle_truncate_text
 
 _FORMAT_IDS = tuple(FORMATS)
 _RATE_CONTROL_IDS = tuple(RATE_CONTROL_LABELS)
 _AUDIO_LAYOUT_IDS = ("separate", "mixed")
 _AUDIO_LAYOUT_LABELS = (_("Keep separate tracks"), _("Combine into one track"))
-_BITRATE_MIN = 1_000
-_BITRATE_MAX = 50_000
-_BITRATE_STEP = 500
 _FOLDER_LABEL_MAX_CHARS = 64
 _CAPABILITY_POLL_MS = 100
 _SAFE_INITIAL_ENCODERS = frozenset({"libx264", "aac"})
@@ -470,34 +469,14 @@ class EditorExportDialog(Adw.Dialog):
         )
         encoding_group.add(self.hardware_acceleration_row)
 
-        self.rate_control_row = Adw.ComboRow()
-        self.rate_control_row.set_title(_("Rate control"))
-        self.rate_control_row.set_subtitle(RATE_CONTROL_SUBTITLE)
-        self.rate_control_row.set_model(
-            Gtk.StringList.new(
-                [RATE_CONTROL_LABELS[rate_control] for rate_control in _RATE_CONTROL_IDS]
-            )
+        self.rate_control_row = create_combo_row(
+            _("Rate control"), RATE_CONTROL_SUBTITLE,
+            [RATE_CONTROL_LABELS[item] for item in _RATE_CONTROL_IDS],
+            _index(_RATE_CONTROL_IDS, self._preferred_rate_control),
+            self._on_rate_control_selected,
         )
-        self.rate_control_row.set_selected(
-            _index(
-                _RATE_CONTROL_IDS,
-                self._preferred_rate_control,
-            )
-        )
-        self.rate_control_row.connect("notify::selected", self._on_rate_control_selected)
         encoding_group.add(self.rate_control_row)
 
-        self.quality_row = Adw.ActionRow()
-        self.quality_row.set_title(_("Quality"))
-        self.quality_row.set_subtitle(QUALITY_SUBTITLE)
-        quality_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        quality_box.set_valign(Gtk.Align.CENTER)
-        self.quality = Gtk.Scale.new_with_range(
-            Gtk.Orientation.HORIZONTAL,
-            CQP_HIGH_QUALITY,
-            CQP_LOW_QUALITY,
-            1,
-        )
         configured_quality = _bounded_int(
             initial_options.quality_cqp
             if initial_options is not None
@@ -506,20 +485,7 @@ class EditorExportDialog(Adw.Dialog):
             CQP_HIGH_QUALITY,
             CQP_LOW_QUALITY,
         )
-        self.quality.set_value(cqp_to_slider_value(configured_quality))
-        self.quality.set_draw_value(True)
-        self.quality.set_value_pos(Gtk.PositionType.RIGHT)
-        self.quality.set_size_request(240, -1)
-        self.quality.get_adjustment().set_page_increment(1)
-        for value, label in (
-            (cqp_to_slider_value(CQP_LOW_QUALITY), _("Low")),
-            (cqp_to_slider_value(CQP_MEDIUM_QUALITY), _("Medium")),
-            (cqp_to_slider_value(CQP_HIGH_QUALITY), _("High")),
-        ):
-            self.quality.add_mark(value, Gtk.PositionType.BOTTOM, label)
-        self.quality.set_format_value_func(self._format_quality_value)
-        quality_box.append(self.quality)
-        self.quality_row.add_suffix(quality_box)
+        self.quality_row, self.quality = create_quality_row(configured_quality, width=240)
         encoding_group.add(self.quality_row)
 
         configured_bitrate = _bounded_int(
@@ -539,7 +505,7 @@ class EditorExportDialog(Adw.Dialog):
             _BITRATE_MAX,
         )
         configured_max_bitrate = max(configured_bitrate, configured_max_bitrate)
-        self.bitrate_row, self.bitrate = self._make_bitrate_row(
+        self.bitrate_row, self.bitrate = create_bitrate_row(
             VBR_BITRATE_TITLE,
             VBR_BITRATE_SUBTITLE,
             configured_bitrate,
@@ -547,7 +513,7 @@ class EditorExportDialog(Adw.Dialog):
         self.bitrate.connect("value-changed", self._on_bitrate_changed)
         encoding_group.add(self.bitrate_row)
 
-        self.max_bitrate_row, self.max_bitrate = self._make_bitrate_row(
+        self.max_bitrate_row, self.max_bitrate = create_bitrate_row(
             MAX_BITRATE_TITLE,
             MAX_BITRATE_SUBTITLE,
             configured_max_bitrate,
@@ -832,23 +798,6 @@ class EditorExportDialog(Adw.Dialog):
     def _on_close_attempt(self, *_args) -> None:
         self.show_close_warning()
 
-    def _make_bitrate_row(self, title, subtitle, value):
-        row = Adw.ActionRow()
-        row.set_title(title)
-        row.set_subtitle(subtitle)
-        spin = Gtk.SpinButton.new_with_range(_BITRATE_MIN, _BITRATE_MAX, _BITRATE_STEP)
-        spin.set_value(value)
-        spin.set_numeric(True)
-        spin.set_digits(0)
-        spin.set_width_chars(6)
-        spin.set_valign(Gtk.Align.CENTER)
-        row.add_suffix(spin)
-        unit = Gtk.Label(label=_("Kbps"))
-        unit.add_css_class("dim-label")
-        unit.set_valign(Gtk.Align.CENTER)
-        row.add_suffix(unit)
-        return row, spin
-
     def _format_id(self):
         selected = self.format_row.get_selected()
         return _FORMAT_IDS[selected] if 0 <= selected < len(_FORMAT_IDS) else "mkv"
@@ -1023,30 +972,13 @@ class EditorExportDialog(Adw.Dialog):
         return "cqp"
 
     def _update_rate_control_rows(self):
-        rate_control = self._rate_control_id()
-        self.quality_row.set_visible(rate_control == "cqp")
-        self.bitrate_row.set_visible(rate_control in {"cbr", "vbr"})
-        self.max_bitrate_row.set_visible(rate_control == "vbr")
-        if rate_control == "cbr":
-            self.bitrate_row.set_title(CBR_BITRATE_TITLE)
-            self.bitrate_row.set_subtitle(CBR_BITRATE_SUBTITLE)
-        else:
-            self.bitrate_row.set_title(VBR_BITRATE_TITLE)
-            self.bitrate_row.set_subtitle(VBR_BITRATE_SUBTITLE)
+        update_rate_control_rows(
+            self._rate_control_id(), self.quality_row, self.bitrate_row, self.max_bitrate_row
+        )
         self._sync_max_bitrate()
 
     def _sync_max_bitrate(self):
-        minimum = (
-            int(self.bitrate.get_value())
-            if self._rate_control_id() == "vbr"
-            else _BITRATE_MIN
-        )
-        self.max_bitrate.set_range(minimum, _BITRATE_MAX)
-        if self.max_bitrate.get_value() < minimum:
-            self.max_bitrate.set_value(minimum)
-
-    def _format_quality_value(self, _scale, value, _user_data=None):
-        return str(slider_value_to_cqp(value))
+        sync_max_bitrate(self._rate_control_id(), self.bitrate, self.max_bitrate)
 
     def _on_bitrate_changed(self, _spin):
         self._sync_max_bitrate()

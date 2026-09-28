@@ -20,6 +20,7 @@ from editor_export_dialog import (
 from editor_model import AudioTrack, EditorProject, Source
 from editor_window import EditorWindow
 from gi.repository import Adw
+from quality_controls import format_quality_value
 
 
 @pytest.fixture
@@ -80,9 +81,9 @@ def test_export_uses_native_adwaita_dialog_and_forward_quality_scale(export_dial
     assert dialog.quality.get_inverted() is False
     assert dialog.quality.get_adjustment().get_lower() == 20
     assert dialog.quality.get_adjustment().get_upper() == 30
-    assert dialog._format_quality_value(None, dialog.quality.get_value()) == "23"
-    assert dialog._format_quality_value(None, 20) == "30"
-    assert dialog._format_quality_value(None, 30) == "20"
+    assert format_quality_value(None, dialog.quality.get_value()) == "23"
+    assert format_quality_value(None, 20) == "30"
+    assert format_quality_value(None, 30) == "20"
     assert dialog._options().quality_cqp == 23
     assert dialog._options().video_codec == "h264"
     assert dialog._options().video_encoder == "software"
