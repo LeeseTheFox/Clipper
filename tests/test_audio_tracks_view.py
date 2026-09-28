@@ -20,6 +20,7 @@ def _load_audio_tracks_module():
             "audio_source_discovery",
             "audio_source_watcher",
             "engine_client",
+            "focus_helpers",
         )
     }
 
@@ -84,6 +85,7 @@ def _load_audio_tracks_module():
         }
     )
 
+    sys.modules.pop("focus_helpers", None)
     try:
         module = importlib.util.module_from_spec(spec)
         module._test_timeouts = timeouts
@@ -761,11 +763,20 @@ def test_whitelisted_games_prefer_steam_install_dir_over_title():
     assert option["sources"][0]["match"]["value"] == "BloonsTD6"
 
 
-def test_whitelisted_games_prefer_install_executable_when_present(tmp_path):
+def test_whitelisted_games_infer_executable_without_recursive_ui_scan(tmp_path, monkeypatch):
     install_path = tmp_path / "BloonsTD6"
     install_path.mkdir()
     (install_path / "BloonsTD6.exe").write_text("", encoding="utf-8")
     (install_path / "UnityCrashHandler64.exe").write_text("", encoding="utf-8")
+    (install_path / "large-game-assets").mkdir()
+    original_iterdir = Path.iterdir
+
+    def bounded_iterdir(path):
+        # Audio refresh runs on GTK's thread; walking asset trees freezes it.
+        assert path == install_path
+        return original_iterdir(path)
+
+    monkeypatch.setattr(Path, "iterdir", bounded_iterdir)
     config = ConfigStub(
         {
             "whitelist": [
@@ -785,6 +796,25 @@ def test_whitelisted_games_prefer_install_executable_when_present(tmp_path):
         if option["label"] == "Whitelisted games"
     )
     assert option["sources"][0]["match"]["value"] == "BloonsTD6.exe"
+
+
+def test_unreadable_game_installation_keeps_audio_directory_fallback(tmp_path, monkeypatch):
+    install_path = tmp_path / "BloonsTD6"
+    install_path.mkdir()
+
+    def denied_iterdir(_path):
+        raise PermissionError("game library is unavailable")
+
+    monkeypatch.setattr(Path, "iterdir", denied_iterdir)
+    config = ConfigStub(
+        {"whitelist": [{"name": "Bloons TD 6", "install_path": str(install_path)}]}
+    )
+    view, _dropdown = _make_view(config=config)
+
+    option = next(
+        option for option in view._source_options if option["role"] == "whitelisted_games"
+    )
+    assert option["sources"][0]["match"]["value"] == "BloonsTD6"
 
 
 def test_stale_install_directory_match_updates_to_install_executable(tmp_path):

@@ -3,7 +3,6 @@ Audio track configuration view.
 """
 
 import copy
-import os
 from pathlib import Path
 
 import gi
@@ -16,9 +15,10 @@ from audio_source_discovery import list_runtime_audio_sources
 from audio_source_watcher import AudioSourceWatcher
 from config import AUDIO_MAX_TRACKS, normalize_audio_config
 from engine_client import STATE_CONNECTED
+from focus_helpers import new_dropdown_label_factory
+from game_icons import EXECUTABLE_SUFFIXES, executable_path_for_game
 from gi.repository import Adw, GLib, Gtk, Pango
 from icon_names import ADD, AUDIO, MICROPHONE, TRASH, VOLUME
-from text_helpers import configure_single_line_ellipsis, set_single_line_label_text
 
 _SPLIT_TRACKS_SUBTITLE = _("Each audio track includes only its selected source")
 _SINGLE_TRACK_SUBTITLE = _("All audio sources are combined into a single track")
@@ -189,8 +189,12 @@ class AudioTracksView(Gtk.Box):
         source_dropdown.set_model(
             Gtk.StringList.new([option["label"] for option in self._source_options])
         )
-        source_dropdown.set_factory(self._create_dropdown_label_factory())
-        source_dropdown.set_list_factory(self._create_dropdown_label_factory())
+        source_dropdown.set_factory(
+            new_dropdown_label_factory(mode=Pango.EllipsizeMode.MIDDLE, tooltip=False)
+        )
+        source_dropdown.set_list_factory(
+            new_dropdown_label_factory(mode=Pango.EllipsizeMode.MIDDLE, tooltip=False)
+        )
         source_dropdown.set_hexpand(True)
         source_dropdown.set_valign(Gtk.Align.CENTER)
         source_dropdown.set_has_tooltip(False)
@@ -249,24 +253,6 @@ class AudioTracksView(Gtk.Box):
             "remove": remove_button,
         }
         return row, widgets
-
-    def _create_dropdown_label_factory(self):
-        factory = Gtk.SignalListItemFactory()
-        factory.connect("setup", self._setup_dropdown_label)
-        factory.connect("bind", self._bind_dropdown_label)
-        return factory
-
-    def _setup_dropdown_label(self, _factory, list_item):
-        label = Gtk.Label()
-        label.set_xalign(0)
-        configure_single_line_ellipsis(label, mode=Pango.EllipsizeMode.MIDDLE)
-        list_item.set_child(label)
-
-    def _bind_dropdown_label(self, _factory, list_item):
-        label = list_item.get_child()
-        item = list_item.get_item()
-        text = item.get_string() if item is not None else ""
-        set_single_line_label_text(label, text, tooltip=False)
 
     def _track_is_added(self, track):
         return bool(track.get("enabled") or track.get("sources"))
@@ -813,7 +799,7 @@ class AudioTracksView(Gtk.Box):
     def _looks_like_game_executable(self, value):
         if not isinstance(value, str):
             return False
-        return value.lower().endswith((".exe", ".x86_64", ".x86", ".appimage"))
+        return value.lower().endswith(EXECUTABLE_SUFFIXES)
 
     def _whitelist_audio_match_value(self, entry):
         for key in (
@@ -851,74 +837,13 @@ class AudioTracksView(Gtk.Box):
         if not path.is_dir():
             return path.name
 
-        best_name = ""
-        best_score = -1
-        for child in path.iterdir():
-            if not child.is_file():
-                continue
-
-            name = child.name
-            if not self._looks_like_game_executable(name) and not os.access(child, os.X_OK):
-                continue
-            if self._should_ignore_game_executable(name):
-                continue
-
-            score = self._game_executable_score(name, path.name, game_name)
-            if score > best_score:
-                best_name = name
-                best_score = score
-
-        return best_name or path.name
-
-    def _should_ignore_game_executable(self, name):
-        lowered = name.lower()
-        ignored_markers = (
-            "crashhandler",
-            "unitycrashhandler",
-            "installer",
-            "redist",
-            "setup",
-            "unins",
-            "vc_redist",
+        # Source refreshes run on the GTK thread. Keep this fallback shallow;
+        # explicit executable paths and learned live audio identities take
+        # precedence above, including those from nested game installations.
+        executable = executable_path_for_game(
+            {"install_path": str(path), "name": game_name}, max_search_depth=0
         )
-        ignored_suffixes = (".dll", ".so", ".dylib")
-        return lowered.endswith(ignored_suffixes) or any(
-            marker in lowered for marker in ignored_markers
-        )
-
-    def _game_executable_score(self, executable_name, install_dir_name, game_name):
-        executable_stem = self._normalize_executable_stem(executable_name)
-        install_dir = self._normalize_match_term(install_dir_name)
-        game = self._normalize_match_term(game_name)
-
-        score = 0
-        if executable_stem and executable_stem == install_dir:
-            score += 100
-        elif executable_stem and (
-            executable_stem in install_dir or install_dir in executable_stem
-        ):
-            score += 70
-
-        if executable_stem and executable_stem == game:
-            score += 90
-        elif executable_stem and game and (executable_stem in game or game in executable_stem):
-            score += 60
-
-        if self._looks_like_game_executable(executable_name):
-            score += 10
-
-        return score
-
-    def _normalize_executable_stem(self, value):
-        if not isinstance(value, str):
-            return ""
-
-        lowered = value.lower()
-        for suffix in (".x86_64", ".appimage", ".exe", ".x86"):
-            if lowered.endswith(suffix):
-                value = value[: -len(suffix)]
-                break
-        return self._normalize_match_term(value)
+        return executable.name if executable is not None else path.name
 
     def _whitelist_match_terms(self, entry):
         terms = []

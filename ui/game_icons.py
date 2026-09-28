@@ -66,8 +66,14 @@ def submit_icon_resolution(game_data: dict):
     return _ICON_EXECUTOR.submit(resolve_icon_for_game, dict(game_data))
 
 
-def executable_path_for_game(game_data: dict) -> Path | None:
-    """Return the best executable path we can infer for a whitelist/game entry."""
+def executable_path_for_game(
+    game_data: dict, *, max_search_depth: int = MAX_EXECUTABLE_SEARCH_DEPTH
+) -> Path | None:
+    """Infer an executable, optionally limiting synchronous callers to the root.
+
+    Recursive discovery belongs on a worker; use ``max_search_depth=0`` when
+    resolving the immediate installation directory from a UI callback.
+    """
     for key in ("executable_path", "path"):
         candidate = _existing_file(game_data.get(key))
         if candidate and _is_executable_candidate(candidate):
@@ -83,7 +89,9 @@ def executable_path_for_game(game_data: dict) -> Path | None:
     if not path.is_dir():
         return None
 
-    return _best_executable_in_directory(path, str(game_data.get("name") or ""))
+    return _best_executable_in_directory(
+        path, str(game_data.get("name") or ""), max_search_depth
+    )
 
 
 def icon_path_for_executable(executable: Path) -> str:
@@ -163,10 +171,12 @@ def cached_icon_path_for_executable(executable: Path) -> str:
     return str(cache_path) if cache_path.is_file() else ""
 
 
-def _best_executable_in_directory(directory: Path, game_name: str) -> Path | None:
+def _best_executable_in_directory(
+    directory: Path, game_name: str, max_search_depth: int
+) -> Path | None:
     best_path = None
     best_score = -1
-    for child in _iter_candidate_files(directory):
+    for child in _iter_candidate_files(directory, max_search_depth):
         if not child.is_file() or not _is_executable_candidate(child):
             continue
         if _should_ignore_executable(child.name):
@@ -181,7 +191,7 @@ def _best_executable_in_directory(directory: Path, game_name: str) -> Path | Non
     return best_path
 
 
-def _iter_candidate_files(directory: Path):
+def _iter_candidate_files(directory: Path, max_search_depth: int):
     pending = [(directory, 0)]
     while pending:
         current, depth = pending.pop(0)
@@ -191,7 +201,7 @@ def _iter_candidate_files(directory: Path):
             continue
 
         for child in children:
-            if child.is_dir() and depth < MAX_EXECUTABLE_SEARCH_DEPTH:
+            if child.is_dir() and depth < max_search_depth:
                 pending.append((child, depth + 1))
             elif child.is_file():
                 yield child

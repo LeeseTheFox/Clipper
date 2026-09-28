@@ -25,8 +25,8 @@ def new_id_dropdown(
     if width_request is not None:
         dropdown.set_size_request(width_request, -1)
     if max_width_chars is not None:
-        dropdown.set_factory(_new_dropdown_label_factory(max_width_chars))
-        dropdown.set_list_factory(_new_dropdown_label_factory(max_width_chars))
+        dropdown.set_factory(new_dropdown_label_factory(max_width_chars))
+        dropdown.set_list_factory(new_dropdown_label_factory(max_width_chars))
     dropdown._clipper_option_ids = option_ids
     dropdown.set_focus_on_click(False)
 
@@ -38,7 +38,13 @@ def new_id_dropdown(
     return dropdown
 
 
-def _new_dropdown_label_factory(max_width_chars: int):
+def new_dropdown_label_factory(
+    max_width_chars: int | None = None,
+    *,
+    mode=ELLIPSIZE_END,
+    tooltip: bool = True,
+):
+    """Build ellipsized string-item labels without changing dropdown behavior."""
     factory = Gtk.SignalListItemFactory()
 
     def setup(_factory, list_item):
@@ -46,7 +52,7 @@ def _new_dropdown_label_factory(max_width_chars: int):
         label.set_xalign(0)
         configure_single_line_ellipsis(
             label,
-            mode=ELLIPSIZE_END,
+            mode=mode,
             max_width_chars=max_width_chars,
         )
         list_item.set_child(label)
@@ -55,7 +61,7 @@ def _new_dropdown_label_factory(max_width_chars: int):
         label = list_item.get_child()
         item = list_item.get_item()
         text = item.get_string() if item is not None else ""
-        set_single_line_label_text(label, text)
+        set_single_line_label_text(label, text, tooltip=tooltip)
 
     factory.connect("setup", setup)
     factory.connect("bind", bind)
