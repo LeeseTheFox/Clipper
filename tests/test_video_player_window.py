@@ -8,6 +8,7 @@ gi.require_version("Gst", "1.0")
 
 import video_player_window as player_module
 from gi.repository import Gdk, Gst, Gtk
+from icon_names import VOLUME_CROSS, VOLUME_MEDIUM
 from video_output import ClipperVideoSink
 from video_player_window import (
     _PLAYER_CSS,
@@ -74,12 +75,12 @@ def test_player_volume_slider_expands_and_controls_pipeline_volume():
 
     window._volume_scale.set_value(0.35)
     assert state == {"volume": 0.35, "mute": False}
-    assert window._mute_button.get_icon_name() == player_module.VOLUME_MEDIUM
+    assert window._mute_button.get_icon_name() == VOLUME_MEDIUM
 
     window._toggle_muted()
     assert state == {"volume": 0.0, "mute": True}
     assert window._volume_scale.get_value() == 0
-    assert window._mute_button.get_icon_name() == player_module.VOLUME_CROSS
+    assert window._mute_button.get_icon_name() == VOLUME_CROSS
     window._toggle_muted()
     assert state == {"volume": 0.35, "mute": False}
     assert window._volume_scale.get_value() == 0.35

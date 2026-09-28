@@ -4,8 +4,9 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 
-from editor_window import EditorWindow, _prevent_scroll_seeking, format_transport_time
+from editor_window import EditorWindow, format_transport_time
 from gi.repository import Gtk
+from playback_controls import PlaybackControls, _prevent_scroll_seeking
 
 
 class FakeLabel:
@@ -166,60 +167,41 @@ def test_transport_progress_drag_uses_the_coalesced_scrub_preview_path():
     ]
 
 
+def _volume_window(on_volume=lambda _volume: None):
+    transport = PlaybackControls(
+        on_play=lambda: None,
+        on_fullscreen=lambda: None,
+        on_seek=lambda *_args: False,
+        on_seek_drag=lambda *_args: None,
+        on_volume=on_volume,
+    )
+    return SimpleNamespace(
+        _transport=transport,
+        _volume_scale=transport._volume_scale,
+        _mute_button=transport._mute_button,
+    )
+
+
 def test_transport_volume_mutes_and_restores_the_previous_level():
     values = []
-    preview = SimpleNamespace(set_volume=values.append)
-
-    class FakeScale:
-        value = 0.35
-
-        def get_value(self):
-            return self.value
-
-        def set_value(self, value):
-            self.value = value
-
-    class FakeButton:
-        icon_name = None
-
-        def set_icon_name(self, name):
-            self.icon_name = name
-
-        def set_tooltip_text(self, _text):
-            pass
-
-    window = SimpleNamespace(
-        preview=preview,
-        _volume_scale=FakeScale(),
-        _mute_button=FakeButton(),
-        _volume_before_mute=None,
-        _updating_volume=False,
-    )
-    window._set_volume = lambda volume: EditorWindow._set_volume(window, volume)
-    window._set_volume_ui = lambda volume: EditorWindow._set_volume_ui(window, volume)
+    window = _volume_window(values.append)
+    window._volume_scale.set_value(0.35)
+    values.clear()
 
     EditorWindow._toggle_muted(window)
     assert values == [0.0]
     assert window._volume_scale.get_value() == 0
-    assert window._mute_button.icon_name == "speaker-0-symbolic"
+    assert window._mute_button.get_icon_name() == "speaker-0-symbolic"
 
     EditorWindow._toggle_muted(window)
     assert values == [0.0, 0.35]
     assert window._volume_scale.get_value() == 0.35
-    assert window._mute_button.icon_name == "speaker-2-symbolic"
+    assert window._mute_button.get_icon_name() == "speaker-2-symbolic"
 
 
 def test_volume_keyboard_step_is_five_percent_and_clamped():
-    class FakeScale:
-        value = 0.5
-
-        def get_value(self):
-            return self.value
-
-        def set_value(self, value):
-            self.value = value
-
-    window = SimpleNamespace(_volume_scale=FakeScale())
+    window = _volume_window()
+    window._volume_scale.set_value(0.5)
 
     EditorWindow._change_volume(window, 1)
     assert window._volume_scale.get_value() == 0.55
@@ -232,17 +214,13 @@ def test_volume_keyboard_step_is_five_percent_and_clamped():
 
 
 def test_editor_mute_button_scroll_adjusts_volume():
-    values = []
-    scale = SimpleNamespace(
-        get_value=lambda: 0.5,
-        set_value=values.append,
-    )
-    window = SimpleNamespace(_volume_scale=scale)
+    window = _volume_window()
+    window._volume_scale.set_value(0.5)
 
     assert EditorWindow._on_mute_button_scroll(window, None, 0, -1) is True
+    assert window._volume_scale.get_value() == 0.6
     assert EditorWindow._on_mute_button_scroll(window, None, 0, 1) is True
-
-    assert values == [0.6, 0.4]
+    assert window._volume_scale.get_value() == 0.5
 
 
 def test_video_fullscreen_hides_editor_chrome_and_removes_monitor_margins():

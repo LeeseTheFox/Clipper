@@ -49,13 +49,15 @@ from icon_names import (
     SCISSORS_OUTLINE,
     TRASH,
     UNDO,
-    VOLUME,
-    VOLUME_CROSS,
-    VOLUME_MEDIUM,
     ZOOM_IN,
     ZOOM_OUT,
 )
 from icon_widgets import TintedIcon
+from playback_controls import (
+    TRANSPORT_CSS,
+    PlaybackControls,
+    _matches_base_key,
+)
 from shortcut_dialog import (
     Shortcut,
     ShortcutSection,
@@ -96,8 +98,6 @@ AMBIENT_GLOW_MAX_EXTENT = 160.0
 AMBIENT_GLOW_SAMPLE_WIDTH = 64
 AMBIENT_GLOW_SAMPLE_INTERVAL_MS = 500
 AMBIENT_GLOW_CROSSFADE_MS = 420
-_VOLUME_STEP = 0.05
-_VOLUME_SCROLL_STEP = 0.1
 
 EDITOR_SHORTCUT_SECTIONS = (
     ShortcutSection(
@@ -142,7 +142,7 @@ EDITOR_SHORTCUT_SECTIONS = (
     ),
 )
 
-_EDITOR_CSS = """
+_EDITOR_CSS = TRANSPORT_CSS + """
 .editor-workspace {
     background-color: @window_bg_color;
     color: @window_fg_color;
@@ -184,82 +184,10 @@ _EDITOR_CSS = """
     color: white;
 }
 
-.clipper-player-controls {
-    min-height: 36px;
-    padding: 6px 8px;
-    color: white;
-    background-color: alpha(#111419, 0.94);
-    border: 1px solid alpha(white, 0.14);
-    border-radius: 14px;
-    box-shadow: 0 8px 28px alpha(black, 0.52);
-}
-
-.clipper-player-timeline {
-    margin: 0 6px;
-    padding: 0;
-}
-
-.clipper-player-timeline trough {
-    min-height: 4px;
-    border-radius: 9999px;
-    background-color: alpha(white, 0.24);
-}
-
-.clipper-player-timeline highlight {
-    min-height: 4px;
-    border-radius: 9999px;
-    background-color: @accent_bg_color;
-}
-
 .clipper-player-timeline slider {
     min-width: 14px;
     min-height: 14px;
     border-radius: 9999px;
-}
-
-.clipper-player-control-button {
-    min-width: 36px;
-    min-height: 36px;
-    padding: 0;
-    border-radius: 9999px;
-}
-
-.clipper-player-time {
-    min-width: 96px;
-    margin-left: 2px;
-    margin-right: 4px;
-    color: alpha(white, 0.82);
-    font-size: 0.9em;
-    font-variant-numeric: tabular-nums;
-}
-
-.clipper-player-volume {
-    min-width: 88px;
-    margin: 0 6px 0 4px;
-    padding: 0;
-}
-
-.clipper-player-volume trough {
-    min-height: 4px;
-    border-radius: 9999px;
-    background-color: alpha(white, 0.24);
-}
-
-.clipper-player-volume highlight {
-    min-height: 4px;
-    border-radius: 9999px;
-    background-color: @accent_bg_color;
-}
-
-.clipper-player-volume slider {
-    min-width: 12px;
-    min-height: 12px;
-    margin: -4px;
-    padding: 0;
-    border-radius: 9999px;
-    background-color: white;
-    border: 1px solid alpha(black, 0.2);
-    box-shadow: 0 1px 3px alpha(black, 0.4);
 }
 
 .editor-workspace-paned > separator {
@@ -485,21 +413,6 @@ def gain_feedback_badge_width(text_width, available_width):
     return min(requested_width, available_width)
 
 
-def _disable_hold_to_fine_tune(scale) -> None:
-    """Remove GtkRange's private long-press fine-tuning gesture."""
-    model = scale.observe_controllers()
-    controllers = [model.get_item(index) for index in range(model.get_n_items())]
-    for controller in controllers:
-        if isinstance(controller, Gtk.GestureLongPress):
-            scale.remove_controller(controller)
-
-
-def _prevent_scroll_seeking(scale) -> None:
-    """Consume scroll events before GtkRange can adjust the playback position."""
-    controller = Gtk.EventControllerScroll.new(Gtk.EventControllerScrollFlags.BOTH_AXES)
-    controller.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
-    controller.connect("scroll", lambda *_args: True)
-    scale.add_controller(controller)
 
 
 def format_video_track_details(source) -> str:
@@ -595,19 +508,6 @@ def _new_track_mute_badge(label):
     badge.set_focus_on_click(False)
     return badge
 
-
-def _matches_base_key(keyval, keycode, *base_keyvals):
-    """Match a physical key against its base-layout keyval when available."""
-    display = Gdk.Display.get_default()
-    if display is not None and keycode is not None and hasattr(display, "map_keycode"):
-        keyvals = ()
-        try:
-            found, _keys, keyvals = display.map_keycode(keycode)
-        except Exception:
-            found = False
-        if found:
-            return any(candidate in base_keyvals for candidate in keyvals)
-    return Gdk.keyval_to_lower(keyval) in base_keyvals
 
 
 def _set_source_color(context, color, alpha=1.0):
@@ -1231,8 +1131,6 @@ class EditorWindow(Adw.ApplicationWindow):
         self._timeline_pointer_x = None
         self._zoom_anchor_timeout_id = None
         self._zoom_anchor_attempts = 0
-        self._updating_volume = False
-        self._volume_before_mute = None
         self._updating_transport_seek = False
         self._transport_seek_dragging = False
         _install_editor_css()
@@ -1356,143 +1254,31 @@ class EditorWindow(Adw.ApplicationWindow):
         ambient_overlay.set_child(ambient_layer)
         ambient_overlay.add_overlay(picture_overlay)
 
-        self.transport_revealer = Gtk.Revealer()
-        self._controls_revealer = self.transport_revealer
-        self.transport_revealer.set_transition_type(
-            Gtk.RevealerTransitionType.CROSSFADE
+        self._transport = PlaybackControls(
+            on_play=self._toggle_playback,
+            on_fullscreen=self._toggle_fullscreen,
+            on_seek=self._on_seek_change_value,
+            on_seek_drag=self._on_seek_css_classes_changed,
+            on_volume=self._apply_volume,
+            time_text=(f"{format_transport_time(0)} / "
+                       f"{format_transport_time(self.project.output_duration_us)}"),
+            seek_sensitive=self.project.output_duration_us > 0,
+            seek_visible=False,
         )
-        self.transport_revealer.set_transition_duration(180)
-        self.transport_revealer.set_reveal_child(False)
-        self.transport_revealer.set_halign(Gtk.Align.FILL)
-        self.transport_revealer.set_valign(Gtk.Align.END)
-        self.transport_revealer.set_margin_start(16)
-        self.transport_revealer.set_margin_end(16)
-        self.transport_revealer.set_margin_bottom(16)
-
-        controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
-        self._controls = controls
-        controls.add_css_class("clipper-player-controls")
-        controls.add_css_class("osd")
-
-        self._play_button = Gtk.Button.new_from_icon_name(PLAY)
+        self._controls_revealer = self._transport._controls_revealer
+        self._controls = self._transport._controls
+        self._play_button = self._transport._play_button
+        self._time_label = self._transport._time_label
+        self._seek_scale = self._transport._seek_scale
+        self._control_spacer = self._transport._control_spacer
+        self._volume_control = self._transport._volume_control
+        self._volume_revealer = self._transport._volume_revealer
+        self._volume_scale = self._transport._volume_scale
+        self._mute_button = self._transport._mute_button
+        self._fullscreen_button = self._transport._fullscreen_button
+        self.transport_revealer = self._controls_revealer
         self.playback_button = self._play_button
-        self._play_button.set_tooltip_text(_("Play"))
-        self._play_button.add_css_class("circular")
-        self._play_button.add_css_class("flat")
-        self._play_button.add_css_class("clipper-player-control-button")
-        self._play_button.connect("clicked", self._toggle_playback)
-        controls.append(self._play_button)
-
-        self._time_label = Gtk.Label(
-            label=(
-                f"{format_transport_time(0)} / "
-                f"{format_transport_time(self.project.output_duration_us)}"
-            )
-        )
         self.time_label = self._time_label
-        self.time_label.set_halign(Gtk.Align.START)
-        self.time_label.set_valign(Gtk.Align.CENTER)
-        self.time_label.set_xalign(0)
-        self.time_label.add_css_class("clipper-player-time")
-        controls.append(self.time_label)
-
-        self._seek_scale = Gtk.Scale.new_with_range(
-            Gtk.Orientation.HORIZONTAL,
-            0,
-            1000,
-            1,
-        )
-        self._seek_scale.set_draw_value(False)
-        self._seek_scale.set_hexpand(True)
-        self._seek_scale.set_valign(Gtk.Align.CENTER)
-        self._seek_scale.set_sensitive(self.project.output_duration_us > 0)
-        self._seek_scale.set_visible(False)
-        self._seek_scale.add_css_class("clipper-player-timeline")
-        self._seek_scale.update_property(
-            [Gtk.AccessibleProperty.LABEL],
-            [_('Playback position')],
-        )
-        self._seek_scale.connect("change-value", self._on_seek_change_value)
-        _disable_hold_to_fine_tune(self._seek_scale)
-        _prevent_scroll_seeking(self._seek_scale)
-        self._seek_scale.connect(
-            "notify::css-classes",
-            self._on_seek_css_classes_changed,
-        )
-        controls.append(self._seek_scale)
-
-        control_spacer = Gtk.Box()
-        self._control_spacer = control_spacer
-        control_spacer.set_hexpand(True)
-        controls.append(control_spacer)
-
-        self._volume_control = Gtk.Box(
-            orientation=Gtk.Orientation.HORIZONTAL,
-            spacing=0,
-        )
-        self._volume_control.set_valign(Gtk.Align.CENTER)
-
-        self._volume_revealer = Gtk.Revealer()
-        self._volume_revealer.set_transition_type(
-            Gtk.RevealerTransitionType.SLIDE_LEFT
-        )
-        self._volume_revealer.set_transition_duration(160)
-        self._volume_revealer.set_reveal_child(False)
-
-        self._volume_scale = Gtk.Scale.new_with_range(
-            Gtk.Orientation.HORIZONTAL,
-            0,
-            1,
-            0.01,
-        )
-        self._volume_scale.set_value(1)
-        self._volume_scale.set_draw_value(False)
-        self._volume_scale.set_valign(Gtk.Align.CENTER)
-        self._volume_scale.add_css_class("clipper-player-volume")
-        self._volume_scale.update_property(
-            [Gtk.AccessibleProperty.LABEL],
-            [_('Volume')],
-        )
-        self._volume_scale.connect("value-changed", self._on_volume_changed)
-        _disable_hold_to_fine_tune(self._volume_scale)
-        self._volume_revealer.set_child(self._volume_scale)
-        self._volume_control.append(self._volume_revealer)
-
-        self._mute_button = Gtk.Button.new_from_icon_name(VOLUME)
-        self._mute_button.set_tooltip_text(_("Mute"))
-        self._mute_button.add_css_class("circular")
-        self._mute_button.add_css_class("flat")
-        self._mute_button.add_css_class("clipper-player-control-button")
-        self._mute_button.connect("clicked", self._toggle_muted)
-        mute_button_scroll = Gtk.EventControllerScroll.new(
-            Gtk.EventControllerScrollFlags.VERTICAL
-        )
-        mute_button_scroll.connect("scroll", self._on_mute_button_scroll)
-        self._mute_button.add_controller(mute_button_scroll)
-        self._volume_control.append(self._mute_button)
-
-        volume_hover = Gtk.EventControllerMotion()
-        volume_hover.connect("enter", self._on_volume_control_enter)
-        volume_hover.connect("leave", self._on_volume_control_leave)
-        self._volume_control.add_controller(volume_hover)
-
-        volume_focus = Gtk.EventControllerFocus()
-        volume_focus.connect("enter", self._on_volume_control_enter)
-        volume_focus.connect("leave", self._on_volume_control_leave)
-        self._volume_control.add_controller(volume_focus)
-        controls.append(self._volume_control)
-
-        self._fullscreen_button = Gtk.Button.new_from_icon_name(FULLSCREEN)
-        self._fullscreen_button.set_tooltip_text(_("Fullscreen"))
-        self._fullscreen_button.add_css_class("circular")
-        self._fullscreen_button.add_css_class("flat")
-        self._fullscreen_button.add_css_class("clipper-player-control-button")
-        self._fullscreen_button.connect(
-            "clicked", lambda _button: self._toggle_fullscreen()
-        )
-        controls.append(self._fullscreen_button)
-
-        self.transport_revealer.set_child(controls)
         picture_overlay.add_overlay(self.transport_revealer)
 
         monitor_hover = Gtk.EventControllerMotion()
@@ -1765,65 +1551,17 @@ class EditorWindow(Adw.ApplicationWindow):
         else:
             self._finish_scrub()
 
-    def _on_volume_control_enter(self, *_args):
-        self._volume_revealer.set_reveal_child(True)
-
-    def _on_volume_control_leave(self, *_args):
-        self._volume_revealer.set_reveal_child(False)
-
-    def _on_volume_changed(self, scale):
-        if self._updating_volume:
-            return
-        volume = max(0.0, min(1.0, float(scale.get_value())))
-        self._volume_before_mute = None
+    def _apply_volume(self, volume):
         self.preview.set_volume(volume)
-        self._set_volume_ui(volume)
-
-    def _set_volume(self, volume):
-        volume = max(0.0, min(1.0, float(volume)))
-        self._updating_volume = True
-        try:
-            self._volume_scale.set_value(volume)
-        finally:
-            self._updating_volume = False
-        self.preview.set_volume(volume)
-        self._set_volume_ui(volume)
 
     def _toggle_muted(self, _button=None):
-        volume = max(0.0, min(1.0, float(self._volume_scale.get_value())))
-        if volume == 0:
-            restore_volume = self._volume_before_mute or 1.0
-            self._volume_before_mute = None
-            self._set_volume(restore_volume)
-            return
-        self._volume_before_mute = volume
-        self._set_volume(0)
+        return self._transport._toggle_muted()
 
     def _change_volume(self, direction):
-        volume = self._volume_scale.get_value()
-        self._volume_scale.set_value(
-            max(0.0, min(1.0, round(volume + direction * _VOLUME_STEP, 2)))
-        )
+        return self._transport._change_volume(direction)
 
     def _on_mute_button_scroll(self, _controller, _dx, dy):
-        if dy:
-            volume = self._volume_scale.get_value()
-            direction = 1 if dy < 0 else -1
-            self._volume_scale.set_value(
-                max(0.0, min(1.0, round(volume + direction * _VOLUME_SCROLL_STEP, 2)))
-            )
-        return True
-
-    def _set_volume_ui(self, volume):
-        muted = volume <= 0
-        if muted:
-            icon_name = VOLUME_CROSS
-        elif volume <= 2 / 3:
-            icon_name = VOLUME_MEDIUM
-        else:
-            icon_name = VOLUME
-        self._mute_button.set_icon_name(icon_name)
-        self._mute_button.set_tooltip_text(_("Unmute") if muted else _("Mute"))
+        return self._transport._on_mute_button_scroll(_controller, _dx, dy)
 
     def _toggle_fullscreen(self):
         if self.is_fullscreen():
