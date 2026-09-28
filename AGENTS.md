@@ -102,6 +102,9 @@ This file gives coding agents the minimum repo-specific instructions needed to w
 
 ## Change Expectations
 
+- Reuse before you build. Analyze existing code and its extension points first.
+  When an existing element fits, extend it with a builder method instead of
+  creating a sibling implementation.
 - If you change Python behavior under `ui/` or `tests/`, run the Python test suite before finishing.
 - If you change engine code under `engine/src/`, rebuild the engine before finishing.
 - After adding a feature or fixing a bug, build the Flatpak when the change warrants a packaging check, using `./tools/run_flatpak_build_quiet.sh` from the repository root.
