@@ -30,7 +30,7 @@ msgstr ""
 msgid "Engine restart required for audio changes"
 msgstr ""
 
-#: ui/audio_tracks_view.py:72 ui/main_window.py:179 ui/settings_view.py:492
+#: ui/audio_tracks_view.py:72 ui/main_window.py:179 ui/settings_view.py:482
 msgid "Restart engine"
 msgstr ""
 
@@ -58,52 +58,52 @@ msgstr ""
 msgid "Add track"
 msgstr ""
 
-#: ui/audio_tracks_view.py:181 ui/audio_tracks_view.py:469
+#: ui/audio_tracks_view.py:181 ui/audio_tracks_view.py:455
 #, python-format
 msgid "Track %(number)d"
 msgstr ""
 
-#: ui/audio_tracks_view.py:220
+#: ui/audio_tracks_view.py:224
 #, python-format
 msgid "Track %(number)d volume"
 msgstr ""
 
-#: ui/audio_tracks_view.py:235
+#: ui/audio_tracks_view.py:239
 #, python-format
 msgid "Remove track %(number)d"
 msgstr ""
 
-#: ui/audio_tracks_view.py:530
+#: ui/audio_tracks_view.py:516
 msgid "Off"
 msgstr ""
 
-#: ui/audio_tracks_view.py:539
+#: ui/audio_tracks_view.py:525
 msgid "System default"
 msgstr ""
 
-#: ui/audio_tracks_view.py:657
+#: ui/audio_tracks_view.py:643
 msgid "None"
 msgstr ""
 
-#: ui/audio_tracks_view.py:659
+#: ui/audio_tracks_view.py:645
 msgid "System audio"
 msgstr ""
 
-#: ui/audio_tracks_view.py:664
+#: ui/audio_tracks_view.py:650
 msgid "Microphone"
 msgstr ""
 
-#: ui/audio_tracks_view.py:672 ui/audio_tracks_view.py:998
-#: ui/audio_tracks_view.py:1122
+#: ui/audio_tracks_view.py:658 ui/audio_tracks_view.py:923
+#: ui/audio_tracks_view.py:1047
 msgid "Whitelisted games"
 msgstr ""
 
-#: ui/audio_tracks_view.py:685 ui/audio_tracks_view.py:1014
+#: ui/audio_tracks_view.py:671 ui/audio_tracks_view.py:939
 #, python-format
 msgid "App: %(name)s"
 msgstr ""
 
-#: ui/audio_tracks_view.py:1012
+#: ui/audio_tracks_view.py:937
 #, python-format
 msgid "Game: %(name)s"
 msgstr ""
@@ -317,7 +317,7 @@ msgstr ""
 msgid "Reveal in file manager"
 msgstr ""
 
-#: ui/clips_view.py:1847 ui/editor_window.py:3823
+#: ui/clips_view.py:1847 ui/editor_window.py:3561
 msgid "Could not wipe saved edits"
 msgstr ""
 
@@ -336,9 +336,9 @@ msgid ""
 "This can be reversed."
 msgstr ""
 
-#: ui/clips_view.py:2140 ui/dialogs.py:864 ui/editor_export_dialog.py:345
-#: ui/editor_export_dialog.py:636 ui/editor_export_dialog.py:664
-#: ui/editor_export_dialog.py:772 ui/editor_window.py:3997 ui/editor_wipe.py:16
+#: ui/clips_view.py:2140 ui/dialogs.py:842 ui/editor_export_dialog.py:344
+#: ui/editor_export_dialog.py:602 ui/editor_export_dialog.py:630
+#: ui/editor_export_dialog.py:738 ui/editor_window.py:3735 ui/editor_wipe.py:16
 #: ui/game_details_dialog.py:37 ui/update_controller.py:376
 msgid "Cancel"
 msgstr ""
@@ -382,138 +382,138 @@ msgid ""
 "game window."
 msgstr ""
 
-#: ui/dialogs.py:96
-msgid "Capture method"
-msgstr ""
-
-#: ui/dialogs.py:120
-msgid "Required launch option"
-msgstr ""
-
-#: ui/dialogs.py:127
-msgid "Copy this into the game's launch options before starting it."
-msgstr ""
-
-#: ui/dialogs.py:142
-msgid "Copy the required launch option"
-msgstr ""
-
-#: ui/dialogs.py:146 ui/dialogs.py:454
-msgid "Copy launch option"
-msgstr ""
-
-#: ui/dialogs.py:201 ui/whitelist_view.py:455
-msgid "Add a non-Steam game"
-msgstr ""
-
-#: ui/dialogs.py:224
-msgid "Pick a process"
-msgstr ""
-
-#: ui/dialogs.py:234
-msgid "Search processes…"
-msgstr ""
-
-#: ui/dialogs.py:269
-msgid "Or pick an executable path"
-msgstr ""
-
-#: ui/dialogs.py:278
-msgid "/path/to/game.exe"
-msgstr ""
-
-#: ui/dialogs.py:284
-msgid "Choose executable"
-msgstr ""
-
-#: ui/dialogs.py:316 ui/dialogs.py:644
+#: ui/dialogs.py:125
 msgid "Add selected"
 msgstr ""
 
-#: ui/dialogs.py:351
+#: ui/dialogs.py:150
+msgid "Capture method"
+msgstr ""
+
+#: ui/dialogs.py:174
+msgid "Required launch option"
+msgstr ""
+
+#: ui/dialogs.py:181
+msgid "Copy this into the game's launch options before starting it."
+msgstr ""
+
+#: ui/dialogs.py:196
+msgid "Copy the required launch option"
+msgstr ""
+
+#: ui/dialogs.py:200 ui/dialogs.py:474
+msgid "Copy launch option"
+msgstr ""
+
+#: ui/dialogs.py:255 ui/whitelist_view.py:455
+msgid "Add a non-Steam game"
+msgstr ""
+
+#: ui/dialogs.py:278
+msgid "Pick a process"
+msgstr ""
+
+#: ui/dialogs.py:288
+msgid "Search processes…"
+msgstr ""
+
+#: ui/dialogs.py:301
+msgid "Or pick an executable path"
+msgstr ""
+
+#: ui/dialogs.py:310
+msgid "/path/to/game.exe"
+msgstr ""
+
+#: ui/dialogs.py:316
+msgid "Choose executable"
+msgstr ""
+
+#: ui/dialogs.py:371
 msgid "Could not load host processes"
 msgstr ""
 
-#: ui/dialogs.py:353
+#: ui/dialogs.py:373
 msgid "No running processes found"
 msgstr ""
 
-#: ui/dialogs.py:442
+#: ui/dialogs.py:462
 msgid "Copied"
 msgstr ""
 
-#: ui/dialogs.py:495 ui/game_details_dialog.py:92 ui/game_details_dialog.py:165
+#: ui/dialogs.py:515 ui/game_details_dialog.py:92 ui/game_details_dialog.py:165
 msgid "Choose game executable"
 msgstr ""
 
-#: ui/dialogs.py:496 ui/game_details_dialog.py:165
+#: ui/dialogs.py:516 ui/game_details_dialog.py:165
 msgid "Choose"
 msgstr ""
 
-#: ui/dialogs.py:511
+#: ui/dialogs.py:531
 msgid "Choose a local executable file."
 msgstr ""
 
-#: ui/dialogs.py:572
+#: ui/dialogs.py:592
 msgid "Select Steam game"
 msgstr ""
 
-#: ui/dialogs.py:597
+#: ui/dialogs.py:617
 msgid "Search games…"
 msgstr ""
 
-#: ui/dialogs.py:667
+#: ui/dialogs.py:645
 msgid "Scanning Steam libraries…"
 msgstr ""
 
-#: ui/dialogs.py:731
+#: ui/dialogs.py:709
 msgid "Steam not found"
 msgstr ""
 
-#: ui/dialogs.py:733
+#: ui/dialogs.py:711
 msgid "Could not find Steam. Start Steam once, then try again."
 msgstr ""
 
-#: ui/dialogs.py:736
+#: ui/dialogs.py:714
 msgid "No games found"
 msgstr ""
 
-#: ui/dialogs.py:739
+#: ui/dialogs.py:717
 msgid ""
 "No Steam games are currently installed.\n"
 "Install games through Steam and try again."
 msgstr ""
 
-#: ui/dialogs.py:775
+#: ui/dialogs.py:753
 msgid "Flatpak Steam"
 msgstr ""
 
-#: ui/dialogs.py:775 ui/game_details.py:36
+#: ui/dialogs.py:753 ui/game_details.py:36
 msgid "Native Steam"
 msgstr ""
 
-#: ui/dialogs.py:777 ui/game_details.py:39
+#: ui/dialogs.py:755 ui/game_details.py:39
 msgid "Steam Snap"
 msgstr ""
 
-#: ui/dialogs.py:780
+#: ui/dialogs.py:758
 #, python-format
 msgid "%(source)s · account %(account)s"
 msgstr ""
 
-#: ui/dialogs.py:846
+#: ui/dialogs.py:824
 msgid "Warning"
 msgstr ""
 
-#: ui/dialogs.py:848
+#: ui/dialogs.py:826
 msgid "OK"
 msgstr ""
 
-#: ui/dialogs.py:856
+#: ui/dialogs.py:834
 msgid "Game capture requires a Steam restart"
 msgstr ""
 
-#: ui/dialogs.py:858
+#: ui/dialogs.py:836
 msgid ""
 "The <b>Game capture</b> method changes this game's Steam launch options. "
 "Steam must be closed while Clipper applies the change.\n"
@@ -521,23 +521,23 @@ msgid ""
 "Restart Steam now to continue, or cancel without changing the whitelist."
 msgstr ""
 
-#: ui/dialogs.py:865
+#: ui/dialogs.py:843
 msgid "Restart Steam"
 msgstr ""
 
-#: ui/editor_export.py:32 ui/settings_view.py:62 ui/settings_view.py:817
+#: ui/editor_export.py:32 ui/settings_view.py:56 ui/settings_view.py:808
 msgid "Matroska video (.mkv)"
 msgstr ""
 
-#: ui/editor_export.py:33 ui/settings_view.py:63 ui/settings_view.py:818
+#: ui/editor_export.py:33 ui/settings_view.py:57 ui/settings_view.py:809
 msgid "MPEG-4 (.mp4)"
 msgstr ""
 
-#: ui/editor_export.py:34 ui/settings_view.py:64 ui/settings_view.py:819
+#: ui/editor_export.py:34 ui/settings_view.py:58 ui/settings_view.py:810
 msgid "QuickTime (.mov)"
 msgstr ""
 
-#: ui/editor_export.py:35 ui/settings_view.py:65 ui/settings_view.py:820
+#: ui/editor_export.py:35 ui/settings_view.py:59 ui/settings_view.py:811
 msgid "MPEG-TS (.ts)"
 msgstr ""
 
@@ -730,7 +730,7 @@ msgid "Export was already started"
 msgstr ""
 
 #: ui/editor_export.py:1053 ui/editor_export.py:1137 ui/editor_export.py:1151
-#: ui/editor_export_dialog.py:751 ui/editor_window.py:3957
+#: ui/editor_export_dialog.py:717 ui/editor_window.py:3695
 msgid "Export cancelled"
 msgstr ""
 
@@ -751,281 +751,260 @@ msgstr ""
 msgid "The exported file did not match the selected options"
 msgstr ""
 
-#: ui/editor_export_dialog.py:57
+#: ui/editor_export_dialog.py:59
 msgid "Combine into one track"
 msgstr ""
 
-#: ui/editor_export_dialog.py:57
+#: ui/editor_export_dialog.py:59
 msgid "Keep separate tracks"
 msgstr ""
 
-#: ui/editor_export_dialog.py:94 ui/editor_export_dialog.py:106
+#: ui/editor_export_dialog.py:93 ui/editor_export_dialog.py:105
 #, python-format
 msgid "%(count)d second"
 msgid_plural "%(count)d seconds"
 msgstr[0] ""
 msgstr[1] ""
 
-#: ui/editor_export_dialog.py:97 ui/editor_export_dialog.py:105
-#: ui/editor_export_dialog.py:113 ui/editor_export_dialog.py:120
-#: ui/editor_export_dialog.py:128
+#: ui/editor_export_dialog.py:96 ui/editor_export_dialog.py:104
+#: ui/editor_export_dialog.py:112 ui/editor_export_dialog.py:119
+#: ui/editor_export_dialog.py:127
 #, python-format
 msgid "About %(duration)s remaining"
 msgstr ""
 
-#: ui/editor_export_dialog.py:101 ui/editor_export_dialog.py:121
+#: ui/editor_export_dialog.py:100 ui/editor_export_dialog.py:120
 #, python-format
 msgid "%(count)d minute"
 msgid_plural "%(count)d minutes"
 msgstr[0] ""
 msgstr[1] ""
 
-#: ui/editor_export_dialog.py:109 ui/editor_export_dialog.py:124
+#: ui/editor_export_dialog.py:108 ui/editor_export_dialog.py:123
 #, python-format
 msgid "%(first)s, %(second)s"
 msgstr ""
 
-#: ui/editor_export_dialog.py:116
+#: ui/editor_export_dialog.py:115
 #, python-format
 msgid "%(count)d hour"
 msgid_plural "%(count)d hours"
 msgstr[0] ""
 msgstr[1] ""
 
-#: ui/editor_export_dialog.py:335 ui/editor_export_dialog.py:343
+#: ui/editor_export_dialog.py:334 ui/editor_export_dialog.py:342
 msgid "Export edited clip"
 msgstr ""
 
-#: ui/editor_export_dialog.py:349 ui/editor_export_dialog.py:353
-#: ui/editor_window.py:1283 ui/editor_window.py:3936 ui/editor_window.py:3972
+#: ui/editor_export_dialog.py:348 ui/editor_export_dialog.py:352
+#: ui/editor_window.py:1181 ui/editor_window.py:3674 ui/editor_window.py:3710
 msgid "Export"
 msgstr ""
 
-#: ui/editor_export_dialog.py:381
+#: ui/editor_export_dialog.py:380
 msgid "Destination"
 msgstr ""
 
-#: ui/editor_export_dialog.py:385
+#: ui/editor_export_dialog.py:384
 msgid "Filename"
 msgstr ""
 
-#: ui/editor_export_dialog.py:399
+#: ui/editor_export_dialog.py:398
 msgid "Folder"
 msgstr ""
 
-#: ui/editor_export_dialog.py:400 ui/settings_view.py:1372
+#: ui/editor_export_dialog.py:399 ui/settings_view.py:1139
 msgid "Choose…"
 msgstr ""
 
-#: ui/editor_export_dialog.py:409
+#: ui/editor_export_dialog.py:408
 msgid "File format"
 msgstr ""
 
-#: ui/editor_export_dialog.py:410
+#: ui/editor_export_dialog.py:409
 msgid "Container used for the exported file"
 msgstr ""
 
-#: ui/editor_export_dialog.py:426
+#: ui/editor_export_dialog.py:425
 msgid "Encoding"
 msgstr ""
 
-#: ui/editor_export_dialog.py:430 ui/settings_view.py:1198
-#: ui/setup_window.py:388
+#: ui/editor_export_dialog.py:429 ui/settings_view.py:1042
+#: ui/setup_window.py:352
 msgid "Resolution"
 msgstr ""
 
-#: ui/editor_export_dialog.py:431
+#: ui/editor_export_dialog.py:430
 msgid "Preserves the source aspect ratio"
 msgstr ""
 
-#: ui/editor_export_dialog.py:437
+#: ui/editor_export_dialog.py:436
 #, python-format
 msgid "%(width)d × %(height)d (native)"
 msgstr ""
 
-#: ui/editor_export_dialog.py:440
+#: ui/editor_export_dialog.py:439
 msgid "Native"
 msgstr ""
 
-#: ui/editor_export_dialog.py:456 ui/setup_window.py:415
+#: ui/editor_export_dialog.py:455 ui/setup_window.py:379
 msgid "Video codec"
 msgstr ""
 
-#: ui/editor_export_dialog.py:457 ui/settings_view.py:1229
+#: ui/editor_export_dialog.py:456 ui/settings_view.py:1057
 msgid "Encoder implementation"
 msgstr ""
 
-#: ui/editor_export_dialog.py:464
+#: ui/editor_export_dialog.py:463
 msgid "Hardware acceleration"
 msgstr ""
 
-#: ui/editor_export_dialog.py:465
+#: ui/editor_export_dialog.py:464
 msgid "libx264 — software encoding"
 msgstr ""
 
-#: ui/editor_export_dialog.py:474 ui/settings_view.py:1260
+#: ui/editor_export_dialog.py:473 ui/settings_view.py:1074
 msgid "Rate control"
 msgstr ""
 
-#: ui/editor_export_dialog.py:491 ui/settings_view.py:1271
-msgid "Quality"
-msgstr ""
-
-#: ui/editor_export_dialog.py:515 ui/settings_view.py:1283
-msgid "Low"
-msgstr ""
-
-#: ui/editor_export_dialog.py:516 ui/settings_view.py:1284
-msgid "Medium"
-msgstr ""
-
-#: ui/editor_export_dialog.py:517 ui/settings_view.py:1285
-msgid "High"
-msgstr ""
-
-#: ui/editor_export_dialog.py:558 ui/setup_window.py:424
+#: ui/editor_export_dialog.py:524 ui/setup_window.py:388
 msgid "Audio codec"
 msgstr ""
 
-#: ui/editor_export_dialog.py:559 ui/settings_view.py:1245
+#: ui/editor_export_dialog.py:525 ui/settings_view.py:1065
 msgid "Audio compression format"
 msgstr ""
 
-#: ui/editor_export_dialog.py:564
+#: ui/editor_export_dialog.py:530
 msgid "Audio tracks"
 msgstr ""
 
-#: ui/editor_export_dialog.py:565
+#: ui/editor_export_dialog.py:531
 msgid "Preserve tracks or mix them into one"
 msgstr ""
 
-#: ui/editor_export_dialog.py:581 ui/editor_export_dialog.py:582
+#: ui/editor_export_dialog.py:547 ui/editor_export_dialog.py:548
 msgid "This clip has no audio tracks"
 msgstr ""
 
-#: ui/editor_export_dialog.py:609 ui/editor_export_dialog.py:662
+#: ui/editor_export_dialog.py:575 ui/editor_export_dialog.py:628
 msgid "Estimating time remaining…"
 msgstr ""
 
-#: ui/editor_export_dialog.py:622
+#: ui/editor_export_dialog.py:588
 msgid "Export progress"
 msgstr ""
 
-#: ui/editor_export_dialog.py:631
+#: ui/editor_export_dialog.py:597
 msgid "Show in folder"
 msgstr ""
 
-#: ui/editor_export_dialog.py:659
+#: ui/editor_export_dialog.py:625
 msgid "0% complete"
 msgstr ""
 
-#: ui/editor_export_dialog.py:660
+#: ui/editor_export_dialog.py:626
 msgid "0%"
 msgstr ""
 
-#: ui/editor_export_dialog.py:682
+#: ui/editor_export_dialog.py:648
 #, python-format
 msgid "%(percentage)d%% complete"
 msgstr ""
 
-#: ui/editor_export_dialog.py:684 ui/editor_window.py:1992
-#: ui/editor_window.py:2285 ui/editor_window.py:2295 ui/editor_window.py:2328
+#: ui/editor_export_dialog.py:650 ui/editor_window.py:1730
+#: ui/editor_window.py:2023 ui/editor_window.py:2033 ui/editor_window.py:2066
 #, python-format
 msgid "%(percentage)d%%"
 msgstr ""
 
-#: ui/editor_export_dialog.py:704
+#: ui/editor_export_dialog.py:670
 msgid "Finishing export…"
 msgstr ""
 
-#: ui/editor_export_dialog.py:730
+#: ui/editor_export_dialog.py:696
 #, python-format
 msgid "Exported %(name)s"
 msgstr ""
 
-#: ui/editor_export_dialog.py:734
+#: ui/editor_export_dialog.py:700
 msgid "100% complete"
 msgstr ""
 
-#: ui/editor_export_dialog.py:735
+#: ui/editor_export_dialog.py:701
 msgid "100%"
 msgstr ""
 
-#: ui/editor_export_dialog.py:737
+#: ui/editor_export_dialog.py:703
 msgid "Finished"
 msgstr ""
 
-#: ui/editor_export_dialog.py:739 ui/game_details_dialog.py:37
+#: ui/editor_export_dialog.py:705 ui/game_details_dialog.py:37
 #: ui/preferences_dialog.py:29
 msgid "Close"
 msgstr ""
 
-#: ui/editor_export_dialog.py:756 ui/editor_window.py:4043
+#: ui/editor_export_dialog.py:722 ui/editor_window.py:3781
 msgid "Cancel the export before closing the editor"
 msgstr ""
 
-#: ui/editor_export_dialog.py:787
+#: ui/editor_export_dialog.py:753
 msgid "Cancelling…"
 msgstr ""
 
-#: ui/editor_export_dialog.py:830
+#: ui/editor_export_dialog.py:796
 msgid "Could not show exported file"
 msgstr ""
 
-#: ui/editor_export_dialog.py:846 ui/settings_view.py:1304
-#: ui/settings_view.py:1320
-msgid "Kbps"
-msgstr ""
-
-#: ui/editor_export_dialog.py:894
+#: ui/editor_export_dialog.py:843
 msgid "No compatible codec available"
 msgstr ""
 
-#: ui/editor_export_dialog.py:928
+#: ui/editor_export_dialog.py:877
 msgid "No compatible FFmpeg encoder is available"
 msgstr ""
 
-#: ui/editor_export_dialog.py:948
+#: ui/editor_export_dialog.py:897
 #, python-format
 msgid "%(encoder)s — software encoding; hardware unavailable"
 msgstr ""
 
-#: ui/editor_export_dialog.py:951
+#: ui/editor_export_dialog.py:900
 #, python-format
 msgid "%(encoder)s — software encoding; checking hardware"
 msgstr ""
 
-#: ui/editor_export_dialog.py:955
+#: ui/editor_export_dialog.py:904
 #, python-format
 msgid "%(encoder)s — software encoding"
 msgstr ""
 
-#: ui/editor_export_dialog.py:959
+#: ui/editor_export_dialog.py:908
 msgid "Software encoding"
 msgstr ""
 
-#: ui/editor_export_dialog.py:1112
+#: ui/editor_export_dialog.py:1044
 msgid "Choose export folder"
 msgstr ""
 
-#: ui/editor_export_dialog.py:1125
+#: ui/editor_export_dialog.py:1057
 msgid "Choose a local export folder"
 msgstr ""
 
-#: ui/editor_export_dialog.py:1135
+#: ui/editor_export_dialog.py:1067
 msgid "No compatible codec is available"
 msgstr ""
 
-#: ui/editor_export_dialog.py:1200
+#: ui/editor_export_dialog.py:1132
 msgid "A folder already uses this filename"
 msgstr ""
 
-#: ui/editor_export_dialog.py:1208
+#: ui/editor_export_dialog.py:1140
 #, python-format
 msgid "%(name)s already exists. Choose Replace to overwrite it"
 msgstr ""
 
-#: ui/editor_export_dialog.py:1211
+#: ui/editor_export_dialog.py:1143
 msgid "Replace"
 msgstr ""
 
@@ -1034,71 +1013,67 @@ msgstr ""
 msgid "The GStreamer element %(element)s is unavailable"
 msgstr ""
 
-#: ui/editor_preview.py:177 ui/editor_preview.py:1084 ui/editor_preview.py:1096
+#: ui/editor_preview.py:202 ui/editor_preview.py:1082 ui/editor_preview.py:1094
 msgid "The GStreamer video preview is unavailable"
 msgstr ""
 
-#: ui/editor_preview.py:186
+#: ui/editor_preview.py:211
 msgid "The timeline video preview could not be linked"
 msgstr ""
 
-#: ui/editor_preview.py:293
+#: ui/editor_preview.py:288
 msgid "The timeline audio preview could not be linked"
 msgstr ""
 
-#: ui/editor_preview.py:307
+#: ui/editor_preview.py:305
 msgid "A timeline audio track could not be linked"
 msgstr ""
 
-#: ui/editor_preview.py:501
+#: ui/editor_preview.py:499
 msgid "A timeline video segment could not be linked"
 msgstr ""
 
-#: ui/editor_preview.py:508
+#: ui/editor_preview.py:506
 msgid "A timeline audio segment could not be prepared"
 msgstr ""
 
-#: ui/editor_preview.py:741
+#: ui/editor_preview.py:739
 msgid "A timeline audio segment could not be linked"
 msgstr ""
 
-#: ui/editor_preview.py:747
+#: ui/editor_preview.py:745
 msgid "A timeline audio segment could not be concatenated"
 msgstr ""
 
-#: ui/editor_preview.py:750
+#: ui/editor_preview.py:748
 msgid "A decoded timeline audio track could not be linked"
 msgstr ""
 
-#: ui/editor_preview.py:788
+#: ui/editor_preview.py:786
 msgid "A timeline segment could not be prepared"
 msgstr ""
 
-#: ui/editor_preview.py:855
+#: ui/editor_preview.py:853
 msgid "The timeline could not be prepared"
 msgstr ""
 
-#: ui/editor_preview.py:871
+#: ui/editor_preview.py:869
 msgid "The pre-rolled timeline could not start"
 msgstr ""
 
-#: ui/editor_preview.py:1072
+#: ui/editor_preview.py:1070
 msgid "Loading video"
 msgstr ""
 
-#: ui/editor_preview.py:1104
+#: ui/editor_preview.py:1102
 msgid "The GStreamer video preview could not be linked"
 msgstr ""
 
-#: ui/editor_preview.py:1254
-msgid "The GStreamer audio preview is unavailable"
-msgstr ""
-
-#: ui/editor_preview.py:1263
+#: ui/editor_preview.py:1236
 msgid "The GStreamer audio preview could not be linked"
 msgstr ""
 
-#: ui/editor_window.py:91
+#: ui/editor_window.py:93
 msgid "Mixed mute · click to mute all"
 msgstr ""
 
@@ -1162,11 +1137,11 @@ msgstr ""
 msgid "Toggle fullscreen"
 msgstr ""
 
-#: ui/editor_window.py:130 ui/editor_window.py:133 ui/editor_window.py:1609
+#: ui/editor_window.py:130 ui/editor_window.py:133 ui/editor_window.py:1395
 msgid "Zoom in"
 msgstr ""
 
-#: ui/editor_window.py:131 ui/editor_window.py:137 ui/editor_window.py:1585
+#: ui/editor_window.py:131 ui/editor_window.py:137 ui/editor_window.py:1371
 msgid "Zoom out"
 msgstr ""
 
@@ -1174,253 +1149,243 @@ msgstr ""
 msgid "Close or exit fullscreen"
 msgstr ""
 
-#: ui/editor_window.py:458
+#: ui/editor_window.py:386
 #, python-format
 msgid "Gain %(decibels)+.1f dB"
 msgstr ""
 
-#: ui/editor_window.py:460
+#: ui/editor_window.py:388
 msgid "Gain 0.0 dB"
 msgstr ""
 
-#: ui/editor_window.py:507
+#: ui/editor_window.py:420
 msgid "Source video"
 msgstr ""
 
-#: ui/editor_window.py:518
+#: ui/editor_window.py:431
 #, python-format
 msgid "Segment %(number)d"
 msgstr ""
 
-#: ui/editor_window.py:563
+#: ui/editor_window.py:476
 msgid "All segments selected"
 msgstr ""
 
-#: ui/editor_window.py:565
+#: ui/editor_window.py:478
 #, python-format
 msgid "%(count)d segment selected"
 msgid_plural "%(count)d segments selected"
 msgstr[0] ""
 msgstr[1] ""
 
-#: ui/editor_window.py:1081
+#: ui/editor_window.py:981
 msgid "Stereo peak level"
 msgstr ""
 
-#: ui/editor_window.py:1085
+#: ui/editor_window.py:985
 msgid "Stereo peak meter"
 msgstr ""
 
-#: ui/editor_window.py:1275
+#: ui/editor_window.py:1173
 msgid "Video editor"
 msgstr ""
 
-#: ui/editor_window.py:1292
+#: ui/editor_window.py:1190
 msgid "Editor menu"
 msgstr ""
 
-#: ui/editor_window.py:1294
+#: ui/editor_window.py:1192
 msgid "Wipe all edits"
 msgstr ""
 
-#: ui/editor_window.py:1379 ui/editor_window.py:3419
-#: ui/video_player_window.py:1374
-msgid "Play"
-msgstr ""
-
-#: ui/editor_window.py:1413 ui/video_player_window.py:483
-msgid "Playback position"
-msgstr ""
-
-#: ui/editor_window.py:1454 ui/settings_view.py:1451 ui/settings_view.py:1453
-#: ui/video_player_window.py:516
-msgid "Volume"
-msgstr ""
-
-#: ui/editor_window.py:1462 ui/editor_window.py:1826 ui/editor_window.py:2054
-#: ui/video_player_window.py:524 ui/video_player_window.py:1435
-msgid "Mute"
-msgstr ""
-
-#: ui/editor_window.py:1486 ui/editor_window.py:1853
-#: ui/video_player_window.py:548 ui/video_player_window.py:1448
-msgid "Fullscreen"
-msgstr ""
-
-#: ui/editor_window.py:1530
+#: ui/editor_window.py:1316
 msgid "Timeline"
 msgstr ""
 
-#: ui/editor_window.py:1548
+#: ui/editor_window.py:1334
 msgid "Undo (Ctrl+Z)"
 msgstr ""
 
-#: ui/editor_window.py:1552
+#: ui/editor_window.py:1338
 msgid "Redo (Ctrl+Shift+Z)"
 msgstr ""
 
-#: ui/editor_window.py:1561
+#: ui/editor_window.py:1347
 msgid "Split"
 msgstr ""
 
-#: ui/editor_window.py:1562 ui/editor_window.py:2978
+#: ui/editor_window.py:1348 ui/editor_window.py:2716
 msgid "Split at playhead (X)"
 msgstr ""
 
-#: ui/editor_window.py:1568 ui/hotkeys.py:531
+#: ui/editor_window.py:1354 ui/hotkeys.py:531
 msgid "Delete"
 msgstr ""
 
-#: ui/editor_window.py:1569
+#: ui/editor_window.py:1355
 msgid "Delete selected segments (Del)"
 msgstr ""
 
-#: ui/editor_window.py:1602
+#: ui/editor_window.py:1388
 msgid "Zoom 100%"
 msgstr ""
 
-#: ui/editor_window.py:1826 ui/editor_window.py:2054
-#: ui/video_player_window.py:1435
-msgid "Unmute"
-msgstr ""
-
-#: ui/editor_window.py:1853 ui/video_player_window.py:1448
+#: ui/editor_window.py:1591 ui/video_player_window.py:1198
 msgid "Exit fullscreen"
 msgstr ""
 
-#: ui/editor_window.py:1864 ui/editor_window.py:3999
+#: ui/editor_window.py:1591 ui/playback_controls.py:254
+#: ui/video_player_window.py:1198
+msgid "Fullscreen"
+msgstr ""
+
+#: ui/editor_window.py:1602 ui/editor_window.py:3737
 msgid "Save draft"
 msgstr ""
 
-#: ui/editor_window.py:1919
+#: ui/editor_window.py:1657
 msgid "Source clip changed or is unavailable"
 msgstr ""
 
-#: ui/editor_window.py:2013
+#: ui/editor_window.py:1751
 msgid "Video"
 msgstr ""
 
-#: ui/editor_window.py:2026
+#: ui/editor_window.py:1764
 #, python-format
 msgid "segment %(number)d"
 msgstr ""
 
-#: ui/editor_window.py:2029
+#: ui/editor_window.py:1767
 #, python-format
 msgid "%(count)d selected segment"
 msgid_plural "%(count)d selected segments"
 msgstr[0] ""
 msgstr[1] ""
 
-#: ui/editor_window.py:2055
+#: ui/editor_window.py:1792 ui/playback_controls.py:230
+#: ui/playback_controls.py:327
+msgid "Mute"
+msgstr ""
+
+#: ui/editor_window.py:1792 ui/playback_controls.py:327
+msgid "Unmute"
+msgstr ""
+
+#: ui/editor_window.py:1793
 #, python-format
 msgid "%(action)s %(track)s for %(selection)s"
 msgstr ""
 
-#: ui/editor_window.py:2060
+#: ui/editor_window.py:1798
 #, python-format
 msgid "%(action)s %(track)s"
 msgstr ""
 
-#: ui/editor_window.py:2075
+#: ui/editor_window.py:1813
 #, python-format
 msgid "Audio %(number)d"
 msgstr ""
 
-#: ui/editor_window.py:2109 ui/main_window.py:228
+#: ui/editor_window.py:1847 ui/main_window.py:228
 msgid "Audio"
 msgstr ""
 
-#: ui/editor_window.py:2110
+#: ui/editor_window.py:1848
 msgid "No audio tracks"
 msgstr ""
 
-#: ui/editor_window.py:2130
+#: ui/editor_window.py:1868
 #, python-format
 msgid "%(count)d segment"
 msgid_plural "%(count)d segments"
 msgstr[0] ""
 msgstr[1] ""
 
-#: ui/editor_window.py:2133
+#: ui/editor_window.py:1871
 #, python-format
 msgid "%(segments)s · %(duration)s"
 msgstr ""
 
-#: ui/editor_window.py:2204
+#: ui/editor_window.py:1942
 msgid "Timeline ruler"
 msgstr ""
 
-#: ui/editor_window.py:2206
+#: ui/editor_window.py:1944
 #, python-format
 msgid "%(title)s track timeline"
 msgstr ""
 
-#: ui/editor_window.py:2275
+#: ui/editor_window.py:2013
 #, python-format
 msgid "Zoom %(percentage)d%%"
 msgstr ""
 
-#: ui/editor_window.py:2795
+#: ui/editor_window.py:2533
 #, python-format
 msgid "%(gain)s for selected audio"
 msgstr ""
 
-#: ui/editor_window.py:2960
+#: ui/editor_window.py:2698
 msgid "Select a segment to delete"
 msgstr ""
 
-#: ui/editor_window.py:2962
+#: ui/editor_window.py:2700
 msgid "At least one segment must remain"
 msgstr ""
 
-#: ui/editor_window.py:2964
+#: ui/editor_window.py:2702
 msgid "Delete selected segment (Del)"
 msgstr ""
 
-#: ui/editor_window.py:2967
+#: ui/editor_window.py:2705
 #, python-format
 msgid "Delete %(count)d selected segment (Del)"
 msgid_plural "Delete %(count)d selected segments (Del)"
 msgstr[0] ""
 msgstr[1] ""
 
-#: ui/editor_window.py:2980
+#: ui/editor_window.py:2718
 msgid "Select one segment to split"
 msgstr ""
 
-#: ui/editor_window.py:3419 ui/hotkeys.py:540 ui/video_player_window.py:462
-#: ui/video_player_window.py:1374
+#: ui/editor_window.py:3157 ui/hotkeys.py:540 ui/playback_controls.py:162
+#: ui/video_player_window.py:1167
 msgid "Pause"
 msgstr ""
 
-#: ui/editor_window.py:3907
+#: ui/editor_window.py:3157 ui/playback_controls.py:162
+#: ui/video_player_window.py:1167
+msgid "Play"
+msgstr ""
+
+#: ui/editor_window.py:3645
 msgid "Exporting…"
 msgstr ""
 
-#: ui/editor_window.py:3951
+#: ui/editor_window.py:3689
 #, python-format
 msgid "Exported to %(name)s"
 msgstr ""
 
-#: ui/editor_window.py:3959 ui/main.py:2013 ui/settings_view.py:1719
+#: ui/editor_window.py:3697 ui/main.py:2013 ui/settings_view.py:1486
 msgid "Unknown error"
 msgstr ""
 
-#: ui/editor_window.py:3960
+#: ui/editor_window.py:3698
 #, python-format
 msgid "Export failed: %(error)s"
 msgstr ""
 
-#: ui/editor_window.py:3996
+#: ui/editor_window.py:3734
 msgid "Save this edit?"
 msgstr ""
 
-#: ui/editor_window.py:3996
+#: ui/editor_window.py:3734
 msgid "You have unsaved changes."
 msgstr ""
 
-#: ui/editor_window.py:3998
+#: ui/editor_window.py:3736
 msgid "Discard"
 msgstr ""
 
@@ -1508,19 +1473,19 @@ msgstr ""
 msgid "Could not save the executable path. Try again."
 msgstr ""
 
-#: ui/hotkeys.py:49 ui/settings_view.py:97
+#: ui/hotkeys.py:49 ui/settings_view.py:85
 msgid "Ctrl"
 msgstr ""
 
-#: ui/hotkeys.py:50 ui/settings_view.py:98
+#: ui/hotkeys.py:50 ui/settings_view.py:86
 msgid "Alt"
 msgstr ""
 
-#: ui/hotkeys.py:51 ui/settings_view.py:99
+#: ui/hotkeys.py:51 ui/settings_view.py:87
 msgid "Shift"
 msgstr ""
 
-#: ui/hotkeys.py:52 ui/settings_view.py:100
+#: ui/hotkeys.py:52 ui/settings_view.py:88
 msgid "Super"
 msgstr ""
 
@@ -1533,8 +1498,8 @@ msgstr ""
 msgid "Choose a key too"
 msgstr ""
 
-#: ui/hotkeys.py:235 ui/hotkeys.py:252 ui/settings_view.py:1666
-#: ui/setup_window.py:649
+#: ui/hotkeys.py:235 ui/hotkeys.py:252 ui/settings_view.py:1433
+#: ui/setup_window.py:605
 msgid "Not set"
 msgstr ""
 
@@ -1747,7 +1712,7 @@ msgstr ""
 msgid "Acknowledge"
 msgstr ""
 
-#: ui/main.py:995 ui/settings_view.py:1715
+#: ui/main.py:995 ui/settings_view.py:1482
 msgid "Restarting engine…"
 msgstr ""
 
@@ -1812,7 +1777,7 @@ msgstr ""
 msgid "Could not start Clipper engine: %(error)s"
 msgstr ""
 
-#: ui/main.py:1883 ui/settings_view.py:1718
+#: ui/main.py:1883 ui/settings_view.py:1485
 #, python-format
 msgid "Engine shutdown failed: %(error)s"
 msgstr ""
@@ -1850,7 +1815,7 @@ msgstr ""
 msgid "Ready"
 msgstr ""
 
-#: ui/main_window.py:39 ui/settings_view.py:1130 ui/tray.py:144
+#: ui/main_window.py:39 ui/settings_view.py:1022 ui/tray.py:144
 msgid "Recording"
 msgstr ""
 
@@ -1935,6 +1900,15 @@ msgstr ""
 msgid "Preview unavailable"
 msgstr ""
 
+#: ui/playback_controls.py:184
+msgid "Playback position"
+msgstr ""
+
+#: ui/playback_controls.py:222 ui/settings_view.py:1218
+#: ui/settings_view.py:1220
+msgid "Volume"
+msgstr ""
+
 #: ui/quality_controls.py:12 ui/quality_controls.py:19
 msgid "Constant bitrate"
 msgstr ""
@@ -1971,250 +1945,270 @@ msgstr ""
 msgid "Maximum video bitrate cap"
 msgstr ""
 
-#: ui/settings_view.py:68
-msgid "x264"
+#: ui/quality_controls.py:46
+msgid "Quality"
 msgstr ""
 
-#: ui/settings_view.py:69
-msgid "FFmpeg VAAPI"
+#: ui/quality_controls.py:58
+msgid "Low"
 msgstr ""
 
-#: ui/settings_view.py:72
-msgid "FFmpeg AAC"
+#: ui/quality_controls.py:59
+msgid "Medium"
 msgstr ""
 
-#: ui/settings_view.py:73
-msgid "FFmpeg Opus"
+#: ui/quality_controls.py:60
+msgid "High"
 msgstr ""
 
-#: ui/settings_view.py:74
-msgid "FFmpeg FLAC"
+#: ui/quality_controls.py:73
+msgid "Kbps"
 msgstr ""
 
-#: ui/settings_view.py:77 ui/settings_view.py:130
-msgid "Automatic"
-msgstr ""
-
-#: ui/settings_view.py:85
-msgid "Detecting…"
-msgstr ""
-
-#: ui/settings_view.py:305 ui/settings_view.py:389 ui/settings_view.py:404
-msgid "Press shortcut"
-msgstr ""
-
-#: ui/settings_view.py:307
-msgid "Press a shortcut · Backspace clears · Esc cancels"
-msgstr ""
-
-#: ui/settings_view.py:491
-msgid "Engine restart required for changes to take effect"
-msgstr ""
-
-#: ui/settings_view.py:1131
-msgid "Configure clip and encoding settings"
-msgstr ""
-
-#: ui/settings_view.py:1135 ui/setup_window.py:300
+#: ui/recording_controls.py:40
 msgid "Clip length"
 msgstr ""
 
-#: ui/settings_view.py:1136
-msgid "How many seconds to keep in memory"
-msgstr ""
-
-#: ui/settings_view.py:1149
+#: ui/recording_controls.py:41
 msgid "seconds"
 msgstr ""
 
-#: ui/settings_view.py:1158 ui/setup_window.py:319
+#: ui/recording_controls.py:47
 msgid "File size limit"
 msgstr ""
 
-#: ui/settings_view.py:1159 ui/setup_window.py:320
+#: ui/recording_controls.py:47
 msgid "Maximum size retained for each clip"
 msgstr ""
 
-#: ui/settings_view.py:1177 ui/setup_window.py:343 ui/update_controller.py:339
+#: ui/recording_controls.py:49 ui/update_controller.py:339
 msgid "MiB"
 msgstr ""
 
-#: ui/settings_view.py:1186 ui/setup_window.py:397
-msgid "Frame rate"
+#: ui/settings_view.py:62
+msgid "x264"
 msgstr ""
 
-#: ui/settings_view.py:1187
-msgid "Frames per second"
+#: ui/settings_view.py:63
+msgid "FFmpeg VAAPI"
 msgstr ""
 
-#: ui/settings_view.py:1188
+#: ui/settings_view.py:66
+msgid "FFmpeg AAC"
+msgstr ""
+
+#: ui/settings_view.py:67
+msgid "FFmpeg Opus"
+msgstr ""
+
+#: ui/settings_view.py:68
+msgid "FFmpeg FLAC"
+msgstr ""
+
+#: ui/settings_view.py:71 ui/settings_view.py:118
+msgid "Automatic"
+msgstr ""
+
+#: ui/settings_view.py:79
+msgid "Detecting…"
+msgstr ""
+
+#: ui/settings_view.py:293 ui/settings_view.py:377 ui/settings_view.py:392
+msgid "Press shortcut"
+msgstr ""
+
+#: ui/settings_view.py:295
+msgid "Press a shortcut · Backspace clears · Esc cancels"
+msgstr ""
+
+#: ui/settings_view.py:481
+msgid "Engine restart required for changes to take effect"
+msgstr ""
+
+#: ui/settings_view.py:1023
+msgid "Configure clip and encoding settings"
+msgstr ""
+
+#: ui/settings_view.py:1028
+msgid "How many seconds to keep in memory"
+msgstr ""
+
+#: ui/settings_view.py:1037
 msgid "30 FPS"
 msgstr ""
 
-#: ui/settings_view.py:1188
+#: ui/settings_view.py:1037
 msgid "60 FPS"
 msgstr ""
 
-#: ui/settings_view.py:1199
+#: ui/settings_view.py:1037 ui/setup_window.py:361
+msgid "Frame rate"
+msgstr ""
+
+#: ui/settings_view.py:1037
+msgid "Frames per second"
+msgstr ""
+
+#: ui/settings_view.py:1042
 msgid "Output video resolution"
 msgstr ""
 
-#: ui/settings_view.py:1212
-msgid "Recording format"
-msgstr ""
-
-#: ui/settings_view.py:1213
+#: ui/settings_view.py:1049
 msgid "Container format for output file"
 msgstr ""
 
-#: ui/settings_view.py:1228
+#: ui/settings_view.py:1049
+msgid "Recording format"
+msgstr ""
+
+#: ui/settings_view.py:1057
 msgid "Video encoder"
 msgstr ""
 
-#: ui/settings_view.py:1244
+#: ui/settings_view.py:1065
 msgid "Audio encoder"
 msgstr ""
 
-#: ui/settings_view.py:1329
+#: ui/settings_view.py:1096
 msgid "VAAPI device"
 msgstr ""
 
-#: ui/settings_view.py:1330
+#: ui/settings_view.py:1097
 msgid "Hardware acceleration device"
 msgstr ""
 
-#: ui/settings_view.py:1345
+#: ui/settings_view.py:1112
 msgid "Change capture target display"
 msgstr ""
 
-#: ui/settings_view.py:1346 ui/settings_view.py:1558 ui/setup_window.py:471
+#: ui/settings_view.py:1113 ui/settings_view.py:1325 ui/setup_window.py:427
 msgid "Opens the system display picker"
 msgstr ""
 
-#: ui/settings_view.py:1347 ui/setup_window.py:472
+#: ui/settings_view.py:1114 ui/setup_window.py:428
 msgid "Pick display…"
 msgstr ""
 
-#: ui/settings_view.py:1359
+#: ui/settings_view.py:1126
 msgid "Saving"
 msgstr ""
 
-#: ui/settings_view.py:1360
+#: ui/settings_view.py:1127
 msgid "Output location, shortcuts and feedback"
 msgstr ""
 
-#: ui/settings_view.py:1364
+#: ui/settings_view.py:1131
 msgid "Output folder"
 msgstr ""
 
-#: ui/settings_view.py:1381
+#: ui/settings_view.py:1148
 msgid "Hotkey"
 msgstr ""
 
-#: ui/settings_view.py:1383 ui/settings_view.py:1680 ui/setup_window.py:558
+#: ui/settings_view.py:1150 ui/settings_view.py:1447 ui/setup_window.py:514
 msgid "Your desktop may ask you to approve or change this shortcut"
 msgstr ""
 
-#: ui/settings_view.py:1409
+#: ui/settings_view.py:1176
 msgid "Show notification when a clip is captured"
 msgstr ""
 
-#: ui/settings_view.py:1410
+#: ui/settings_view.py:1177
 msgid "Display a system notification after saving a clip"
 msgstr ""
 
-#: ui/settings_view.py:1425
+#: ui/settings_view.py:1192
 msgid "Play sound when a clip is captured"
 msgstr ""
 
-#: ui/settings_view.py:1426
+#: ui/settings_view.py:1193
 msgid "Play audio feedback after saving a clip"
 msgstr ""
 
-#: ui/settings_view.py:1468
+#: ui/settings_view.py:1235
 msgid "App"
 msgstr ""
 
-#: ui/settings_view.py:1469
+#: ui/settings_view.py:1236
 msgid "Startup and window behavior"
 msgstr ""
 
-#: ui/settings_view.py:1471
+#: ui/settings_view.py:1238
 msgid "Automatically check for updates"
 msgstr ""
 
-#: ui/settings_view.py:1472
+#: ui/settings_view.py:1239
 msgid "Check GitHub at startup and daily for new Clipper releases"
 msgstr ""
 
-#: ui/settings_view.py:1489
+#: ui/settings_view.py:1256
 msgid "Start on boot"
 msgstr ""
 
-#: ui/settings_view.py:1490
+#: ui/settings_view.py:1257
 msgid "Launch Clipper automatically when you log in"
 msgstr ""
 
-#: ui/settings_view.py:1504
+#: ui/settings_view.py:1271
 msgid "Minimize to tray instead of close"
 msgstr ""
 
-#: ui/settings_view.py:1506
+#: ui/settings_view.py:1273
 msgid "Hide Clipper to the tray when the window close button is pressed"
 msgstr ""
 
-#: ui/settings_view.py:1521
+#: ui/settings_view.py:1288
 msgid "Remember window sizes"
 msgstr ""
 
-#: ui/settings_view.py:1523
+#: ui/settings_view.py:1290
 msgid "Restore sizes for the main window, video editor and video player"
 msgstr ""
 
-#: ui/settings_view.py:1545
+#: ui/settings_view.py:1312
 msgid "The system display picker is unavailable"
 msgstr ""
 
-#: ui/settings_view.py:1549 ui/setup_window.py:588
+#: ui/settings_view.py:1316 ui/setup_window.py:544
 msgid "Waiting for the system display picker…"
 msgstr ""
 
-#: ui/settings_view.py:1553
+#: ui/settings_view.py:1320
 msgid "Could not open the system display picker."
 msgstr ""
 
-#: ui/settings_view.py:1563
+#: ui/settings_view.py:1330
 #, python-format
 msgid "Capture display was not changed: %(message)s"
 msgstr ""
 
-#: ui/settings_view.py:1582
+#: ui/settings_view.py:1349
 msgid "Tray unavailable. Clipper will quit when closed."
 msgstr ""
 
-#: ui/settings_view.py:1616
+#: ui/settings_view.py:1383
 msgid "Could not update the start-on-boot setting"
 msgstr ""
 
-#: ui/settings_view.py:1623
+#: ui/settings_view.py:1390
 #, python-format
 msgid "Could not update the start-on-boot setting: %(error)s"
 msgstr ""
 
-#: ui/settings_view.py:1630
+#: ui/settings_view.py:1397
 msgid "Choose output folder"
 msgstr ""
 
-#: ui/settings_view.py:1679 ui/settings_view.py:1695 ui/setup_window.py:557
-#: ui/setup_window.py:566
+#: ui/settings_view.py:1446 ui/settings_view.py:1462 ui/setup_window.py:513
+#: ui/setup_window.py:522
 msgid "Managed by your desktop's global shortcut settings"
 msgstr ""
 
-#: ui/settings_view.py:1728
+#: ui/settings_view.py:1495
 msgid "Engine restarted successfully"
 msgstr ""
 
-#: ui/settings_view.py:1737
+#: ui/settings_view.py:1504
 msgid "Failed to restart engine. Please restart manually."
 msgstr ""
 
@@ -2222,122 +2216,122 @@ msgstr ""
 msgid "Unknown encoder"
 msgstr ""
 
-#: ui/setup_window.py:84 ui/setup_window.py:135
+#: ui/setup_window.py:86 ui/setup_window.py:137
 msgid "Set up Clipper"
 msgstr ""
 
-#: ui/setup_window.py:162 ui/setup_window.py:624
+#: ui/setup_window.py:164 ui/setup_window.py:580
 #, python-format
 msgid "Step %(current)d of %(total)d"
 msgstr ""
 
-#: ui/setup_window.py:180
+#: ui/setup_window.py:182
 msgid "Skip setup"
 msgstr ""
 
-#: ui/setup_window.py:188
+#: ui/setup_window.py:190
 msgid "Back"
 msgstr ""
 
-#: ui/setup_window.py:193 ui/setup_window.py:635
+#: ui/setup_window.py:195 ui/setup_window.py:591
 msgid "Next"
 msgstr ""
 
-#: ui/setup_window.py:224
+#: ui/setup_window.py:226
 msgid "Welcome to Clipper"
 msgstr ""
 
-#: ui/setup_window.py:231
+#: ui/setup_window.py:233
 msgid ""
 "Set up clip length, quality, codecs, your save shortcut, and the display "
 "used for capture. Every choice can be changed later."
 msgstr ""
 
-#: ui/setup_window.py:236
+#: ui/setup_window.py:238
 msgid ""
 "Set up clip length, quality, codecs, and your save shortcut. Every choice "
 "can be changed later."
 msgstr ""
 
-#: ui/setup_window.py:294
+#: ui/setup_window.py:296
 msgid "Clips and shortcut"
 msgstr ""
 
-#: ui/setup_window.py:295
+#: ui/setup_window.py:297
 msgid "Choose the clip length and how to save it."
 msgstr ""
 
-#: ui/setup_window.py:301
+#: ui/setup_window.py:304
 msgid "Clip length in seconds"
 msgstr ""
 
-#: ui/setup_window.py:351
+#: ui/setup_window.py:315
 msgid "Save shortcut"
 msgstr ""
 
-#: ui/setup_window.py:381
+#: ui/setup_window.py:345
 msgid "Video and audio"
 msgstr ""
 
-#: ui/setup_window.py:382
+#: ui/setup_window.py:346
 msgid ""
 "Set the output size, frame rate, container, and encoders used for clips."
 msgstr ""
 
-#: ui/setup_window.py:389
+#: ui/setup_window.py:353
 msgid "Output dimensions"
 msgstr ""
 
-#: ui/setup_window.py:398
+#: ui/setup_window.py:362
 msgid "Frames recorded each second"
 msgstr ""
 
-#: ui/setup_window.py:399
+#: ui/setup_window.py:363
 #, python-format
 msgid "%(fps)d FPS"
 msgstr ""
 
-#: ui/setup_window.py:406
+#: ui/setup_window.py:370
 msgid "Container"
 msgstr ""
 
-#: ui/setup_window.py:407
+#: ui/setup_window.py:371
 msgid "File format used when a clip is saved"
 msgstr ""
 
-#: ui/setup_window.py:416
+#: ui/setup_window.py:380
 msgid "Encoder used for the picture"
 msgstr ""
 
-#: ui/setup_window.py:425
+#: ui/setup_window.py:389
 msgid "Encoder used for sound"
 msgstr ""
 
-#: ui/setup_window.py:462
+#: ui/setup_window.py:418
 msgid "Capture display"
 msgstr ""
 
-#: ui/setup_window.py:464
+#: ui/setup_window.py:420
 msgid ""
 "Choose the primary display, or the display where your games will appear. The "
 "system picker controls this permission."
 msgstr ""
 
-#: ui/setup_window.py:470
+#: ui/setup_window.py:426
 msgid "Target capture display"
 msgstr ""
 
-#: ui/setup_window.py:505
+#: ui/setup_window.py:461
 msgid "All set!"
 msgstr ""
 
-#: ui/setup_window.py:512
+#: ui/setup_window.py:468
 msgid ""
 "Clipper is ready to save your recent gameplay. You can change these settings "
 "at any time."
 msgstr ""
 
-#: ui/setup_window.py:635
+#: ui/setup_window.py:591
 msgid "Start using Clipper"
 msgstr ""
 
@@ -2494,44 +2488,44 @@ msgstr ""
 msgid "Window"
 msgstr ""
 
-#: ui/video_player_window.py:339 ui/video_player_window.py:412
+#: ui/video_player_window.py:230 ui/video_player_window.py:301
 msgid "Clip player"
 msgstr ""
 
-#: ui/video_player_window.py:416
+#: ui/video_player_window.py:305
 msgid "Player menu"
 msgstr ""
 
-#: ui/video_player_window.py:439
+#: ui/video_player_window.py:328
 msgid "Loading clip…"
 msgstr ""
 
-#: ui/video_player_window.py:622
+#: ui/video_player_window.py:421
 #, python-format
 msgid "%(title)s — Clipper"
 msgstr ""
 
-#: ui/video_player_window.py:624
+#: ui/video_player_window.py:423
 msgid "Clip playback"
 msgstr ""
 
-#: ui/video_player_window.py:729
+#: ui/video_player_window.py:522
 msgid "Clip unavailable"
 msgstr ""
 
-#: ui/video_player_window.py:729
+#: ui/video_player_window.py:522
 msgid "The video file could not be found."
 msgstr ""
 
-#: ui/video_player_window.py:1453
+#: ui/video_player_window.py:1203
 msgid "Couldn’t play this clip"
 msgstr ""
 
-#: ui/video_player_window.py:1454
+#: ui/video_player_window.py:1204
 msgid "The file may use an unsupported video or audio format."
 msgstr ""
 
-#: ui/video_player_window.py:1673
+#: ui/video_player_window.py:1423
 msgid "Play a Clipper video"
 msgstr ""
 
