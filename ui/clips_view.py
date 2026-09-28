@@ -764,7 +764,7 @@ class ClipsView(Gtk.Box):
         def focus_editor():
             if editing:
                 entry.grab_focus()
-                entry.set_position(-1)
+                entry.select_region(0, -1)
             return False
 
         gesture = Gtk.GestureClick()

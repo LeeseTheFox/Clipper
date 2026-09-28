@@ -524,7 +524,7 @@ def test_clip_rename_rolls_back_when_saved_edits_cannot_move(monkeypatch, tmp_pa
     assert toasts == ["Could not rename clip"]
 
 
-def test_inline_name_focus_waits_until_pointer_dispatch_finishes(monkeypatch, tmp_path):
+def test_inline_name_selects_all_after_pointer_dispatch_finishes(monkeypatch, tmp_path):
     from unittest.mock import MagicMock
 
     widgets = {}
@@ -554,7 +554,7 @@ def test_inline_name_focus_waits_until_pointer_dispatch_finishes(monkeypatch, tm
     assert len(pending) == 1
     assert pending.pop()() is False
     widgets["Text"].grab_focus.assert_called_once()
-    widgets["Text"].set_position.assert_called_once_with(-1)
+    widgets["Text"].select_region.assert_called_once_with(0, -1)
     widgets["Text"].get_text.return_value = "Edited clip"
     activated = widgets["Text"].connect.call_args.args[1]
     activated(widgets["Text"])
@@ -562,7 +562,7 @@ def test_inline_name_focus_waits_until_pointer_dispatch_finishes(monkeypatch, tm
     widgets["Stack"].set_visible_child_name.assert_called_with("label")
 
 
-def test_inline_name_escape_saves_and_closes_editor(monkeypatch, tmp_path):
+def test_inline_name_editing_keys_pass_through_and_escape_saves(monkeypatch, tmp_path):
     from unittest.mock import MagicMock
 
     widgets = {}
@@ -577,6 +577,9 @@ def test_inline_name_escape_saves_and_closes_editor(monkeypatch, tmp_path):
     monkeypatch.setattr(clips_module.Gtk, "EventSequenceState", MagicMock(), raising=False)
     monkeypatch.setattr(clips_module.GLib, "idle_add", lambda callback: callback())
     monkeypatch.setattr(clips_module.Gdk, "KEY_Escape", 65307, raising=False)
+    monkeypatch.setattr(
+        clips_module.Gdk.ModifierType, "CONTROL_MASK", 4, raising=False
+    )
     view = _make_view()
     path = tmp_path / "clip.mkv"
     path.write_bytes(b"video")
@@ -586,6 +589,15 @@ def test_inline_name_escape_saves_and_closes_editor(monkeypatch, tmp_path):
     pressed(gesture, 2, 0, 0)
     widgets["Text"].get_text.return_value = "Edited clip"
     key_handler = widgets["EventControllerKey"].connect.call_args.args[1]
+    # Leave copy, cut, paste, and undo to Gtk.Text's native key bindings.
+    for key in "cxvz":
+        assert not key_handler(
+            widgets["EventControllerKey"],
+            ord(key),
+            0,
+            clips_module.Gdk.ModifierType.CONTROL_MASK,
+        )
+    assert clip["name"] == "clip"
     assert key_handler(widgets["EventControllerKey"], 65307, 0, 0)
     assert clip["name"] == "Edited clip"
     widgets["Stack"].set_visible_child_name.assert_called_with("label")
