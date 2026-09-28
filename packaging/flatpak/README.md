@@ -152,10 +152,3 @@ Native unit tests extract packaged C functions using
 `tools/generate_native_test_headers.py` and compile them against driver stubs.
 They cover guards and resource lifetimes, but hardware smoke tests are still
 needed for pixels and synchronization. These checks do not measure gameplay FPS.
-
-## Before a Flathub submission
-
-- Make the project URL in AppStream metadata publicly reachable.
-- Add screenshots captured from the real installed Flatpak.
-- Run the manifest and repository lints after the final build.
-- Confirm that Clipper and bundled third-party licenses are installed in the package.

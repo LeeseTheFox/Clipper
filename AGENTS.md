@@ -113,6 +113,17 @@ This file gives coding agents the minimum repo-specific instructions needed to w
 - Do not install or reinstall the Clipper Flatpak automatically. Before running `./tools/install_flatpak_quiet.sh`, obtain explicit user consent or follow an explicit user direction.
 - Do not add new project/runtime dependencies unless the task requires them.
 
+## Documentation Policy
+
+- Keep repository docs useful to future readers: describe current behavior,
+  stable contracts, reproducible procedures, and durable design rationale.
+- Do not put dated audits, one-time cleanup reports, test counts, agent handoffs,
+  temporary notes, speculative plans, or milestone checklists in READMEs. Put
+  work history and follow-up tasks in commits, reviews, or issues instead.
+- Update existing guidance when behavior changes and remove obsolete statements
+  instead of appending a chronological account. Keep translated READMEs aligned
+  when changing user-facing instructions.
+
 ## Commit Messages
 
 - Keep each commit focused on one logical change. Do not combine unrelated

@@ -43,12 +43,15 @@ make -C engine/src
 
 The native launcher uses `./venv` when it can import PyGObject. It also expects a locally installed OBS Studio Flatpak and OBSVkCapture extension. The standalone Clipper Flatpak bundles that recording stack.
 
-## Still worth testing
+## Manual validation
 
-- A complete display-capture flow: add a rule, pick a display, launch the game, and save a clip.
-- Game detection for native Steam, Flatpak Steam, Proton, launcher-child processes, and process-name collisions.
-- Separate audio tracks with real application and Proton/Wine audio streams.
-- A clean-account Flatpak install with no OBS Studio installation.
-- AppStream screenshots and a public canonical app URL before Flathub submission.
+When changing capture, game detection, audio routing, or setup, check the
+affected flow in the installed Flatpak with real desktop and game processes:
+
+- Add a display-capture rule, pick a display, launch the game, and save a clip.
+- Check game detection with the affected native Steam, Flatpak Steam, Proton,
+  launcher-child, or same-name process setup.
+- Check separate tracks with real application and Proton/Wine audio streams.
+- Check first-run setup in a clean Flatpak account without OBS Studio installed.
 
 For Flatpak commands and review rationale, see `packaging/flatpak/`.

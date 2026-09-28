@@ -30,10 +30,6 @@ flatpak install --user --bundle path/to/Clipper.flatpak
 Replace the example path with the bundle's real filename. Clipper will then
 appear in your app menu.
 
-### 🚧 Flathub
-
-Flathub support is on the way. Until then, install Clipper from GitHub Releases.
-
 ## Major features
 
 ### Instant replay, built around your games
@@ -89,7 +85,7 @@ separate OBS Studio installation to use the released app.
 
 ## 🕹️ Using Clipper
 
-1. Add a Steam game or any other running process on your deivce.
+1. Add a Steam game or any other running process on your device.
 2. Pick a capture method, then choose the clip length, quality, audio, and
    hotkey you want.
 3. Play. Press the hotkey when the moment happens and Clipper saves the clip.

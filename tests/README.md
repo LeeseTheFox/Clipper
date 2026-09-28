@@ -29,40 +29,17 @@ Add a short explanation when the reason for an internal invariant is not obvious
 - Static checks are appropriate for deliberate repository-wide requirements,
   such as gettext usage, symbolic icon policy, bounded Flatpak permissions and
   pinned downloads. They should express the rule, not duplicate implementation.
+- Native harnesses check C behavior, but cannot establish rendered pixels or
+  hardware synchronization. Use the Flatpak build, relevant smoke tools, and
+  visual checks when those outcomes matter.
 
 A small test can protect an important boundary. A large test can add no useful
 protection. Test count is an inventory, not a quality target.
 
-## September 2026 audit
+## Coverage map
 
-Reviewed the scenarios, assertions and parameter cases in all 71 pytest modules,
-including their compiled native harnesses. The suite went from 1,227 to 1,081
-collected cases. Removed or consolidated 146 cases, without changing application
-code, the collection configuration or skip conditions.
-
-The largest reductions were configuration (56 to 31 test functions), Steam
-(78 to 54), packaging metadata (25 to 7) and theme checks (14 to 1).
-Configuration round trips now share one mixed-settings scenario, and Steam
-parsing shares a nested fixture with comments, empty blocks and mixed casing.
-Persistence failure, ownership recovery and asynchronous ordering remain separate.
-
-Removed source snapshots for engine logging, GPU optimization implementation,
-launcher command spelling and export callback spelling; copies of dependency
-pins; README keyword checks; tests of the checker configuration and `.gitignore`;
-cosmetic snapshots; duplicated helper checks; and the shader test that calculated
-its own answer without running the shader. Removed their unused support code too.
-
-The deleted modules were `test_engine_logging.py`, `test_low_resource_video.py`,
-`test_gitignore.py` and `test_typechecking_config.py`. Git history retains them.
-GPU patch behavior is still exercised by the native harnesses, but these are not
-GPU pixel tests. Actual packaging and rendering still need the Flatpak build,
-`tools/flatpak_smoke_test.py`, `tools/game_capture_frame_smoke.py` and visual checks
-when those areas change. Passing Python tests alone does not establish those results.
-
-## Retained coverage map
-
-Each row describes why the module remains. Individual test names identify the
-specific scenario within that contract. Similar cases in native and Python
+Each row describes the contract covered by a module. Individual test names
+identify the specific scenario. Similar cases in native and Python
 process matching intentionally cover separate production implementations.
 
 | Module (`test_` prefix, `.py` suffix) | Long-term regression protection |

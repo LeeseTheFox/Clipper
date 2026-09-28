@@ -41,7 +41,6 @@ accepts only newer stable semantic versions with a manifest matching its app,
 architecture and branch. It verifies download size and SHA-256 before installation
 and the installed commit before reporting success. Trust comes from HTTPS to the
 project's GitHub release assets; checksums are not independent publisher signatures.
-A dedicated signing key could be added later without changing the UI.
 
 ## Installation and restart
 
@@ -72,8 +71,7 @@ muxer process failures. Save notifications wait for completion, and failed saves
 release the pending-save guard so another save can be attempted.
 
 Native development runs expose a message directing users to the Flatpak build.
-Existing releases without update manifests cannot be installed by this updater.
-Existing users need to install the first updater-enabled release manually once.
+Releases without update manifests cannot be installed by this updater.
 
 ## Validation
 
