@@ -48,6 +48,58 @@ def test_preview_failure_logs_element_and_debug_context(monkeypatch):
     assert records[0][4] == "PipeWire connection lost"
 
 
+@pytest.mark.parametrize("preview_type", [EditorPreview, TimelineComposition])
+@pytest.mark.parametrize("failure", ["add", "add_false", "link"])
+def test_audio_output_failure_releases_partial_chain_without_publishing_it(
+    monkeypatch, preview_type, failure,
+):
+    # A failed output must not leave owned audio elements behind or expose a
+    # partially linked mixer to dynamic source-pad callbacks.
+    existing_video = object()
+    children = [existing_video]
+    added = []
+
+    def make_element(factory, _name):
+        states = []
+        element = SimpleNamespace(
+            factory=factory,
+            states=states,
+            set_state=states.append,
+            link=lambda _other: not (failure == "link" and factory == "volume"),
+        )
+        return element
+
+    def add(element):
+        if failure == "add" and element.factory == "volume":
+            raise RuntimeError("Cannot add element")
+        if failure == "add_false" and element.factory == "volume":
+            return False
+        children.append(element)
+        added.append(element)
+        return True
+
+    monkeypatch.setattr(editor_preview, "_make_element", make_element)
+    monkeypatch.setattr(
+        editor_preview,
+        "_make_preview_audio_sink",
+        lambda name: make_element("sink", name),
+    )
+    preview = preview_type.__new__(preview_type)
+    preview.pipeline = SimpleNamespace(add=add, remove=children.remove)
+    preview.audio_mixer = preview.master_volume = preview.audio_sink = None
+    preview._audio_elements = []
+
+    with pytest.raises(RuntimeError):
+        preview._build_audio_output()
+
+    assert children == [existing_video]
+    assert all(element.states == [Gst.State.NULL] for element in added)
+    assert preview.audio_mixer is None
+    assert preview.master_volume is None
+    assert preview.audio_sink is None
+    assert preview._audio_elements == []
+
+
 class FakePipeline:
     def __init__(self, position_ns=2_001_000_000):
         self.calls = []

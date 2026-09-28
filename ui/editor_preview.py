@@ -104,6 +104,31 @@ def _make_preview_audio_sink(name):
     return sink
 
 
+def _build_preview_audio_output(pipeline, name_prefix, link_error):
+    """Add a complete output chain, rolling back partial pipeline ownership."""
+    mixer = _make_element("audiomixer", f"{name_prefix}-audio-mixer")
+    convert = _make_element("audioconvert", f"{name_prefix}-audio-convert")
+    resample = _make_element("audioresample", f"{name_prefix}-audio-resample")
+    volume = _make_element("volume", f"{name_prefix}-master-volume")
+    sink = _make_preview_audio_sink(f"{name_prefix}-audio-sink")
+    elements = (mixer, convert, resample, volume, sink)
+    added = []
+    try:
+        for element in elements:
+            if pipeline.add(element) is False:
+                raise RuntimeError(link_error)
+            added.append(element)
+        for upstream, downstream in zip(elements, elements[1:], strict=False):
+            if not upstream.link(downstream):
+                raise RuntimeError(link_error)
+    except Exception:
+        for element in reversed(added):
+            element.set_state(Gst.State.NULL)
+            pipeline.remove(element)
+        raise
+    return elements
+
+
 def _set_listening_volume(master_volume, audio_sink, volume):
     """Apply volume at the sink when possible, ahead of already-buffered audio."""
     volume = max(0.0, min(1.0, float(volume)))
@@ -257,40 +282,13 @@ class TimelineComposition:
         return Gst.PadProbeReturn.OK
 
     def _build_audio_output(self):
-        self.audio_mixer = _make_element(
-            "audiomixer",
-            "clipper-editor-timeline-audio-mixer",
+        elements = _build_preview_audio_output(
+            self.pipeline,
+            "clipper-editor-timeline",
+            _("The timeline audio preview could not be linked"),
         )
-        convert = _make_element(
-            "audioconvert",
-            "clipper-editor-timeline-audio-convert",
-        )
-        resample = _make_element(
-            "audioresample",
-            "clipper-editor-timeline-audio-resample",
-        )
-        self.master_volume = _make_element(
-            "volume",
-            "clipper-editor-timeline-master-volume",
-        )
-        self.audio_sink = _make_preview_audio_sink(
-            "clipper-editor-timeline-audio-sink"
-        )
-        for element in (
-            self.audio_mixer,
-            convert,
-            resample,
-            self.master_volume,
-            self.audio_sink,
-        ):
-            self.pipeline.add(element)
-        if (
-            not self.audio_mixer.link(convert)
-            or not convert.link(resample)
-            or not resample.link(self.master_volume)
-            or not self.master_volume.link(self.audio_sink)
-        ):
-            raise RuntimeError(_("The timeline audio preview could not be linked"))
+        self.audio_mixer = elements[0]
+        self.master_volume, self.audio_sink = elements[-2:]
         for track in self.project.source.audio_tracks:
             concat = _make_element(
                 "concat",
@@ -1232,35 +1230,13 @@ class EditorPreview:
         return False
 
     def _build_audio_output(self):
-        self.audio_mixer = Gst.ElementFactory.make("audiomixer", "clipper-editor-audio-mixer")
-        self.master_volume = Gst.ElementFactory.make(
-            "volume",
-            "clipper-editor-master-volume",
+        elements = _build_preview_audio_output(
+            self.pipeline,
+            "clipper-editor",
+            _("The GStreamer audio preview could not be linked"),
         )
-        convert = Gst.ElementFactory.make("audioconvert", "clipper-editor-audio-output-convert")
-        resample = Gst.ElementFactory.make(
-            "audioresample",
-            "clipper-editor-audio-output-resample",
-        )
-        self.audio_sink = _make_preview_audio_sink("clipper-editor-audio-sink")
-        elements = (
-            self.audio_mixer,
-            convert,
-            resample,
-            self.master_volume,
-            self.audio_sink,
-        )
-        if any(element is None for element in elements):
-            raise RuntimeError(_("The GStreamer audio preview is unavailable"))
-        for element in elements:
-            self.pipeline.add(element)
-        if (
-            not self.audio_mixer.link(convert)
-            or not convert.link(resample)
-            or not resample.link(self.master_volume)
-            or not self.master_volume.link(self.audio_sink)
-        ):
-            raise RuntimeError(_("The GStreamer audio preview could not be linked"))
+        self.audio_mixer = elements[0]
+        self.master_volume, self.audio_sink = elements[-2:]
         self._audio_elements.extend(elements)
 
     def set_volume(self, volume):
