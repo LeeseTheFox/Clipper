@@ -76,6 +76,60 @@ def _style_game_artwork_icon(icon: Gtk.Image) -> None:
     icon.set_overflow(Gtk.Overflow.HIDDEN)
 
 
+def _append_picker_list(
+    main_box,
+    search_text,
+    on_search_changed,
+    on_row_selected,
+    *,
+    search_margin_top=12,
+):
+    """Build the shared search/list area, leaving data and selection to the caller."""
+    search_entry = Gtk.SearchEntry()
+    search_entry.set_placeholder_text(search_text)
+    search_entry.set_margin_start(12)
+    search_entry.set_margin_end(12)
+    search_entry.set_margin_top(search_margin_top)
+    search_entry.set_margin_bottom(12)
+    search_entry.connect("search-changed", on_search_changed)
+    main_box.append(search_entry)
+
+    scrolled = Gtk.ScrolledWindow()
+    scrolled.set_vexpand(True)
+    scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+    scrolled.set_margin_start(6)
+    scrolled.set_margin_end(6)
+
+    item_list = Gtk.ListBox()
+    item_list.add_css_class("boxed-list")
+    item_list.set_margin_start(6)
+    item_list.set_margin_end(6)
+    item_list.set_margin_top(6)
+    item_list.set_margin_bottom(6)
+    item_list.set_selection_mode(Gtk.SelectionMode.SINGLE)
+    item_list.connect("row-selected", on_row_selected)
+    scrolled.set_child(item_list)
+    main_box.append(scrolled)
+    return search_entry, item_list, scrolled
+
+
+def _append_picker_button(main_box, on_clicked):
+    """Append the common selection action after the caller's capture controls."""
+    button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+    button_box.set_margin_start(12)
+    button_box.set_margin_end(12)
+    button_box.set_margin_top(12)
+    button_box.set_margin_bottom(12)
+    button_box.set_halign(Gtk.Align.CENTER)
+
+    button = Gtk.Button(label=_("Add selected"))
+    button.add_css_class("suggested-action")
+    button.connect("clicked", on_clicked)
+    button_box.append(button)
+    main_box.append(button_box)
+    return button
+
+
 def _new_capture_mode_dropdown() -> Gtk.DropDown:
     return new_id_dropdown(
         CAPTURE_MODE_OPTIONS,
@@ -229,37 +283,15 @@ class ProcessPickerDialog(Gtk.Window):
         process_label.add_css_class("heading")
         main_box.append(process_label)
 
-        # Search bar
-        self.search_entry = Gtk.SearchEntry()
-        self.search_entry.set_placeholder_text(_("Search processes…"))
-        self.search_entry.set_margin_start(12)
-        self.search_entry.set_margin_end(12)
-        self.search_entry.set_margin_top(6)
-        self.search_entry.set_margin_bottom(12)
-        self.search_entry.connect("search-changed", self.on_search_changed)
-        main_box.append(self.search_entry)
-
-        # Process list
-        scrolled = Gtk.ScrolledWindow()
-        scrolled.set_vexpand(True)
-        scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        scrolled.set_margin_start(6)
-        scrolled.set_margin_end(6)
-
-        self.process_list = Gtk.ListBox()
-        self.process_list.add_css_class("boxed-list")
-        self.process_list.set_margin_start(6)
-        self.process_list.set_margin_end(6)
-        self.process_list.set_margin_top(6)
-        self.process_list.set_margin_bottom(6)
-        self.process_list.set_selection_mode(Gtk.SelectionMode.SINGLE)
-        self.process_list.connect("row-selected", self.on_process_row_selected)
-        scrolled.set_child(self.process_list)
-
+        self.search_entry, self.process_list, _scrolled = _append_picker_list(
+            main_box,
+            _("Search processes…"),
+            self.on_search_changed,
+            self.on_process_row_selected,
+            search_margin_top=6,
+        )
         self.process_data_list = []
         self.populate_processes()
-
-        main_box.append(scrolled)
 
         executable_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         executable_box.set_margin_start(12)
@@ -306,19 +338,7 @@ class ProcessPickerDialog(Gtk.Window):
         main_box.append(self.game_capture_launch_option_box)
         self._update_game_capture_launch_option_visibility()
 
-        button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
-        button_box.set_margin_start(12)
-        button_box.set_margin_end(12)
-        button_box.set_margin_top(12)
-        button_box.set_margin_bottom(12)
-        button_box.set_halign(Gtk.Align.CENTER)
-
-        self.select_button = Gtk.Button(label=_("Add selected"))
-        self.select_button.add_css_class("suggested-action")
-        self.select_button.connect("clicked", self.on_select_clicked)
-        button_box.append(self.select_button)
-
-        main_box.append(button_box)
+        self.select_button = _append_picker_button(main_box, self.on_select_clicked)
 
         self.set_child(main_box)
         self.update_process_select_button_state()
@@ -592,61 +612,19 @@ class SteamGamePickerDialog(Gtk.Window):
         header = Adw.HeaderBar()
         self.set_titlebar(header)
 
-        # Search bar
-        self.search_entry = Gtk.SearchEntry()
-        self.search_entry.set_placeholder_text(_("Search games…"))
-        self.search_entry.set_margin_start(12)
-        self.search_entry.set_margin_end(12)
-        self.search_entry.set_margin_top(12)
-        self.search_entry.set_margin_bottom(12)
-        self.search_entry.connect("search-changed", self.on_search_changed)
-        main_box.append(self.search_entry)
-
-        # Games list
-        scrolled = Gtk.ScrolledWindow()
-        scrolled.set_vexpand(True)
-        scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        scrolled.set_margin_start(6)
-        scrolled.set_margin_end(6)
-
-        self.games_list = Gtk.ListBox()
-        self.games_list.add_css_class("boxed-list")
-        self.games_list.set_margin_start(6)
-        self.games_list.set_margin_end(6)
-        self.games_list.set_margin_top(6)
-        self.games_list.set_margin_bottom(6)
-        self.games_list.set_selection_mode(Gtk.SelectionMode.SINGLE)
-        self.games_list.connect("row-selected", self.on_game_row_selected)
-        scrolled.set_child(self.games_list)
-
-        # Store game data for later reference
+        self.search_entry, self.games_list, self.scrolled = _append_picker_list(
+            main_box,
+            _("Search games…"),
+            self.on_search_changed,
+            self.on_game_row_selected,
+        )
         self.game_data_list = []
-
-        # Create loading state
         self.loading_state = self.create_loading_state()
-
-        # Store scrolled reference
-        self.scrolled = scrolled
-
-        main_box.append(scrolled)
 
         capture_box, self.capture_mode_dropdown = _new_capture_method_row()
         main_box.append(capture_box)
 
-        # Add button
-        button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        button_box.set_margin_start(12)
-        button_box.set_margin_end(12)
-        button_box.set_margin_top(12)
-        button_box.set_margin_bottom(12)
-        button_box.set_halign(Gtk.Align.CENTER)
-
-        self.add_button = Gtk.Button(label=_("Add selected"))
-        self.add_button.add_css_class("suggested-action")
-        self.add_button.connect("clicked", self.on_add_clicked)
-        button_box.append(self.add_button)
-
-        main_box.append(button_box)
+        self.add_button = _append_picker_button(main_box, self.on_add_clicked)
 
         self.set_child(main_box)
         self.update_add_button_state()
