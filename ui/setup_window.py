@@ -11,15 +11,15 @@ from i18n import _
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
+from capability_response import CapabilityResponseHandler
 from config import (
     REPLAY_BUFFER_SIZE_DEFAULT_MB,
-    REPLAY_BUFFER_SIZE_MAX_MB,
-    REPLAY_BUFFER_SIZE_MIN_MB,
 )
 from gi.repository import Adw, GLib, Gtk
 from hotkeys import display_hotkey, effective_hotkey_label
 from icon_names import APP_ICON
 from language_row import create_language_row
+from recording_controls import create_buffer_size_row, create_clip_length_row, create_combo_row
 from settings_view import (
     _FALLBACK_AUDIO_ENCODER_OPTIONS,
     _FALLBACK_FORMAT_OPTIONS,
@@ -62,8 +62,10 @@ def _initial_setup_resolution(
     return configured_resolution
 
 
-class SetupWindow(Adw.ApplicationWindow):
+class SetupWindow(Adw.ApplicationWindow, CapabilityResponseHandler):
     """Native, multi-page first-run configuration window."""
+
+    _capability_scheduler = GLib
 
     def __init__(
         self,
@@ -296,55 +298,17 @@ class SetupWindow(Adw.ApplicationWindow):
         )
         group = Adw.PreferencesGroup()
 
-        length_row = Adw.ActionRow()
-        length_row.set_title(_("Clip length"))
-        length_row.set_subtitle(_("Clip length in seconds"))
-        adjustment = Gtk.Adjustment.new(
-            float(self._config.get("replay_buffer_length", 60)),
-            5,
-            600,
-            5,
-            30,
-            0,
+        length_row, self._clip_spin = create_clip_length_row(
+            self._config.get("replay_buffer_length", 60),
+            self._on_clip_length_changed,
+            subtitle=_("Clip length in seconds"),
+            show_unit=False,
         )
-        self._clip_spin = Gtk.SpinButton(adjustment=adjustment, digits=0)
-        self._clip_spin.set_valign(Gtk.Align.CENTER)
-        self._clip_spin.set_numeric(True)
-        self._clip_spin.connect("value-changed", self._on_clip_length_changed)
-        length_row.add_suffix(self._clip_spin)
-        length_row.set_activatable_widget(self._clip_spin)
         group.add(length_row)
-
-        buffer_size_row = Adw.ActionRow()
-        buffer_size_row.set_title(_("File size limit"))
-        buffer_size_row.set_subtitle(_("Maximum size retained for each clip"))
-        buffer_size_adjustment = Gtk.Adjustment.new(
-            float(
-                self._config.get(
-                    "replay_buffer_size_mb", REPLAY_BUFFER_SIZE_DEFAULT_MB
-                )
-            ),
-            REPLAY_BUFFER_SIZE_MIN_MB,
-            REPLAY_BUFFER_SIZE_MAX_MB,
-            128,
-            1024,
-            0,
+        buffer_size_row, self._buffer_size_spin = create_buffer_size_row(
+            self._config.get("replay_buffer_size_mb", REPLAY_BUFFER_SIZE_DEFAULT_MB),
+            changed=self._on_buffer_size_changed,
         )
-        self._buffer_size_spin = Gtk.SpinButton(
-            adjustment=buffer_size_adjustment, digits=0
-        )
-        self._buffer_size_spin.set_valign(Gtk.Align.CENTER)
-        self._buffer_size_spin.set_numeric(True)
-        self._buffer_size_spin.connect(
-            "value-changed", self._on_buffer_size_changed
-        )
-        buffer_size_row.add_suffix(self._buffer_size_spin)
-
-        mebibytes_label = Gtk.Label(label=_("MiB"))
-        mebibytes_label.add_css_class("dim-label")
-        mebibytes_label.set_valign(Gtk.Align.CENTER)
-        buffer_size_row.add_suffix(mebibytes_label)
-        buffer_size_row.set_activatable_widget(self._buffer_size_spin)
         group.add(buffer_size_row)
 
         self._hotkey_row = Adw.ActionRow()
@@ -441,18 +405,10 @@ class SetupWindow(Adw.ApplicationWindow):
         config_key: str,
         default_value: Any,
     ):
-        row = Adw.ComboRow()
-        row.set_title(title)
-        row.set_subtitle(subtitle)
-        row.set_model(Gtk.StringList.new(labels))
-        row.set_selected(
-            _index_of(values, self._config.get(config_key, default_value))
-        )
-        row.connect(
-            "notify::selected",
-            self._on_combo_changed,
-            config_key,
-            values,
+        row = create_combo_row(
+            title, subtitle, labels,
+            _index_of(values, self._config.get(config_key, default_value)),
+            self._on_combo_changed, config_key, values,
         )
         group.add(row)
         return row
@@ -662,6 +618,7 @@ class SetupWindow(Adw.ApplicationWindow):
         if self._capability_probe_requested:
             return
         self._capability_probe_requested = True
+        self._capability_response_retry_count = 0
         self._capability_retry_count = 0
         if self._engine_client and self._engine_client.is_connected():
             self._fetch_capabilities()
@@ -672,9 +629,13 @@ class SetupWindow(Adw.ApplicationWindow):
         ):
             self._finish_capability_probe()
             return
-        self._capability_retry_id = GLib.timeout_add(
-            _CAPABILITY_RETRY_MS, self._retry_capabilities
-        )
+        if self._capability_probe_requested:
+            if self._engine_client and self._engine_client.is_connected():
+                self._fetch_capabilities()
+            else:
+                self._capability_retry_id = GLib.timeout_add(
+                    _CAPABILITY_RETRY_MS, self._retry_capabilities
+                )
 
     def _retry_capabilities(self) -> bool:
         if not self._capability_probe_requested:
@@ -692,12 +653,17 @@ class SetupWindow(Adw.ApplicationWindow):
         return True
 
     def _fetch_capabilities(self) -> None:
+        self._capability_request_in_flight = True
         if not self._engine_client or not self._engine_client.get_capabilities(
             self._on_capabilities
         ):
             self._finish_capability_probe()
 
-    def _on_capabilities(self, response: dict[str, Any]) -> None:
+    def _restore_fallback_capability_options(self) -> None:
+        # Setup keeps fallback choices usable throughout discovery.
+        pass
+
+    def _apply_capabilities(self, response: dict[str, Any]) -> None:
         if response.get("ok"):
             video_encoders = [
                 encoder
@@ -733,7 +699,6 @@ class SetupWindow(Adw.ApplicationWindow):
                     "audio_encoder",
                     "ffmpeg_aac",
                 )
-        self._finish_capability_probe()
 
     def _replace_combo_options(
         self,
@@ -759,6 +724,7 @@ class SetupWindow(Adw.ApplicationWindow):
             self._capabilities_finished_callback()
 
     def cleanup(self) -> None:
+        self._cancel_capability_response()
         if self._capability_retry_id is not None:
             GLib.source_remove(self._capability_retry_id)
             self._capability_retry_id = None

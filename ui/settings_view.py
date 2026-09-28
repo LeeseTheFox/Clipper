@@ -8,14 +8,13 @@ from i18n import _
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
+from capability_response import CapabilityResponseHandler
 from config import (
     DEFAULT_CLIP_SOUND_VOLUME,
     MAX_CLIP_SOUND_VOLUME,
     MIN_CLIP_SOUND_VOLUME,
     OUTPUT_FORMATS,
     REPLAY_BUFFER_SIZE_DEFAULT_MB,
-    REPLAY_BUFFER_SIZE_MAX_MB,
-    REPLAY_BUFFER_SIZE_MIN_MB,
 )
 from engine_client import STATE_CONNECTED, STATE_DISCONNECTED
 from gi.repository import Adw, Gdk, GLib, Gtk
@@ -26,23 +25,11 @@ from hotkeys import (
     hotkey_from_gdk_event,
 )
 from language_row import create_language_row
-from quality_controls import CBR_BITRATE_SUBTITLE as _CBR_BITRATE_SUBTITLE
-from quality_controls import CBR_BITRATE_TITLE as _CBR_BITRATE_TITLE
 from quality_controls import (
     CQP_DEFAULT as _CQP_DEFAULT,
 )
-from quality_controls import (
-    CQP_HIGH_QUALITY as _CQP_HIGH_QUALITY,
-)
-from quality_controls import (
-    CQP_LOW_QUALITY as _CQP_LOW_QUALITY,
-)
-from quality_controls import (
-    CQP_MEDIUM_QUALITY as _CQP_MEDIUM_QUALITY,
-)
 from quality_controls import MAX_BITRATE_SUBTITLE as _MAX_BITRATE_SUBTITLE
 from quality_controls import MAX_BITRATE_TITLE as _MAX_BITRATE_TITLE
-from quality_controls import QUALITY_SUBTITLE as _QUALITY_SUBTITLE
 from quality_controls import RATE_CONTROL_OPTIONS as _RATE_CONTROL_OPTIONS
 from quality_controls import RATE_CONTROL_SUBTITLE as _RATE_CONTROL_SUBTITLE
 from quality_controls import VBR_BITRATE_SUBTITLE as _VBR_BITRATE_SUBTITLE
@@ -51,8 +38,15 @@ from quality_controls import (
     cqp_to_slider_value as _cqp_to_slider_value,
 )
 from quality_controls import (
+    create_bitrate_row,
+    create_quality_row,
+    sync_max_bitrate,
+    update_rate_control_rows,
+)
+from quality_controls import (
     slider_value_to_cqp as _slider_value_to_cqp,
 )
+from recording_controls import create_buffer_size_row, create_clip_length_row, create_combo_row
 from text_helpers import middle_truncate_text
 
 # Map combo index → config value (must stay in sync with StringList items)
@@ -83,14 +77,8 @@ _AUDIO_ENCODER_VALUES = [value for _, value in _FALLBACK_AUDIO_ENCODER_OPTIONS]
 _VAAPI_DEVICE_VALUES = [value for _, value in _FALLBACK_VAAPI_DEVICE_OPTIONS]
 _RATE_CONTROL_VALUES = [value for _, value in _RATE_CONTROL_OPTIONS]
 _CAPABILITY_LOADING_LABEL = _("Detecting…")
-_CAPABILITY_RESPONSE_RETRY_LIMIT = 3
-_CAPABILITY_RESPONSE_RETRY_DELAY_MS = 250
-_BITRATE_MIN = 1000
 _BITRATE_MEDIUM = 12000
 _BITRATE_HIGH = 20000
-_BITRATE_MAX = 50000
-_BITRATE_STEP = 500
-_BITRATE_PAGE = 2000
 _ROW_DYNAMIC_TEXT_MAX_CHARS = 80
 _HOTKEY_MODIFIER_ORDER = ("ctrl", "alt", "shift", "super")
 _HOTKEY_MODIFIER_LABELS = {
@@ -421,8 +409,10 @@ class InlineHotkeyCapture:
             self._capture_state_callback(False, None)
 
 
-class SettingsView(Gtk.Box):
+class SettingsView(Gtk.Box, CapabilityResponseHandler):
     """View for application settings"""
+
+    _capability_scheduler = GLib
 
     def __init__(
         self,
@@ -674,6 +664,7 @@ class SettingsView(Gtk.Box):
             if not self._engine_client.get_capabilities(self._on_capabilities):
                 self._capability_request_in_flight = False
                 self._restore_fallback_capability_options()
+                self._finish_capability_probe()
             return
 
         if self._capability_start_requested:
@@ -828,59 +819,6 @@ class SettingsView(Gtk.Box):
             return f"{name} ({codec})"
         return name
 
-    def _capability_response_has_encoders(self, response):
-        """Return True only for a real capabilities payload, not any ok response."""
-        for key in ("video_encoders", "audio_encoders"):
-            encoders = response.get(key)
-            if not isinstance(encoders, list):
-                return False
-            if not any(isinstance(enc, dict) and enc.get("id") for enc in encoders):
-                return False
-        return True
-
-    def _retry_capability_response(self):
-        if not self._engine_client or not self._engine_client.is_connected():
-            self._restore_fallback_capability_options()
-            self._finish_capability_probe()
-            return False
-
-        self._capability_request_in_flight = True
-        if not self._engine_client.get_capabilities(self._on_capabilities):
-            self._capability_request_in_flight = False
-            self._restore_fallback_capability_options()
-            self._finish_capability_probe()
-        return False
-
-    def _on_capabilities(self, response):
-        """Update OBS-dependent dropdowns from the engine capability response."""
-        self._capability_request_in_flight = False
-        if not response.get("ok"):
-            self._restore_fallback_capability_options()
-            self._finish_capability_probe()
-            return
-
-        if not self._capability_response_has_encoders(response):
-            if (
-                self._capability_response_retry_count
-                < _CAPABILITY_RESPONSE_RETRY_LIMIT
-            ):
-                self._capability_response_retry_count += 1
-                GLib.timeout_add(
-                    _CAPABILITY_RESPONSE_RETRY_DELAY_MS,
-                    self._retry_capability_response,
-                )
-                return
-
-            self._restore_fallback_capability_options()
-            self._finish_capability_probe()
-            return
-
-        self._capability_response_retry_count = 0
-        self._capabilities_cache.clear()
-        self._capabilities_cache.update(response)
-        self._finish_capability_probe()
-        self._apply_capabilities(response)
-
     def _apply_capabilities(self, response):
         """Populate capability-backed settings from a probed or cached response."""
         self._restore_fallback_capability_options()
@@ -961,48 +899,27 @@ class SettingsView(Gtk.Box):
             return
         self._save_key(key, value)
 
-    def _set_widget_value_silently(self, widget, value):
+    def _sync_max_bitrate(self, rate_control):
         was_suppressed = self._suppress_signals
         self._suppress_signals = True
         try:
-            widget.set_value(value)
-        finally:
-            self._suppress_signals = was_suppressed
-
-    def _set_max_bitrate_minimum(self, minimum):
-        was_suppressed = self._suppress_signals
-        self._suppress_signals = True
-        try:
-            self._max_bitrate_spin.set_range(minimum, _BITRATE_MAX)
+            return sync_max_bitrate(rate_control, self._bitrate_spin, self._max_bitrate_spin)
         finally:
             self._suppress_signals = was_suppressed
 
     def _ensure_vbr_max_bitrate_at_least_target(self, *, save=False):
-        target = int(self._bitrate_spin.get_value())
-        maximum = int(self._max_bitrate_spin.get_value())
-        self._set_max_bitrate_minimum(target)
-        if maximum >= target:
-            return
-
-        self._set_widget_value_silently(self._max_bitrate_spin, target)
-        if save:
-            self._save_key_if_changed("video_max_bitrate", target, _BITRATE_HIGH)
+        changed = self._sync_max_bitrate("vbr")
+        if save and changed:
+            self._save_key_if_changed(
+                "video_max_bitrate", int(self._max_bitrate_spin.get_value()), _BITRATE_HIGH
+            )
 
     def _update_rate_control_visibility(self, rate_control=None):
         rate_control = rate_control or self._current_rate_control()
-        self._quality_row.set_visible(rate_control == "cqp")
-        self._bitrate_row.set_visible(rate_control in ("cbr", "vbr"))
-        self._max_bitrate_row.set_visible(rate_control == "vbr")
-        if rate_control == "cbr":
-            self._bitrate_row.set_title(_CBR_BITRATE_TITLE)
-            self._bitrate_row.set_subtitle(_CBR_BITRATE_SUBTITLE)
-        else:
-            self._bitrate_row.set_title(_VBR_BITRATE_TITLE)
-            self._bitrate_row.set_subtitle(_VBR_BITRATE_SUBTITLE)
-        if rate_control == "vbr":
-            self._ensure_vbr_max_bitrate_at_least_target()
-        else:
-            self._set_max_bitrate_minimum(_BITRATE_MIN)
+        update_rate_control_rows(
+            rate_control, self._quality_row, self._bitrate_row, self._max_bitrate_row
+        )
+        self._sync_max_bitrate(rate_control)
 
     def _on_rate_control_selected(self, row, _param):
         selected = row.get_selected()
@@ -1015,17 +932,6 @@ class SettingsView(Gtk.Box):
             return
 
         self._save_key_if_changed("rate_control", value, "cqp")
-
-    def _make_scale(self, minimum, maximum, step, value, marks):
-        scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, minimum, maximum, step)
-        scale.set_value(value)
-        scale.set_draw_value(True)
-        scale.set_value_pos(Gtk.PositionType.RIGHT)
-        scale.set_size_request(200, -1)
-        scale.get_adjustment().set_page_increment(step)
-        for mark_value, mark_label in marks:
-            scale.add_mark(mark_value, Gtk.PositionType.BOTTOM, mark_label)
-        return scale
 
     def _connect_deferred_scale(self, scale, key):
         scale.connect("value-changed", self._on_deferred_scale_value_changed, key)
@@ -1088,20 +994,6 @@ class SettingsView(Gtk.Box):
     def _format_clip_sound_volume(_scale, value, _user_data=None):
         return f"{round(value * 100):d}%"
 
-    def _format_quality_scale_value(self, _scale, value, _user_data=None):
-        return str(_slider_value_to_cqp(value))
-
-    def _make_bitrate_spin(self, value):
-        spin = Gtk.SpinButton()
-        spin.set_range(_BITRATE_MIN, _BITRATE_MAX)
-        spin.set_increments(_BITRATE_STEP, _BITRATE_PAGE)
-        spin.set_value(value)
-        spin.set_numeric(True)
-        spin.set_digits(0)
-        spin.set_valign(Gtk.Align.CENTER)
-        spin.set_width_chars(6)
-        return spin
-
     def _on_bitrate_value_changed(self, spin):
         if self._suppress_signals:
             return
@@ -1130,198 +1022,73 @@ class SettingsView(Gtk.Box):
         group.set_title(_("Recording"))
         group.set_description(_("Configure clip and encoding settings"))
 
-        # Clip length
-        clip_row = Adw.ActionRow()
-        clip_row.set_title(_("Clip length"))
-        clip_row.set_subtitle(_("How many seconds to keep in memory"))
-
-        self._clip_spin = Gtk.SpinButton()
-        self._clip_spin.set_range(5, 300)
-        self._clip_spin.set_increments(5, 30)
-        self._clip_spin.set_value(60)
-        self._clip_spin.set_valign(Gtk.Align.CENTER)
-        self._clip_spin.connect(
-            "value-changed",
+        clip_row, self._clip_spin = create_clip_length_row(
+            60,
             lambda w: self._save_key("replay_buffer_length", int(w.get_value())),
+            subtitle=_("How many seconds to keep in memory"),
         )
-        clip_row.add_suffix(self._clip_spin)
-
-        seconds_label = Gtk.Label(label=_("seconds"))
-        seconds_label.add_css_class("dim-label")
-        seconds_label.set_valign(Gtk.Align.CENTER)
-        clip_row.add_suffix(seconds_label)
-
         group.add(clip_row)
-
-        # File size limit
-        buffer_size_row = Adw.ActionRow()
-        buffer_size_row.set_title(_("File size limit"))
-        buffer_size_row.set_subtitle(_("Maximum size retained for each clip"))
-
-        self._buffer_size_spin = Gtk.SpinButton()
-        self._buffer_size_spin.set_range(
-            REPLAY_BUFFER_SIZE_MIN_MB, REPLAY_BUFFER_SIZE_MAX_MB
+        buffer_size_row, self._buffer_size_spin = create_buffer_size_row(
+            changed=lambda w: self._save_key("replay_buffer_size_mb", int(w.get_value())),
         )
-        self._buffer_size_spin.set_increments(128, 1024)
-        self._buffer_size_spin.set_value(REPLAY_BUFFER_SIZE_DEFAULT_MB)
-        self._buffer_size_spin.set_valign(Gtk.Align.CENTER)
-        self._buffer_size_spin.set_numeric(True)
-        self._buffer_size_spin.connect(
-            "value-changed",
-            lambda w: self._save_key(
-                "replay_buffer_size_mb", int(w.get_value())
-            ),
-        )
-        buffer_size_row.add_suffix(self._buffer_size_spin)
-
-        mebibytes_label = Gtk.Label(label=_("MiB"))
-        mebibytes_label.add_css_class("dim-label")
-        mebibytes_label.set_valign(Gtk.Align.CENTER)
-        buffer_size_row.add_suffix(mebibytes_label)
-
         group.add(buffer_size_row)
 
-        # Frame rate
-        self._fps_row = Adw.ComboRow()
-        self._fps_row.set_title(_("Frame rate"))
-        self._fps_row.set_subtitle(_("Frames per second"))
-        self._fps_row.set_model(Gtk.StringList.new([_("30 FPS"), _("60 FPS")]))
-        self._fps_row.set_selected(1)
-        self._fps_row.connect(
-            "notify::selected",
+        self._fps_row = create_combo_row(
+            _("Frame rate"), _("Frames per second"), [_("30 FPS"), _("60 FPS")], 1,
             lambda w, _: self._save_key("fps", _FPS_VALUES[w.get_selected()]),
         )
         group.add(self._fps_row)
-
-        # Resolution
-        self._resolution_row = Adw.ComboRow()
-        self._resolution_row.set_title(_("Resolution"))
-        self._resolution_row.set_subtitle(_("Output video resolution"))
-        self._resolution_row.set_model(Gtk.StringList.new(self._resolution_values))
-        self._resolution_row.set_selected(0)
-        self._resolution_row.connect(
-            "notify::selected",
+        self._resolution_row = create_combo_row(
+            _("Resolution"), _("Output video resolution"), self._resolution_values, 0,
             lambda w, _: self._save_combo_selection(
                 "resolution", self._resolution_values, w.get_selected()
             ),
         )
         group.add(self._resolution_row)
-
-        # Recording format
-        self._format_row = Adw.ComboRow()
-        self._format_row.set_title(_("Recording format"))
-        self._format_row.set_subtitle(_("Container format for output file"))
-        self._format_row.set_model(
-            Gtk.StringList.new([label for label, _ in _FALLBACK_FORMAT_OPTIONS])
-        )
-        self._format_row.set_selected(0)
-        self._format_row.connect(
-            "notify::selected",
+        self._format_row = create_combo_row(
+            _("Recording format"), _("Container format for output file"),
+            [label for label, _ in _FALLBACK_FORMAT_OPTIONS], 0,
             lambda w, _: self._save_combo_selection(
                 "format", self._format_values, w.get_selected()
             ),
         )
         group.add(self._format_row)
-
-        # Video encoder
-        self._encoder_row = Adw.ComboRow()
-        self._encoder_row.set_title(_("Video encoder"))
-        self._encoder_row.set_subtitle(_("Encoder implementation"))
-        self._encoder_row.set_model(
-            Gtk.StringList.new([label for label, _ in _FALLBACK_VIDEO_ENCODER_OPTIONS])
-        )
-        self._encoder_row.set_selected(0)
-        self._encoder_row.connect(
-            "notify::selected",
+        self._encoder_row = create_combo_row(
+            _("Video encoder"), _("Encoder implementation"),
+            [label for label, _ in _FALLBACK_VIDEO_ENCODER_OPTIONS], 0,
             lambda w, _: self._save_combo_selection(
                 "video_encoder", self._video_encoder_values, w.get_selected()
             ),
         )
         group.add(self._encoder_row)
-
-        # Audio encoder
-        self._audio_row = Adw.ComboRow()
-        self._audio_row.set_title(_("Audio encoder"))
-        self._audio_row.set_subtitle(_("Audio compression format"))
-        self._audio_row.set_model(
-            Gtk.StringList.new([label for label, _ in _FALLBACK_AUDIO_ENCODER_OPTIONS])
-        )
-        self._audio_row.set_selected(0)
-        self._audio_row.connect(
-            "notify::selected",
+        self._audio_row = create_combo_row(
+            _("Audio encoder"), _("Audio compression format"),
+            [label for label, _ in _FALLBACK_AUDIO_ENCODER_OPTIONS], 0,
             lambda w, _: self._save_combo_selection(
                 "audio_encoder", self._audio_encoder_values, w.get_selected()
             ),
         )
         group.add(self._audio_row)
 
-        # Rate control
-        self._rate_control_row = Adw.ComboRow()
-        self._rate_control_row.set_title(_("Rate control"))
-        self._rate_control_row.set_subtitle(_RATE_CONTROL_SUBTITLE)
-        self._rate_control_row.set_model(
-            Gtk.StringList.new([label for label, _ in _RATE_CONTROL_OPTIONS])
+        self._rate_control_row = create_combo_row(
+            _("Rate control"), _RATE_CONTROL_SUBTITLE,
+            [label for label, _ in _RATE_CONTROL_OPTIONS], 0, self._on_rate_control_selected,
         )
-        self._rate_control_row.set_selected(0)
-        self._rate_control_row.connect("notify::selected", self._on_rate_control_selected)
         group.add(self._rate_control_row)
 
-        # Quality slider (CQP)
-        self._quality_row = Adw.ActionRow()
-        self._quality_row.set_title(_("Quality"))
-        self._quality_row.set_subtitle(_QUALITY_SUBTITLE)
-
-        quality_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        quality_box.set_valign(Gtk.Align.CENTER)
-
-        self._quality_scale = self._make_scale(
-            _CQP_HIGH_QUALITY,
-            _CQP_LOW_QUALITY,
-            1,
-            _cqp_to_slider_value(_CQP_DEFAULT),
-            (
-                (_cqp_to_slider_value(_CQP_LOW_QUALITY), _("Low")),
-                (_cqp_to_slider_value(_CQP_MEDIUM_QUALITY), _("Medium")),
-                (_cqp_to_slider_value(_CQP_HIGH_QUALITY), _("High")),
-            ),
-        )
-        self._quality_scale.set_format_value_func(self._format_quality_scale_value)
+        self._quality_row, self._quality_scale = create_quality_row()
         self._connect_deferred_scale(self._quality_scale, "quality_cqp")
-
-        quality_box.append(self._quality_scale)
-        self._quality_row.add_suffix(quality_box)
         group.add(self._quality_row)
 
-        # Bitrate (CBR/VBR)
-        self._bitrate_row = Adw.ActionRow()
-        self._bitrate_row.set_title(_VBR_BITRATE_TITLE)
-        self._bitrate_row.set_subtitle(_VBR_BITRATE_SUBTITLE)
-
-        self._bitrate_spin = self._make_bitrate_spin(_BITRATE_MEDIUM)
-        self._bitrate_spin.connect("value-changed", self._on_bitrate_value_changed)
-        self._bitrate_row.add_suffix(self._bitrate_spin)
-
-        bitrate_label = Gtk.Label(label=_("Kbps"))
-        bitrate_label.add_css_class("dim-label")
-        bitrate_label.set_valign(Gtk.Align.CENTER)
-        self._bitrate_row.add_suffix(bitrate_label)
-
+        self._bitrate_row, self._bitrate_spin = create_bitrate_row(
+            _VBR_BITRATE_TITLE, _VBR_BITRATE_SUBTITLE, _BITRATE_MEDIUM,
+            changed=self._on_bitrate_value_changed,
+        )
         group.add(self._bitrate_row)
-
-        # Max bitrate (VBR)
-        self._max_bitrate_row = Adw.ActionRow()
-        self._max_bitrate_row.set_title(_MAX_BITRATE_TITLE)
-        self._max_bitrate_row.set_subtitle(_MAX_BITRATE_SUBTITLE)
-
-        self._max_bitrate_spin = self._make_bitrate_spin(_BITRATE_HIGH)
-        self._max_bitrate_spin.connect("value-changed", self._on_max_bitrate_value_changed)
-        self._max_bitrate_row.add_suffix(self._max_bitrate_spin)
-
-        max_bitrate_label = Gtk.Label(label=_("Kbps"))
-        max_bitrate_label.add_css_class("dim-label")
-        max_bitrate_label.set_valign(Gtk.Align.CENTER)
-        self._max_bitrate_row.add_suffix(max_bitrate_label)
-
+        self._max_bitrate_row, self._max_bitrate_spin = create_bitrate_row(
+            _MAX_BITRATE_TITLE, _MAX_BITRATE_SUBTITLE, _BITRATE_HIGH,
+            changed=self._on_max_bitrate_value_changed,
+        )
         group.add(self._max_bitrate_row)
 
         # VAAPI device

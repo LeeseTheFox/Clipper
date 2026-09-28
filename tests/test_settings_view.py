@@ -908,15 +908,6 @@ def test_rate_control_visibility_switches_mode_specific_rows():
     assert view._max_bitrate_row.visible is True
 
 
-def test_cqp_slider_uses_reversed_clean_quality_range():
-    assert settings_module._CQP_HIGH_QUALITY == 20
-    assert settings_module._CQP_MEDIUM_QUALITY == 25
-    assert settings_module._CQP_LOW_QUALITY == 30
-    assert settings_module._cqp_to_slider_value(30) == 20
-    assert settings_module._cqp_to_slider_value(25) == 25
-    assert settings_module._cqp_to_slider_value(20) == 30
-
-
 def test_cqp_slider_saves_right_side_as_high_quality_cqp():
     view = _make_view()
     view._config = ConfigStub({"quality_cqp": 25})

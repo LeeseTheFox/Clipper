@@ -156,7 +156,7 @@ def test_runtime_codec_values_replace_fallbacks_without_staling_signal_data():
         _finish_capability_probe=lambda: None,
     )
 
-    SetupWindow._on_capabilities(
+    SetupWindow._apply_capabilities(
         setup,
         {
             "ok": True,
@@ -316,3 +316,68 @@ def test_skipping_setup_clears_default_hotkey_before_completion():
     assert setup._hotkey_button.label == "Not set"
     assert changed == [""]
     assert completed == [True]
+
+
+def test_setup_retries_incomplete_encoders_and_ignores_response_after_close():
+    # An early status reply must not stop discovery before encoders are ready;
+    # closing during the retry must not let its late reply mutate the window.
+    setup = SetupWindow.__new__(SetupWindow)
+    pending = []
+    removed = []
+    applied = []
+    finished = []
+    setup._capability_scheduler = SimpleNamespace(
+        timeout_add=lambda _delay, callback: pending.append(callback) or len(pending),
+        source_remove=removed.append,
+    )
+    setup._capability_probe_requested = True
+    setup._capability_retry_id = None
+    setup._capabilities_finished_callback = lambda: finished.append(True)
+    setup._apply_capabilities = applied.append
+    setup._engine_client = SimpleNamespace(
+        is_connected=lambda: True,
+        get_capabilities=lambda callback: pending.append(callback) or True,
+    )
+    response = {
+        "ok": True,
+        "video_encoders": [{"id": "obs_x264"}],
+        "audio_encoders": [{"id": "ffmpeg_aac"}],
+    }
+
+    setup._on_capabilities({"ok": True})
+    assert finished == []
+    assert applied == []
+    pending.pop(0)()
+    pending.pop(0)(response)
+    assert applied == [response]
+    assert finished == [True]
+
+    setup._capability_probe_requested = True
+    setup._on_capabilities({"ok": True})
+    setup.cleanup()
+    assert removed
+    pending.pop(0)()
+    setup._on_capabilities(response)
+    assert applied == [response]
+    assert finished == [True, True]
+
+
+def test_setup_clip_control_cannot_save_duration_rejected_by_engine():
+    from gi.repository import Gtk
+    from recording_controls import create_clip_length_row
+
+    Gtk.init()
+    config = ConfigStub()
+    setup = SimpleNamespace(_suppress_signals=False, _config=config)
+    _row, spin = create_clip_length_row(
+        60,
+        lambda widget: SetupWindow._on_clip_length_changed(setup, widget),
+        subtitle="",
+        show_unit=False,
+    )
+
+    # The old wizard offered ten minutes, but the engine accepts at most five.
+    spin.set_value(600)
+
+    assert spin.get_value_as_int() == 300
+    assert config.saved == [("replay_buffer_length", 300)]
