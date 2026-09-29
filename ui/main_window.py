@@ -28,6 +28,7 @@ class MainWindow(Adw.ApplicationWindow):
     COMPACT_WIDTH = 600
 
     ENGINE_STATUS_READY = "ready"
+    ENGINE_STATUS_STARTING = "starting"
     ENGINE_STATUS_RECORDING = "recording"
     ENGINE_STATUS_EXITED = "exited"
     ENGINE_STATUS_CRASHED = "crashed"
@@ -36,6 +37,7 @@ class MainWindow(Adw.ApplicationWindow):
 
     _ENGINE_STATUS_LABELS = {
         ENGINE_STATUS_READY: _("Ready"),
+        ENGINE_STATUS_STARTING: _("Starting"),
         ENGINE_STATUS_RECORDING: _("Recording"),
         ENGINE_STATUS_EXITED: _("Exited"),
         ENGINE_STATUS_CRASHED: _("Crashed"),
@@ -43,6 +45,7 @@ class MainWindow(Adw.ApplicationWindow):
 
     _ENGINE_STATUS_STYLE_CLASSES = {
         ENGINE_STATUS_READY: "ready",
+        ENGINE_STATUS_STARTING: "starting",
         ENGINE_STATUS_RECORDING: "recording",
         ENGINE_STATUS_EXITED: "exited",
         ENGINE_STATUS_CRASHED: "crashed",
@@ -640,6 +643,7 @@ class MainWindow(Adw.ApplicationWindow):
                 color: @error_color;
             }
 
+            .engine-status-indicator.starting,
             .engine-status-indicator.exited {
                 color: @warning_color;
             }

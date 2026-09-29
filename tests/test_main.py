@@ -594,6 +594,7 @@ def make_status_application(
     app._config_capture_key = ""
     app._display_target_deadline_id = None
     app._window_engine_status = "ready"
+    app._capture_starting = False
     app._display_capture_sync_pending = False
     app._engine_shutdown_pending = False
     app._idle_engine_exit_expected = False
@@ -1733,6 +1734,61 @@ def test_fresh_inactive_game_capture_engine_is_idle_and_ready():
     assert app._tray.status_values == ["idle"]
 
 
+@pytest.mark.parametrize("capture_mode", ["game_capture", "display_capture"])
+def test_capture_stays_starting_until_buffer_is_active(capture_mode):
+    app = make_status_application()
+    app._tray = StatusTrayStub()
+    entry = {"name": "Game", "appid": "42", "capture_mode": capture_mode}
+    app._config = ConfigStub(False, whitelist=[entry])
+    app._on_monitor_event({"event": "process_started", "rule_id": "steam-42", "pid": 42})
+    assert app._window_engine_status == "starting"
+
+    # Engine readiness and even a successful hook cannot promise a working
+    # replay buffer: encoder startup can still fail after the hook succeeds.
+    app._on_engine_ready()
+    for revision, hooked in enumerate((False, True)):
+        app._on_engine_status_event({
+            "revision": revision, "capture_mode": capture_mode,
+            "buffer_active": False, "game_hooked": hooked,
+        })
+        assert app._window_engine_status == "starting"
+        assert app._tray.status_values[-1] == "idle"
+
+    app._on_engine_status_event({
+        "revision": 2, "capture_mode": capture_mode, "buffer_active": True,
+    })
+    assert app._window_engine_status == "recording"
+    assert app._tray.status_values[-1] == "recording"
+    app._reconcile_capture()
+    assert app._window_engine_status == "recording"
+
+    # The engine sees capture end before the host's next process scan. Its
+    # stale running-game snapshot must not turn a stopped buffer into startup.
+    app._on_engine_status_event({
+        "revision": 3, "capture_mode": capture_mode,
+        "buffer_active": False, "game_hooked": False,
+    })
+    assert app._window_engine_status == "ready"
+    app._reconcile_capture()
+    assert app._window_engine_status == "ready"
+    app._on_engine_connection_state(1)  # EngineClient.STATE_RECONNECTING
+    assert app._window_engine_status == "ready"
+
+    app._on_monitor_event({"event": "process_stopped", "rule_id": "steam-42"})
+    assert app._window_engine_status == "ready"
+
+
+def test_game_hook_without_active_buffer_never_claims_recording():
+    app = make_status_application(engine_manager=EngineManagerStub(running=True))
+    app._tray = StatusTrayStub()
+    app._on_engine_status_event({
+        "revision": 1, "capture_mode": "game_capture",
+        "game_hooked": True, "buffer_active": False,
+    })
+    assert app._window_engine_status == "ready"
+    assert app._tray.status_values[-1] == "idle"
+
+
 def test_game_capture_returns_to_same_idle_tray_state_after_recording():
     app = make_status_application()
     app._tray = StatusTrayStub()
@@ -1829,7 +1885,7 @@ def test_restart_exit_code_does_not_mark_window_crashed():
 
     app._on_engine_exited(42)
 
-    assert app._window_engine_status == "ready"
+    assert app._window_engine_status == "starting"
 
 
 def test_audio_route_restart_replaces_running_engine_before_ipc_connects():
@@ -2547,7 +2603,7 @@ def test_game_arriving_during_shutdown_starts_after_exit_only():
     manager._running = False
     app._on_engine_exited(0)
     assert manager.start_calls == ["game_capture"]
-    assert app._window_engine_status == "ready"
+    assert app._window_engine_status == "starting"
 
 
 def test_monitor_disconnect_does_not_stop_recording_before_resynchronization():

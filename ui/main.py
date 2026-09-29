@@ -75,6 +75,7 @@ _LOG_HANDOFF_FD_ENV = "CLIPPER_INTERNAL_LOG_HANDOFF_FD"
 _CAPABILITIES_HANDOFF_ENV = "CLIPPER_INTERNAL_CAPABILITIES_HANDOFF"
 _REOPEN_PREFERENCES_ENV = "CLIPPER_INTERNAL_REOPEN_PREFERENCES"
 _ENGINE_STATUS_READY = "ready"
+_ENGINE_STATUS_STARTING = "starting"
 _ENGINE_STATUS_RECORDING = "recording"
 _ENGINE_STATUS_EXITED = "exited"
 _ENGINE_STATUS_CRASHED = "crashed"
@@ -199,6 +200,7 @@ class ClipperApplication(Adw.Application):
         self._display_sync_retry_id: int | None = None
         self._config_capture_key = ""
         self._window_engine_status = _ENGINE_STATUS_READY
+        self._capture_starting = False
         self._display_capture_sync_pending = False
         self._engine_shutdown_pending = False
         self._idle_engine_exit_expected = False
@@ -1596,6 +1598,8 @@ class ClipperApplication(Adw.Application):
                 if not self._start_engine_for_capture(capture_mode):
                     self._schedule_engine_recovery()
                     return False
+            if self._capture_starting:
+                self._set_window_engine_status(_ENGINE_STATUS_STARTING)
             self._maybe_learn_game_audio_identity(running_entry)
         else:
             self._reset_game_audio_learning()
@@ -1656,6 +1660,7 @@ class ClipperApplication(Adw.Application):
     def _on_engine_exited(self, exit_code: int) -> None:
         if self._stopping:
             return
+        self._capture_starting = False
         self._cancel_source("_engine_deadline_id")
         expected = self._idle_engine_exit_expected or self._engine_shutdown_pending
         self._handle_engine_process_exit(exit_code)
@@ -1665,6 +1670,8 @@ class ClipperApplication(Adw.Application):
         self._engine_shutdown_pending = False
         self._last_running_entry_key = None
         if exit_code == RESTART_EXIT_CODE:
+            self._capture_starting = True
+            self._set_window_engine_status(_ENGINE_STATUS_STARTING)
             self._arm_engine_deadline()
         elif expected:
             self._schedule_capture_reconcile()
@@ -1740,7 +1747,15 @@ class ClipperApplication(Adw.Application):
         self._set_window_engine_status(self._last_engine_exit_status)
 
     def _idle_window_engine_status(self) -> str:
-        return self._last_engine_exit_status or _ENGINE_STATUS_READY
+        if self._last_engine_exit_status:
+            return self._last_engine_exit_status
+        if (
+            not self._engine_shutdown_pending
+            and self._capture_starting
+            and self._engine_manager.is_running()
+        ):
+            return _ENGINE_STATUS_STARTING
+        return _ENGINE_STATUS_READY
 
     def _running_whitelist_entry(self, capture_mode: str | None = None) -> dict | None:
         return self._running_monitor_whitelist_entry(self._configured_whitelist(), capture_mode)
@@ -1992,6 +2007,8 @@ class ClipperApplication(Adw.Application):
             return
 
         self._last_running_entry_key = key
+        if not self._engine_status_data.get("buffer_active"):
+            self._capture_starting = True
         name = entry.get("name", "Unknown game")
         mode = capture_mode_for_entry(entry).replace("_", " ")
         self._log(f"[clipper] {name} detected, starting recording with {mode} mode")
@@ -2037,6 +2054,9 @@ class ClipperApplication(Adw.Application):
 
         if started:
             self._last_engine_exit_status = None
+            if starting:
+                self._capture_starting = True
+                self._set_window_engine_status(_ENGINE_STATUS_STARTING)
         return started
 
     def _connect_to_engine_if_available(self) -> None:
@@ -2063,6 +2083,8 @@ class ClipperApplication(Adw.Application):
         if not self._engine_manager.is_running():
             return False
 
+        self._capture_starting = False
+        self._set_window_engine_status(_ENGINE_STATUS_READY)
         self._log(
             "[clipper] Stopping idle engine: no whitelisted application running "
             "and no temporary probe or display picker needs the engine"
@@ -2123,9 +2145,10 @@ class ClipperApplication(Adw.Application):
             self._cancel_source("_engine_deadline_id")
 
         buffer_active = status_data.get("buffer_active", status_data.get("status") == "active")
-        game_hooked = status_data.get("game_hooked", False)
         capture_mode = status_data.get("capture_mode", self._engine_manager.capture_mode)
         running_entry = self._running_whitelist_entry(capture_mode)
+        if buffer_active or running_entry is None:
+            self._capture_starting = False
         if running_entry is not None:
             self._maybe_learn_game_audio_identity(running_entry)
 
@@ -2156,8 +2179,10 @@ class ClipperApplication(Adw.Application):
         if self._tray:
             self._tray.set_status(tray_status)
 
-        if buffer_active or game_hooked:
+        if buffer_active:
             window_status = _ENGINE_STATUS_RECORDING
+        elif self._capture_starting and not self._engine_shutdown_pending:
+            window_status = _ENGINE_STATUS_STARTING
         else:
             window_status = _ENGINE_STATUS_READY
         self._set_window_engine_status(window_status)
