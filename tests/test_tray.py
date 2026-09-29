@@ -3,6 +3,8 @@
 import sys
 import types
 
+import pytest
+
 gi = types.ModuleType("gi")
 repository = types.ModuleType("gi.repository")
 repository.Gio = types.SimpleNamespace()
@@ -87,7 +89,10 @@ class InvocationStub:
         self.return_calls += 1
 
 
-tray_module.GLib.Variant = VariantStub
+@pytest.fixture(autouse=True)
+def stub_variants(monkeypatch):
+    # Keep tray protocol doubles from replacing GLib values in GTK tests.
+    monkeypatch.setattr(tray_module.GLib, "Variant", VariantStub, raising=False)
 
 
 def make_tray(status: str = ClipperTray.STATUS_IDLE) -> ClipperTray:

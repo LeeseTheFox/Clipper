@@ -9,7 +9,19 @@ from i18n import _
 
 gi.require_version("Adw", "1")
 
-from gi.repository import Adw, Gio
+from gi.repository import Adw, Gdk, Gio, GLib, Gtk
+from playback_controls import _matches_base_key
+
+SHORTCUTS_ACCELERATOR = "<Control>question"
+
+
+def matches_shortcuts_key(keyval: int, keycode: int, state: int) -> bool:
+    """Recognize Ctrl+Shift+/ using the physical key across input layouts."""
+    modifiers = state & Gtk.accelerator_get_default_mod_mask()
+    return (
+        modifiers == (Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.SHIFT_MASK)
+        and _matches_base_key(keyval, keycode, Gdk.KEY_slash, Gdk.KEY_question)
+    )
 
 
 @dataclass(frozen=True)
@@ -33,7 +45,9 @@ def create_shortcuts_menu(
 ) -> Gio.Menu:
     """Build a window menu led by the standard shortcuts action."""
     menu = Gio.Menu()
-    menu.append(_("Shortcuts"), "win.shortcuts")
+    item = Gio.MenuItem.new(_("Shortcuts"), "win.shortcuts")
+    item.set_attribute_value("accel", GLib.Variant("s", SHORTCUTS_ACCELERATOR))
+    menu.append_item(item)
     for label, action in additional_items:
         menu.append(label, action)
     return menu

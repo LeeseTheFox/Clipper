@@ -48,10 +48,12 @@ from playback_controls import (
     _matches_base_key,
 )
 from shortcut_dialog import (
+    SHORTCUTS_ACCELERATOR,
     Shortcut,
     ShortcutSection,
     create_shortcuts_dialog,
     create_shortcuts_menu,
+    matches_shortcuts_key,
 )
 from video_output import ClipperVideoSink, make_clipper_video_sink
 
@@ -79,6 +81,7 @@ PLAYER_SHORTCUT_SECTIONS = (
         (
             Shortcut(_("Toggle fullscreen"), "f"),
             Shortcut(_("Close or exit fullscreen"), "Escape"),
+            Shortcut(_("Keyboard shortcuts"), SHORTCUTS_ACCELERATOR),
         ),
     ),
 )
@@ -1211,6 +1214,9 @@ class VideoPlayerWindow(Adw.Window):
         self._content_stack.set_visible_child_name("error")
 
     def _on_key_pressed(self, _controller, keyval, keycode, _state) -> bool:
+        if matches_shortcuts_key(keyval, keycode, _state):
+            return self.activate_action("win.shortcuts", None)
+
         if keyval == Gdk.KEY_Escape:
             if self.is_fullscreen():
                 self.unfullscreen()

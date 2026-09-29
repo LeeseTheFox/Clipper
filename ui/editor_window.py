@@ -59,10 +59,12 @@ from playback_controls import (
     _matches_base_key,
 )
 from shortcut_dialog import (
+    SHORTCUTS_ACCELERATOR,
     Shortcut,
     ShortcutSection,
     create_shortcuts_dialog,
     create_shortcuts_menu,
+    matches_shortcuts_key,
 )
 
 _EDITOR_CSS_INSTALLED = False
@@ -138,6 +140,7 @@ EDITOR_SHORTCUT_SECTIONS = (
                 "Down",
             ),
             Shortcut(_("Close or exit fullscreen"), "Escape"),
+            Shortcut(_("Keyboard shortcuts"), SHORTCUTS_ACCELERATOR),
         ),
     ),
 )
@@ -3170,6 +3173,9 @@ class EditorWindow(Adw.ApplicationWindow):
             meter.reset()
 
     def _on_key_pressed(self, _controller, keyval, keycode, state):
+        if matches_shortcuts_key(keyval, keycode, state):
+            return self.activate_action("win.shortcuts", None)
+
         if keyval == Gdk.KEY_Escape and not state:
             if getattr(self, "is_fullscreen", lambda: False)():
                 self.unfullscreen()

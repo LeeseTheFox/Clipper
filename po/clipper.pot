@@ -317,7 +317,7 @@ msgstr ""
 msgid "Reveal in file manager"
 msgstr ""
 
-#: ui/clips_view.py:1847 ui/editor_window.py:3561
+#: ui/clips_view.py:1847 ui/editor_window.py:3567
 msgid "Could not wipe saved edits"
 msgstr ""
 
@@ -338,7 +338,7 @@ msgstr ""
 
 #: ui/clips_view.py:2140 ui/dialogs.py:842 ui/editor_export_dialog.py:344
 #: ui/editor_export_dialog.py:602 ui/editor_export_dialog.py:630
-#: ui/editor_export_dialog.py:738 ui/editor_window.py:3735 ui/editor_wipe.py:16
+#: ui/editor_export_dialog.py:738 ui/editor_window.py:3741 ui/editor_wipe.py:16
 #: ui/game_details_dialog.py:37 ui/update_controller.py:376
 msgid "Cancel"
 msgstr ""
@@ -730,7 +730,7 @@ msgid "Export was already started"
 msgstr ""
 
 #: ui/editor_export.py:1053 ui/editor_export.py:1137 ui/editor_export.py:1151
-#: ui/editor_export_dialog.py:717 ui/editor_window.py:3695
+#: ui/editor_export_dialog.py:717 ui/editor_window.py:3701
 msgid "Export cancelled"
 msgstr ""
 
@@ -797,7 +797,7 @@ msgid "Export edited clip"
 msgstr ""
 
 #: ui/editor_export_dialog.py:348 ui/editor_export_dialog.py:352
-#: ui/editor_window.py:1181 ui/editor_window.py:3674 ui/editor_window.py:3710
+#: ui/editor_window.py:1184 ui/editor_window.py:3680 ui/editor_window.py:3716
 msgid "Export"
 msgstr ""
 
@@ -912,8 +912,8 @@ msgstr ""
 msgid "%(percentage)d%% complete"
 msgstr ""
 
-#: ui/editor_export_dialog.py:650 ui/editor_window.py:1730
-#: ui/editor_window.py:2023 ui/editor_window.py:2033 ui/editor_window.py:2066
+#: ui/editor_export_dialog.py:650 ui/editor_window.py:1733
+#: ui/editor_window.py:2026 ui/editor_window.py:2036 ui/editor_window.py:2069
 #, python-format
 msgid "%(percentage)d%%"
 msgstr ""
@@ -944,7 +944,7 @@ msgstr ""
 msgid "Close"
 msgstr ""
 
-#: ui/editor_export_dialog.py:722 ui/editor_window.py:3781
+#: ui/editor_export_dialog.py:722 ui/editor_window.py:3787
 msgid "Cancel the export before closing the editor"
 msgstr ""
 
@@ -1073,319 +1073,324 @@ msgstr ""
 msgid "The GStreamer audio preview could not be linked"
 msgstr ""
 
-#: ui/editor_window.py:93
+#: ui/editor_window.py:95
 msgid "Mixed mute · click to mute all"
 msgstr ""
 
-#: ui/editor_window.py:104
+#: ui/editor_window.py:106
 msgid "Editing"
 msgstr ""
 
-#: ui/editor_window.py:106
+#: ui/editor_window.py:108
 msgid "Select all segments"
 msgstr ""
 
-#: ui/editor_window.py:107
+#: ui/editor_window.py:109
 msgid "Split at playhead"
 msgstr ""
 
-#: ui/editor_window.py:109
+#: ui/editor_window.py:111
 msgid "Delete selected segments"
 msgstr ""
 
-#: ui/editor_window.py:111
+#: ui/editor_window.py:113
 msgid "Undo"
 msgstr ""
 
-#: ui/editor_window.py:112
+#: ui/editor_window.py:114
 msgid "Redo"
 msgstr ""
 
-#: ui/editor_window.py:116 ui/video_player_window.py:67
+#: ui/editor_window.py:118 ui/video_player_window.py:69
 msgid "Playback"
 msgstr ""
 
-#: ui/editor_window.py:118 ui/video_player_window.py:69
+#: ui/editor_window.py:120 ui/video_player_window.py:71
 msgid "Play or pause"
 msgstr ""
 
-#: ui/editor_window.py:119 ui/video_player_window.py:70
+#: ui/editor_window.py:121 ui/video_player_window.py:72
 msgid "Seek backward 5 seconds"
 msgstr ""
 
-#: ui/editor_window.py:120 ui/video_player_window.py:71
+#: ui/editor_window.py:122 ui/video_player_window.py:73
 msgid "Seek forward 5 seconds"
 msgstr ""
 
-#: ui/editor_window.py:121
+#: ui/editor_window.py:123
 msgid "Seek backward one frame"
 msgstr ""
 
-#: ui/editor_window.py:122
+#: ui/editor_window.py:124
 msgid "Seek forward one frame"
 msgstr ""
 
-#: ui/editor_window.py:123 ui/video_player_window.py:74
+#: ui/editor_window.py:125 ui/video_player_window.py:76
 msgid "Mute or unmute"
 msgstr ""
 
-#: ui/editor_window.py:127
+#: ui/editor_window.py:129
 msgid "View"
 msgstr ""
 
-#: ui/editor_window.py:129 ui/video_player_window.py:80
+#: ui/editor_window.py:131 ui/video_player_window.py:82
 msgid "Toggle fullscreen"
 msgstr ""
 
-#: ui/editor_window.py:130 ui/editor_window.py:133 ui/editor_window.py:1395
+#: ui/editor_window.py:132 ui/editor_window.py:135 ui/editor_window.py:1398
 msgid "Zoom in"
 msgstr ""
 
-#: ui/editor_window.py:131 ui/editor_window.py:137 ui/editor_window.py:1371
+#: ui/editor_window.py:133 ui/editor_window.py:139 ui/editor_window.py:1374
 msgid "Zoom out"
 msgstr ""
 
-#: ui/editor_window.py:140 ui/video_player_window.py:81
+#: ui/editor_window.py:142 ui/video_player_window.py:83
 msgid "Close or exit fullscreen"
 msgstr ""
 
-#: ui/editor_window.py:386
+#: ui/editor_window.py:143 ui/shortcut_dialog.py:60
+#: ui/video_player_window.py:84
+msgid "Keyboard shortcuts"
+msgstr ""
+
+#: ui/editor_window.py:389
 #, python-format
 msgid "Gain %(decibels)+.1f dB"
 msgstr ""
 
-#: ui/editor_window.py:388
+#: ui/editor_window.py:391
 msgid "Gain 0.0 dB"
 msgstr ""
 
-#: ui/editor_window.py:420
+#: ui/editor_window.py:423
 msgid "Source video"
 msgstr ""
 
-#: ui/editor_window.py:431
+#: ui/editor_window.py:434
 #, python-format
 msgid "Segment %(number)d"
 msgstr ""
 
-#: ui/editor_window.py:476
+#: ui/editor_window.py:479
 msgid "All segments selected"
 msgstr ""
 
-#: ui/editor_window.py:478
+#: ui/editor_window.py:481
 #, python-format
 msgid "%(count)d segment selected"
 msgid_plural "%(count)d segments selected"
 msgstr[0] ""
 msgstr[1] ""
 
-#: ui/editor_window.py:981
+#: ui/editor_window.py:984
 msgid "Stereo peak level"
 msgstr ""
 
-#: ui/editor_window.py:985
+#: ui/editor_window.py:988
 msgid "Stereo peak meter"
 msgstr ""
 
-#: ui/editor_window.py:1173
+#: ui/editor_window.py:1176
 msgid "Video editor"
 msgstr ""
 
-#: ui/editor_window.py:1190
+#: ui/editor_window.py:1193
 msgid "Editor menu"
 msgstr ""
 
-#: ui/editor_window.py:1192
+#: ui/editor_window.py:1195
 msgid "Wipe all edits"
 msgstr ""
 
-#: ui/editor_window.py:1316
+#: ui/editor_window.py:1319
 msgid "Timeline"
 msgstr ""
 
-#: ui/editor_window.py:1334
+#: ui/editor_window.py:1337
 msgid "Undo (Ctrl+Z)"
 msgstr ""
 
-#: ui/editor_window.py:1338
+#: ui/editor_window.py:1341
 msgid "Redo (Ctrl+Shift+Z)"
 msgstr ""
 
-#: ui/editor_window.py:1347
+#: ui/editor_window.py:1350
 msgid "Split"
 msgstr ""
 
-#: ui/editor_window.py:1348 ui/editor_window.py:2716
+#: ui/editor_window.py:1351 ui/editor_window.py:2719
 msgid "Split at playhead (X)"
 msgstr ""
 
-#: ui/editor_window.py:1354 ui/hotkeys.py:531
+#: ui/editor_window.py:1357 ui/hotkeys.py:531
 msgid "Delete"
 msgstr ""
 
-#: ui/editor_window.py:1355
+#: ui/editor_window.py:1358
 msgid "Delete selected segments (Del)"
 msgstr ""
 
-#: ui/editor_window.py:1388
+#: ui/editor_window.py:1391
 msgid "Zoom 100%"
 msgstr ""
 
-#: ui/editor_window.py:1591 ui/video_player_window.py:1198
+#: ui/editor_window.py:1594 ui/video_player_window.py:1201
 msgid "Exit fullscreen"
 msgstr ""
 
-#: ui/editor_window.py:1591 ui/playback_controls.py:254
-#: ui/video_player_window.py:1198
+#: ui/editor_window.py:1594 ui/playback_controls.py:254
+#: ui/video_player_window.py:1201
 msgid "Fullscreen"
 msgstr ""
 
-#: ui/editor_window.py:1602 ui/editor_window.py:3737
+#: ui/editor_window.py:1605 ui/editor_window.py:3743
 msgid "Save draft"
 msgstr ""
 
-#: ui/editor_window.py:1657
+#: ui/editor_window.py:1660
 msgid "Source clip changed or is unavailable"
 msgstr ""
 
-#: ui/editor_window.py:1751
+#: ui/editor_window.py:1754
 msgid "Video"
 msgstr ""
 
-#: ui/editor_window.py:1764
+#: ui/editor_window.py:1767
 #, python-format
 msgid "segment %(number)d"
 msgstr ""
 
-#: ui/editor_window.py:1767
+#: ui/editor_window.py:1770
 #, python-format
 msgid "%(count)d selected segment"
 msgid_plural "%(count)d selected segments"
 msgstr[0] ""
 msgstr[1] ""
 
-#: ui/editor_window.py:1792 ui/playback_controls.py:230
+#: ui/editor_window.py:1795 ui/playback_controls.py:230
 #: ui/playback_controls.py:327
 msgid "Mute"
 msgstr ""
 
-#: ui/editor_window.py:1792 ui/playback_controls.py:327
+#: ui/editor_window.py:1795 ui/playback_controls.py:327
 msgid "Unmute"
 msgstr ""
 
-#: ui/editor_window.py:1793
+#: ui/editor_window.py:1796
 #, python-format
 msgid "%(action)s %(track)s for %(selection)s"
 msgstr ""
 
-#: ui/editor_window.py:1798
+#: ui/editor_window.py:1801
 #, python-format
 msgid "%(action)s %(track)s"
 msgstr ""
 
-#: ui/editor_window.py:1813
+#: ui/editor_window.py:1816
 #, python-format
 msgid "Audio %(number)d"
 msgstr ""
 
-#: ui/editor_window.py:1847 ui/main_window.py:228
+#: ui/editor_window.py:1850 ui/main_window.py:228
 msgid "Audio"
 msgstr ""
 
-#: ui/editor_window.py:1848
+#: ui/editor_window.py:1851
 msgid "No audio tracks"
 msgstr ""
 
-#: ui/editor_window.py:1868
+#: ui/editor_window.py:1871
 #, python-format
 msgid "%(count)d segment"
 msgid_plural "%(count)d segments"
 msgstr[0] ""
 msgstr[1] ""
 
-#: ui/editor_window.py:1871
+#: ui/editor_window.py:1874
 #, python-format
 msgid "%(segments)s · %(duration)s"
 msgstr ""
 
-#: ui/editor_window.py:1942
+#: ui/editor_window.py:1945
 msgid "Timeline ruler"
 msgstr ""
 
-#: ui/editor_window.py:1944
+#: ui/editor_window.py:1947
 #, python-format
 msgid "%(title)s track timeline"
 msgstr ""
 
-#: ui/editor_window.py:2013
+#: ui/editor_window.py:2016
 #, python-format
 msgid "Zoom %(percentage)d%%"
 msgstr ""
 
-#: ui/editor_window.py:2533
+#: ui/editor_window.py:2536
 #, python-format
 msgid "%(gain)s for selected audio"
 msgstr ""
 
-#: ui/editor_window.py:2698
+#: ui/editor_window.py:2701
 msgid "Select a segment to delete"
 msgstr ""
 
-#: ui/editor_window.py:2700
+#: ui/editor_window.py:2703
 msgid "At least one segment must remain"
 msgstr ""
 
-#: ui/editor_window.py:2702
+#: ui/editor_window.py:2705
 msgid "Delete selected segment (Del)"
 msgstr ""
 
-#: ui/editor_window.py:2705
+#: ui/editor_window.py:2708
 #, python-format
 msgid "Delete %(count)d selected segment (Del)"
 msgid_plural "Delete %(count)d selected segments (Del)"
 msgstr[0] ""
 msgstr[1] ""
 
-#: ui/editor_window.py:2718
+#: ui/editor_window.py:2721
 msgid "Select one segment to split"
 msgstr ""
 
-#: ui/editor_window.py:3157 ui/hotkeys.py:540 ui/playback_controls.py:162
-#: ui/video_player_window.py:1167
+#: ui/editor_window.py:3160 ui/hotkeys.py:540 ui/playback_controls.py:162
+#: ui/video_player_window.py:1170
 msgid "Pause"
 msgstr ""
 
-#: ui/editor_window.py:3157 ui/playback_controls.py:162
-#: ui/video_player_window.py:1167
+#: ui/editor_window.py:3160 ui/playback_controls.py:162
+#: ui/video_player_window.py:1170
 msgid "Play"
 msgstr ""
 
-#: ui/editor_window.py:3645
+#: ui/editor_window.py:3651
 msgid "Exporting…"
 msgstr ""
 
-#: ui/editor_window.py:3689
+#: ui/editor_window.py:3695
 #, python-format
 msgid "Exported to %(name)s"
 msgstr ""
 
-#: ui/editor_window.py:3697 ui/main.py:2033 ui/settings_view.py:1423
+#: ui/editor_window.py:3703 ui/main.py:2033 ui/settings_view.py:1423
 msgid "Unknown error"
 msgstr ""
 
-#: ui/editor_window.py:3698
+#: ui/editor_window.py:3704
 #, python-format
 msgid "Export failed: %(error)s"
 msgstr ""
 
-#: ui/editor_window.py:3734
+#: ui/editor_window.py:3740
 msgid "Save this edit?"
 msgstr ""
 
-#: ui/editor_window.py:3734
+#: ui/editor_window.py:3740
 msgid "You have unsaved changes."
 msgstr ""
 
-#: ui/editor_window.py:3736
+#: ui/editor_window.py:3742
 msgid "Discard"
 msgstr ""
 
@@ -2335,12 +2340,8 @@ msgstr ""
 msgid "Start using Clipper"
 msgstr ""
 
-#: ui/shortcut_dialog.py:36
+#: ui/shortcut_dialog.py:48
 msgid "Shortcuts"
-msgstr ""
-
-#: ui/shortcut_dialog.py:46
-msgid "Keyboard shortcuts"
 msgstr ""
 
 #: ui/suika_game.py:52 ui/suika_game.py:68
@@ -2476,56 +2477,56 @@ msgstr ""
 msgid "Could not restart Clipper. Quit and open it again to use the update."
 msgstr ""
 
-#: ui/video_player_window.py:72
+#: ui/video_player_window.py:74
 msgid "Raise volume"
 msgstr ""
 
-#: ui/video_player_window.py:73
+#: ui/video_player_window.py:75
 msgid "Lower volume"
 msgstr ""
 
-#: ui/video_player_window.py:78
+#: ui/video_player_window.py:80
 msgid "Window"
 msgstr ""
 
-#: ui/video_player_window.py:230 ui/video_player_window.py:301
+#: ui/video_player_window.py:233 ui/video_player_window.py:304
 msgid "Clip player"
 msgstr ""
 
-#: ui/video_player_window.py:305
+#: ui/video_player_window.py:308
 msgid "Player menu"
 msgstr ""
 
-#: ui/video_player_window.py:328
+#: ui/video_player_window.py:331
 msgid "Loading clip…"
 msgstr ""
 
-#: ui/video_player_window.py:421
+#: ui/video_player_window.py:424
 #, python-format
 msgid "%(title)s — Clipper"
 msgstr ""
 
-#: ui/video_player_window.py:423
+#: ui/video_player_window.py:426
 msgid "Clip playback"
 msgstr ""
 
-#: ui/video_player_window.py:522
+#: ui/video_player_window.py:525
 msgid "Clip unavailable"
 msgstr ""
 
-#: ui/video_player_window.py:522
+#: ui/video_player_window.py:525
 msgid "The video file could not be found."
 msgstr ""
 
-#: ui/video_player_window.py:1203
+#: ui/video_player_window.py:1206
 msgid "Couldn’t play this clip"
 msgstr ""
 
-#: ui/video_player_window.py:1204
+#: ui/video_player_window.py:1207
 msgid "The file may use an unsupported video or audio format."
 msgstr ""
 
-#: ui/video_player_window.py:1423
+#: ui/video_player_window.py:1429
 msgid "Play a Clipper video"
 msgstr ""
 

@@ -96,7 +96,7 @@ process matching intentionally cover separate production implementations.
 | release_version | Reject malformed tags and mismatched application release versions. |
 | settings_view | Apply settings correctly, respect platform approval, join background discovery, detach retired windows, reuse cached options and clamp encoder controls. |
 | setup_window | Persist setup choices within engine-supported clip limits, respect existing settings, share encoder discovery, reject responses after close, and complete or skip setup consistently. |
-| shortcut_dialog | Validate accelerator syntax and present the correct shortcut collection for each window. |
+| shortcut_dialog | Validate accelerator syntax and open the correct shortcut collection from menus and physical keys under non-Latin layouts. |
 | sound_feedback | Play the bundled asset with bounded gain and tolerate missing/unavailable media. |
 | startup_benchmark | Measure the right processes and decode desktop presentation/handoff state accurately. |
 | steam | Discover installations/accounts and change launch options without corrupting or claiming user-owned data. |
