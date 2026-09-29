@@ -31,7 +31,7 @@ msgstr "Все источники звука объединяются в одн�
 msgid "Engine restart required for audio changes"
 msgstr "Для применения настроек звука требуется перезапуск движка"
 
-#: ui/audio_tracks_view.py:72 ui/main_window.py:179 ui/settings_view.py:482
+#: ui/audio_tracks_view.py:72 ui/main_window.py:179 ui/settings_view.py:470
 msgid "Restart engine"
 msgstr "Перезапустить движок"
 
@@ -553,19 +553,19 @@ msgstr ""
 msgid "Restart Steam"
 msgstr "Перезапустить Steam"
 
-#: ui/editor_export.py:32 ui/settings_view.py:56 ui/settings_view.py:808
+#: ui/editor_export.py:32 ui/settings_view.py:56 ui/settings_view.py:745
 msgid "Matroska video (.mkv)"
 msgstr "Видео Matroska (.mkv)"
 
-#: ui/editor_export.py:33 ui/settings_view.py:57 ui/settings_view.py:809
+#: ui/editor_export.py:33 ui/settings_view.py:57 ui/settings_view.py:746
 msgid "MPEG-4 (.mp4)"
 msgstr "MPEG-4 (.mp4)"
 
-#: ui/editor_export.py:34 ui/settings_view.py:58 ui/settings_view.py:810
+#: ui/editor_export.py:34 ui/settings_view.py:58 ui/settings_view.py:747
 msgid "QuickTime (.mov)"
 msgstr "QuickTime (.mov)"
 
-#: ui/editor_export.py:35 ui/settings_view.py:59 ui/settings_view.py:811
+#: ui/editor_export.py:35 ui/settings_view.py:59 ui/settings_view.py:748
 msgid "MPEG-TS (.ts)"
 msgstr "MPEG-TS (.ts)"
 
@@ -847,7 +847,7 @@ msgstr "Имя файла"
 msgid "Folder"
 msgstr "Папка"
 
-#: ui/editor_export_dialog.py:399 ui/settings_view.py:1139
+#: ui/editor_export_dialog.py:399 ui/settings_view.py:1076
 msgid "Choose…"
 msgstr "Выбрать…"
 
@@ -863,8 +863,8 @@ msgstr "Контейнер экспортируемого файла"
 msgid "Encoding"
 msgstr "Кодирование"
 
-#: ui/editor_export_dialog.py:429 ui/settings_view.py:1042
-#: ui/setup_window.py:352
+#: ui/editor_export_dialog.py:429 ui/settings_view.py:979
+#: ui/setup_window.py:341
 msgid "Resolution"
 msgstr "Разрешение"
 
@@ -881,11 +881,11 @@ msgstr "%(width)d × %(height)d (исходное)"
 msgid "Native"
 msgstr "Исходное"
 
-#: ui/editor_export_dialog.py:455 ui/setup_window.py:379
+#: ui/editor_export_dialog.py:455 ui/setup_window.py:368
 msgid "Video codec"
 msgstr "Видеокодек"
 
-#: ui/editor_export_dialog.py:456 ui/settings_view.py:1057
+#: ui/editor_export_dialog.py:456 ui/settings_view.py:994
 msgid "Encoder implementation"
 msgstr "Реализация кодировщика"
 
@@ -897,15 +897,15 @@ msgstr "Аппаратное ускорение"
 msgid "libx264 — software encoding"
 msgstr "libx264 — программное кодирование"
 
-#: ui/editor_export_dialog.py:473 ui/settings_view.py:1074
+#: ui/editor_export_dialog.py:473 ui/settings_view.py:1011
 msgid "Rate control"
 msgstr "Управление битрейтом"
 
-#: ui/editor_export_dialog.py:524 ui/setup_window.py:388
+#: ui/editor_export_dialog.py:524 ui/setup_window.py:377
 msgid "Audio codec"
 msgstr "Аудиокодек"
 
-#: ui/editor_export_dialog.py:525 ui/settings_view.py:1065
+#: ui/editor_export_dialog.py:525 ui/settings_view.py:1002
 msgid "Audio compression format"
 msgstr "Формат сжатия аудио"
 
@@ -1406,7 +1406,7 @@ msgstr "Экспорт…"
 msgid "Exported to %(name)s"
 msgstr "Экспортировано в %(name)s"
 
-#: ui/editor_window.py:3697 ui/main.py:2013 ui/settings_view.py:1486
+#: ui/editor_window.py:3697 ui/main.py:2033 ui/settings_view.py:1423
 msgid "Unknown error"
 msgstr "Неизвестная ошибка"
 
@@ -1537,8 +1537,8 @@ msgstr "Используй одну основную клавишу для со�
 msgid "Choose a key too"
 msgstr "Также выбери клавишу"
 
-#: ui/hotkeys.py:235 ui/hotkeys.py:252 ui/settings_view.py:1433
-#: ui/setup_window.py:605
+#: ui/hotkeys.py:235 ui/hotkeys.py:252 ui/settings_view.py:1370
+#: ui/setup_window.py:594
 msgid "Not set"
 msgstr "Не задано"
 
@@ -1698,11 +1698,11 @@ msgstr "Журналы Clipper"
 msgid "Copy logs"
 msgstr "Скопировать журналы"
 
-#: ui/main.py:85
+#: ui/main.py:86
 msgid "OBS Studio and Clipper are both running"
 msgstr "OBS Studio и Clipper запущены одновременно"
 
-#: ui/main.py:88
+#: ui/main.py:89
 msgid ""
 "Running both apps at the same time can overload the GPU or hardware encoder. "
 "This may also cause issues for games with \"Game capture\" method selected. "
@@ -1713,147 +1713,147 @@ msgstr ""
 "метод «Захват игры». Перед записью рекомендуется закрыть OBS Studio или "
 "Clipper."
 
-#: ui/main.py:555
+#: ui/main.py:574
 msgid "Engine not running"
 msgstr "Движок не запущен"
 
-#: ui/main.py:561
+#: ui/main.py:580
 msgid "Could not send save command to Clipper engine"
 msgstr "Не удалось отправить команду сохранения движку Clipper"
 
-#: ui/main.py:593
+#: ui/main.py:612
 msgid "Restart Clipper?"
 msgstr "Перезапустить Clipper?"
 
-#: ui/main.py:594
+#: ui/main.py:613
 msgid "Clipper needs to be restarted for this change to take effect."
 msgstr "Чтобы это изменение вступило в силу, необходимо перезапустить Clipper."
 
-#: ui/main.py:596 ui/update_controller.py:326
+#: ui/main.py:615 ui/update_controller.py:326
 msgid "Restart later"
 msgstr "Перезапустить позже"
 
-#: ui/main.py:597 ui/update_controller.py:330
+#: ui/main.py:616 ui/update_controller.py:330
 msgid "Restart now"
 msgstr "Перезапустить сейчас"
 
-#: ui/main.py:620
+#: ui/main.py:639
 msgid "Save or discard the video edit before logging out"
 msgstr "Перед выходом сохрани или отмени изменения видео"
 
-#: ui/main.py:731
+#: ui/main.py:750
 #, python-format
 msgid "Could not register save hotkey: %(error)s"
 msgstr "Не удалось зарегистрировать горячую клавишу сохранения: %(error)s"
 
-#: ui/main.py:770
+#: ui/main.py:789
 #, python-format
 msgid "Global hotkey unavailable: %(message)s"
 msgstr "Глобальная горячая клавиша недоступна: %(message)s"
 
-#: ui/main.py:954
+#: ui/main.py:978
 msgid "Acknowledge"
 msgstr "Понятно"
 
-#: ui/main.py:995 ui/settings_view.py:1482
+#: ui/main.py:1019 ui/settings_view.py:1419
 msgid "Restarting engine…"
 msgstr "Перезапуск движка…"
 
-#: ui/main.py:1006
+#: ui/main.py:1030
 msgid "Could not send restart command to Clipper engine"
 msgstr "Не удалось отправить команду перезапуска движку Clipper"
 
-#: ui/main.py:1011
+#: ui/main.py:1035
 msgid "Engine will start when a whitelisted game is running"
 msgstr "Движок запустится, когда будет запущена разрешённая игра"
 
-#: ui/main.py:1024
+#: ui/main.py:1048
 #, python-format
 msgid "Engine restart failed: %(error)s"
 msgstr "Не удалось перезапустить движок: %(error)s"
 
-#: ui/main.py:1142
+#: ui/main.py:1164
 msgid "X11 capture uses the primary X11 display without a system picker."
 msgstr ""
 "Захват X11 использует основной дисплей X11 без системного средства выбора."
 
-#: ui/main.py:1151
+#: ui/main.py:1173
 msgid "The system display picker is already open."
 msgstr "Системное средство выбора экрана уже открыто."
 
-#: ui/main.py:1161
+#: ui/main.py:1183
 msgid "Stop the active game capture before changing the target display."
 msgstr "Останови активный захват игры перед сменой целевого экрана."
 
-#: ui/main.py:1220
+#: ui/main.py:1242
 msgid "Could not disable automatic startup"
 msgstr "Не удалось отключить автоматический запуск"
 
-#: ui/main.py:1227
+#: ui/main.py:1249
 msgid "PipeWire restore token cleared"
 msgstr "Токен восстановления PipeWire очищен"
 
-#: ui/main.py:1294
+#: ui/main.py:1316
 msgid "Clip captured"
 msgstr "Клип записан"
 
-#: ui/main.py:1295
+#: ui/main.py:1317
 msgid "Your clip has been saved."
 msgstr "Клип сохранён."
 
-#: ui/main.py:1301
+#: ui/main.py:1323
 msgid ""
 "Could not write the clip. Check the save folder and available disk space."
 msgstr ""
 "Не удалось записать клип. Проверь папку сохранения и свободное место на "
 "диске."
 
-#: ui/main.py:1303
+#: ui/main.py:1325
 #, python-format
 msgid "Failed to save clip: %(error)s"
 msgstr "Не удалось сохранить клип: %(error)s"
 
-#: ui/main.py:1339
+#: ui/main.py:1361
 #, python-format
 msgid "Could not open clip editor: %(error)s"
 msgstr "Не удалось открыть редактор клипа: %(error)s"
 
-#: ui/main.py:1818
+#: ui/main.py:1838
 #, python-format
 msgid "Could not start Clipper engine: %(error)s"
 msgstr "Не удалось запустить движок Clipper: %(error)s"
 
-#: ui/main.py:1883 ui/settings_view.py:1485
+#: ui/main.py:1903 ui/settings_view.py:1422
 #, python-format
 msgid "Engine shutdown failed: %(error)s"
 msgstr "Не удалось остановить движок: %(error)s"
 
-#: ui/main.py:1922 ui/main.py:1958
+#: ui/main.py:1942 ui/main.py:1978
 msgid "Display selection was cancelled."
 msgstr "Выбор экрана отменён."
 
-#: ui/main.py:1927
+#: ui/main.py:1947
 msgid "Capture display selected successfully."
 msgstr "Экран для захвата успешно выбран."
 
-#: ui/main.py:1931
+#: ui/main.py:1951
 msgid "No display was selected before the picker timed out."
 msgstr "До истечения времени ожидания средство выбора не выбрало экран."
 
-#: ui/main.py:2012
+#: ui/main.py:2032
 #, python-format
 msgid "Display capture sync failed: %(error)s"
 msgstr "Ошибка синхронизации захвата экрана: %(error)s"
 
-#: ui/main.py:2100
+#: ui/main.py:2120
 msgid "🦊 Leese"
 msgstr "🦊 Leese"
 
-#: ui/main.py:2104
+#: ui/main.py:2124
 msgid "© 2026 Leese"
 msgstr "© 2026 Leese"
 
-#: ui/main.py:2110
+#: ui/main.py:2130
 msgid "GitHub"
 msgstr "GitHub"
 
@@ -1861,7 +1861,7 @@ msgstr "GitHub"
 msgid "Ready"
 msgstr "Готов"
 
-#: ui/main_window.py:39 ui/settings_view.py:1022 ui/tray.py:144
+#: ui/main_window.py:39 ui/settings_view.py:959 ui/tray.py:144
 msgid "Recording"
 msgstr "Запись"
 
@@ -1877,7 +1877,7 @@ msgstr "Аварийно завершён"
 msgid "Clipper"
 msgstr "Clipper"
 
-#: ui/main_window.py:136 ui/main_window.py:440
+#: ui/main_window.py:136 ui/main_window.py:438
 msgid "Engine status"
 msgstr "Состояние движка"
 
@@ -1938,11 +1938,11 @@ msgstr "Клипы"
 msgid "Games"
 msgstr "Игры"
 
-#: ui/main_window.py:481
+#: ui/main_window.py:479
 msgid "Waiting for frame"
 msgstr "Ожидание кадра"
 
-#: ui/main_window.py:574
+#: ui/main_window.py:572
 msgid "Preview unavailable"
 msgstr "Предпросмотр недоступен"
 
@@ -1950,8 +1950,8 @@ msgstr "Предпросмотр недоступен"
 msgid "Playback position"
 msgstr "Позиция воспроизведения"
 
-#: ui/playback_controls.py:222 ui/settings_view.py:1218
-#: ui/settings_view.py:1220
+#: ui/playback_controls.py:222 ui/settings_view.py:1155
+#: ui/settings_view.py:1157
 msgid "Volume"
 msgstr "Громкость"
 
@@ -2067,227 +2067,227 @@ msgstr "Нажми сочетание клавиш"
 msgid "Press a shortcut · Backspace clears · Esc cancels"
 msgstr "Нажми сочетание клавиш · Backspace очищает · Esc отменяет"
 
-#: ui/settings_view.py:481
+#: ui/settings_view.py:469
 msgid "Engine restart required for changes to take effect"
 msgstr "Для применения изменений требуется перезапуск движка"
 
-#: ui/settings_view.py:1023
+#: ui/settings_view.py:960
 msgid "Configure clip and encoding settings"
 msgstr "Настрой параметры клипов и кодирования"
 
-#: ui/settings_view.py:1028
+#: ui/settings_view.py:965
 msgid "How many seconds to keep in memory"
 msgstr "Сколько секунд хранить в памяти"
 
-#: ui/settings_view.py:1037
+#: ui/settings_view.py:974
 msgid "30 FPS"
 msgstr "30 FPS"
 
-#: ui/settings_view.py:1037
+#: ui/settings_view.py:974
 msgid "60 FPS"
 msgstr "60 FPS"
 
-#: ui/settings_view.py:1037 ui/setup_window.py:361
+#: ui/settings_view.py:974 ui/setup_window.py:350
 msgid "Frame rate"
 msgstr "Частота кадров"
 
-#: ui/settings_view.py:1037
+#: ui/settings_view.py:974
 msgid "Frames per second"
 msgstr "Кадров в секунду"
 
-#: ui/settings_view.py:1042
+#: ui/settings_view.py:979
 msgid "Output video resolution"
 msgstr "Разрешение выходного видео"
 
-#: ui/settings_view.py:1049
+#: ui/settings_view.py:986
 msgid "Container format for output file"
 msgstr "Формат контейнера выходного файла"
 
-#: ui/settings_view.py:1049
+#: ui/settings_view.py:986
 msgid "Recording format"
 msgstr "Формат записи"
 
-#: ui/settings_view.py:1057
+#: ui/settings_view.py:994
 msgid "Video encoder"
 msgstr "Видеокодировщик"
 
-#: ui/settings_view.py:1065
+#: ui/settings_view.py:1002
 msgid "Audio encoder"
 msgstr "Аудиокодировщик"
 
-#: ui/settings_view.py:1096
+#: ui/settings_view.py:1033
 msgid "VAAPI device"
 msgstr "Устройство VAAPI"
 
-#: ui/settings_view.py:1097
+#: ui/settings_view.py:1034
 msgid "Hardware acceleration device"
 msgstr "Устройство аппаратного ускорения"
 
-#: ui/settings_view.py:1112
+#: ui/settings_view.py:1049
 msgid "Change capture target display"
 msgstr "Изменить целевой экран захвата"
 
-#: ui/settings_view.py:1113 ui/settings_view.py:1325 ui/setup_window.py:427
+#: ui/settings_view.py:1050 ui/settings_view.py:1262 ui/setup_window.py:416
 msgid "Opens the system display picker"
 msgstr "Открывает системное средство выбора экрана"
 
-#: ui/settings_view.py:1114 ui/setup_window.py:428
+#: ui/settings_view.py:1051 ui/setup_window.py:417
 msgid "Pick display…"
 msgstr "Выбрать экран…"
 
-#: ui/settings_view.py:1126
+#: ui/settings_view.py:1063
 msgid "Saving"
 msgstr "Сохранение"
 
-#: ui/settings_view.py:1127
+#: ui/settings_view.py:1064
 msgid "Output location, shortcuts and feedback"
 msgstr "Место сохранения, горячие клавиши и уведомления"
 
-#: ui/settings_view.py:1131
+#: ui/settings_view.py:1068
 msgid "Output folder"
 msgstr "Папка сохранения"
 
-#: ui/settings_view.py:1148
+#: ui/settings_view.py:1085
 msgid "Hotkey"
 msgstr "Горячая клавиша"
 
-#: ui/settings_view.py:1150 ui/settings_view.py:1447 ui/setup_window.py:514
+#: ui/settings_view.py:1087 ui/settings_view.py:1384 ui/setup_window.py:503
 msgid "Your desktop may ask you to approve or change this shortcut"
 msgstr "Система может попросить подтвердить это сочетание клавиш"
 
-#: ui/settings_view.py:1176
+#: ui/settings_view.py:1113
 msgid "Show notification when a clip is captured"
 msgstr "Показывать уведомление при записи клипа"
 
-#: ui/settings_view.py:1177
+#: ui/settings_view.py:1114
 msgid "Display a system notification after saving a clip"
 msgstr "Показывать системное уведомление после сохранения клипа"
 
-#: ui/settings_view.py:1192
+#: ui/settings_view.py:1129
 msgid "Play sound when a clip is captured"
 msgstr "Звуковой эффект сохранения клипа"
 
-#: ui/settings_view.py:1193
+#: ui/settings_view.py:1130
 msgid "Play audio feedback after saving a clip"
 msgstr "Индикация успешного сохранения клипа"
 
-#: ui/settings_view.py:1235
+#: ui/settings_view.py:1172
 msgid "App"
 msgstr "Приложение"
 
-#: ui/settings_view.py:1236
+#: ui/settings_view.py:1173
 msgid "Startup and window behavior"
 msgstr "Запуск и поведение окна"
 
-#: ui/settings_view.py:1238
+#: ui/settings_view.py:1175
 msgid "Automatically check for updates"
 msgstr "Автоматически проверять обновления"
 
-#: ui/settings_view.py:1239
+#: ui/settings_view.py:1176
 msgid "Check GitHub at startup and daily for new Clipper releases"
 msgstr "Проверять новые выпуски Clipper на GitHub при запуске и ежедневно"
 
-#: ui/settings_view.py:1256
+#: ui/settings_view.py:1193
 msgid "Start on boot"
 msgstr "Запускать при входе"
 
-#: ui/settings_view.py:1257
+#: ui/settings_view.py:1194
 msgid "Launch Clipper automatically when you log in"
 msgstr "Автоматически запускать Clipper при входе в систему"
 
-#: ui/settings_view.py:1271
+#: ui/settings_view.py:1208
 msgid "Minimize to tray instead of close"
 msgstr "Сворачивать в трей вместо закрытия"
 
-#: ui/settings_view.py:1273
+#: ui/settings_view.py:1210
 msgid "Hide Clipper to the tray when the window close button is pressed"
 msgstr "Скрывать Clipper в системный трей при нажатии кнопки закрытия окна"
 
-#: ui/settings_view.py:1288
+#: ui/settings_view.py:1225
 msgid "Remember window sizes"
 msgstr "Запоминать размеры окон"
 
-#: ui/settings_view.py:1290
+#: ui/settings_view.py:1227
 msgid "Restore sizes for the main window, video editor and video player"
 msgstr "Восстанавливать размеры главного окна, видеоредактора и видеоплеера"
 
-#: ui/settings_view.py:1312
+#: ui/settings_view.py:1249
 msgid "The system display picker is unavailable"
 msgstr "Системное средство выбора экрана недоступно"
 
-#: ui/settings_view.py:1316 ui/setup_window.py:544
+#: ui/settings_view.py:1253 ui/setup_window.py:533
 msgid "Waiting for the system display picker…"
 msgstr "Ожидание системного средства выбора экрана…"
 
-#: ui/settings_view.py:1320
+#: ui/settings_view.py:1257
 msgid "Could not open the system display picker."
 msgstr "Не удалось открыть системное средство выбора экрана."
 
-#: ui/settings_view.py:1330
+#: ui/settings_view.py:1267
 #, python-format
 msgid "Capture display was not changed: %(message)s"
 msgstr "Экран захвата не изменён: %(message)s"
 
-#: ui/settings_view.py:1349
+#: ui/settings_view.py:1286
 msgid "Tray unavailable. Clipper will quit when closed."
 msgstr "Системный трей недоступен. При закрытии Clipper завершит работу."
 
-#: ui/settings_view.py:1383
+#: ui/settings_view.py:1320
 msgid "Could not update the start-on-boot setting"
 msgstr "Не удалось обновить настройку автозапуска"
 
-#: ui/settings_view.py:1390
+#: ui/settings_view.py:1327
 #, python-format
 msgid "Could not update the start-on-boot setting: %(error)s"
 msgstr "Не удалось обновить настройку автозапуска: %(error)s"
 
-#: ui/settings_view.py:1397
+#: ui/settings_view.py:1334
 msgid "Choose output folder"
 msgstr "Выбери папку сохранения"
 
-#: ui/settings_view.py:1446 ui/settings_view.py:1462 ui/setup_window.py:513
-#: ui/setup_window.py:522
+#: ui/settings_view.py:1383 ui/settings_view.py:1399 ui/setup_window.py:502
+#: ui/setup_window.py:511
 msgid "Managed by your desktop's global shortcut settings"
 msgstr "Управляется глобальными системными настройками сочетаний клавиш"
 
-#: ui/settings_view.py:1495
+#: ui/settings_view.py:1434
 msgid "Engine restarted successfully"
 msgstr "Движок успешно перезапущен"
 
-#: ui/settings_view.py:1504
+#: ui/settings_view.py:1441
 msgid "Failed to restart engine. Please restart manually."
 msgstr "Не удалось перезапустить движок. Перезапусти его вручную."
 
-#: ui/setup_window.py:44
+#: ui/setup_window.py:41
 msgid "Unknown encoder"
 msgstr "Неизвестный кодировщик"
 
-#: ui/setup_window.py:86 ui/setup_window.py:137
+#: ui/setup_window.py:79 ui/setup_window.py:126
 msgid "Set up Clipper"
 msgstr "Настройка Clipper"
 
-#: ui/setup_window.py:164 ui/setup_window.py:580
+#: ui/setup_window.py:153 ui/setup_window.py:569
 #, python-format
 msgid "Step %(current)d of %(total)d"
 msgstr "Шаг %(current)d из %(total)d"
 
-#: ui/setup_window.py:182
+#: ui/setup_window.py:171
 msgid "Skip setup"
 msgstr "Пропустить настройку"
 
-#: ui/setup_window.py:190
+#: ui/setup_window.py:179
 msgid "Back"
 msgstr "Назад"
 
-#: ui/setup_window.py:195 ui/setup_window.py:591
+#: ui/setup_window.py:184 ui/setup_window.py:580
 msgid "Next"
 msgstr "Далее"
 
-#: ui/setup_window.py:226
+#: ui/setup_window.py:215
 msgid "Welcome to Clipper"
 msgstr "Добро пожаловать в Clipper"
 
-#: ui/setup_window.py:233
+#: ui/setup_window.py:222
 msgid ""
 "Set up clip length, quality, codecs, your save shortcut, and the display "
 "used for capture. Every choice can be changed later."
@@ -2295,7 +2295,7 @@ msgstr ""
 "Настрой длительность клипа, качество, кодеки, горячую клавишу сохранения и "
 "экран для захвата. Все параметры можно изменить позже."
 
-#: ui/setup_window.py:238
+#: ui/setup_window.py:227
 msgid ""
 "Set up clip length, quality, codecs, and your save shortcut. Every choice "
 "can be changed later."
@@ -2303,67 +2303,67 @@ msgstr ""
 "Настрой длительность клипа, качество, кодеки и горячую клавишу сохранения. "
 "Все параметры можно изменить позже."
 
-#: ui/setup_window.py:296
+#: ui/setup_window.py:285
 msgid "Clips and shortcut"
 msgstr "Клипы и горячая клавиша"
 
-#: ui/setup_window.py:297
+#: ui/setup_window.py:286
 msgid "Choose the clip length and how to save it."
 msgstr "Выбери длительность клипа и способ его сохранения."
 
-#: ui/setup_window.py:304
+#: ui/setup_window.py:293
 msgid "Clip length in seconds"
 msgstr "Длительность клипа в секундах"
 
-#: ui/setup_window.py:315
+#: ui/setup_window.py:304
 msgid "Save shortcut"
 msgstr "Сочетание клавиш для сохранения"
 
-#: ui/setup_window.py:345
+#: ui/setup_window.py:334
 msgid "Video and audio"
 msgstr "Видео и аудио"
 
-#: ui/setup_window.py:346
+#: ui/setup_window.py:335
 msgid ""
 "Set the output size, frame rate, container, and encoders used for clips."
 msgstr ""
 "Задай размер выходного видео, частоту кадров, контейнер и кодировщики для "
 "клипов."
 
-#: ui/setup_window.py:353
+#: ui/setup_window.py:342
 msgid "Output dimensions"
 msgstr "Размеры выходного видео"
 
-#: ui/setup_window.py:362
+#: ui/setup_window.py:351
 msgid "Frames recorded each second"
 msgstr "Кадров, записываемых каждую секунду"
 
-#: ui/setup_window.py:363
+#: ui/setup_window.py:352
 #, python-format
 msgid "%(fps)d FPS"
 msgstr "%(fps)d FPS"
 
-#: ui/setup_window.py:370
+#: ui/setup_window.py:359
 msgid "Container"
 msgstr "Контейнер"
 
-#: ui/setup_window.py:371
+#: ui/setup_window.py:360
 msgid "File format used when a clip is saved"
 msgstr "Формат файла при сохранении клипа"
 
-#: ui/setup_window.py:380
+#: ui/setup_window.py:369
 msgid "Encoder used for the picture"
 msgstr "Кодировщик изображения"
 
-#: ui/setup_window.py:389
+#: ui/setup_window.py:378
 msgid "Encoder used for sound"
 msgstr "Кодировщик звука"
 
-#: ui/setup_window.py:418
+#: ui/setup_window.py:407
 msgid "Capture display"
 msgstr "Экран захвата"
 
-#: ui/setup_window.py:420
+#: ui/setup_window.py:409
 msgid ""
 "Choose the primary display, or the display where your games will appear. The "
 "system picker controls this permission."
@@ -2371,15 +2371,15 @@ msgstr ""
 "Выбери основной экран или экран, на котором будут отображаться игры. Доступ "
 "к нему управляется системным средством выбора."
 
-#: ui/setup_window.py:426
+#: ui/setup_window.py:415
 msgid "Target capture display"
 msgstr "Целевой экран захвата"
 
-#: ui/setup_window.py:461
+#: ui/setup_window.py:450
 msgid "All set!"
 msgstr "Всё готово!"
 
-#: ui/setup_window.py:468
+#: ui/setup_window.py:457
 msgid ""
 "Clipper is ready to save your recent gameplay. You can change these settings "
 "at any time."
@@ -2387,7 +2387,7 @@ msgstr ""
 "Clipper готов сохранять последние моменты игры. Эти настройки можно изменить "
 "в любое время."
 
-#: ui/setup_window.py:591
+#: ui/setup_window.py:580
 msgid "Start using Clipper"
 msgstr "Начать работу с Clipper"
 

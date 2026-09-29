@@ -168,6 +168,11 @@ class EngineClient:
         if not enabled:
             self._stop_reconnect_timer()
 
+    def remove_state_change_callback(self, callback: Callable[[int], None]) -> None:
+        """Release a subscriber when its window or application is retired."""
+        if callback in self._state_callbacks:
+            self._state_callbacks.remove(callback)
+
     def get_state(self) -> int:
         """Get current connection state.
 

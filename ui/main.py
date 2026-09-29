@@ -26,6 +26,7 @@ gi.require_version("Adw", "1")
 from app_icon import register_app_icon
 from audio_source_discovery import list_playback_audio_sources
 from autostart import AutostartManager
+from capability_response import RecordingCapabilityProbe
 from capture_modes import (
     CAPTURE_MODE_DISPLAY,
     CAPTURE_MODE_GAME,
@@ -92,6 +93,7 @@ _OBS_CONFLICT_BODY = (
 )
 _HOTKEY_CAPTURE_RELEASE_DELAY_MS = 500
 _EXPORT_PROBE_DELAY_SECONDS = 3
+_RECORDING_PROBE_DELAY_SECONDS = 3
 _PRESENTATION_ACTION = "presentation-state"
 _VERSION_EASTER_EGG_CLICKS = 5
 _VERSION_EASTER_EGG_INTERVAL_SECONDS = 0.7
@@ -211,6 +213,8 @@ class ClipperApplication(Adw.Application):
         self._audio_learning_last_diagnostic = ""
         self._audio_learning_resolved = False
         self._export_probe_start_id: int | None = None
+        self._recording_probe_start_id: int | None = None
+        self._recording_capability_probe: RecordingCapabilityProbe | None = None
         self._presentation_action: Gio.SimpleAction | None = None
         self._presentation_marks = {"window": 0, "clips": 0}
         self._fruit_drop_window = None
@@ -257,7 +261,7 @@ class ClipperApplication(Adw.Application):
                 display_target_change_callback=self.change_capture_target_display,
                 show_display_target_controls=self._show_display_target_controls(),
                 tray_available_callback=self._tray_available,
-                capabilities_cache=self._capabilities_cache,
+                capabilities_probe=self._recording_capability_probe,
                 edit_clip_callback=self.open_editor,
                 presentation_callback=self._schedule_presentation_mark,
                 language_changed_callback=self.request_language_change,
@@ -346,9 +350,12 @@ class ClipperApplication(Adw.Application):
             window_visible_callback=self._is_window_visible,
         )
 
-        # Set up the IPC client. The engine itself is started on demand by the
-        # lightweight whitelist watcher in _poll_engine_status().
+        # Delay recording discovery until the first window has had time to
+        # appear. Setup or Preferences can join or start the same probe sooner.
         self._setup_engine_client()
+        self._recording_probe_start_id = GLib.timeout_add_seconds(
+            _RECORDING_PROBE_DELAY_SECONDS, self._start_recording_capability_probe
+        )
         if self._monitor_manager.available():
             self._setup_monitor_ipc()
 
@@ -373,6 +380,13 @@ class ClipperApplication(Adw.Application):
             },
             separators=(",", ":"),
         )
+
+    def _start_recording_capability_probe(self) -> bool:
+        """Warm recording options without constructing a preferences window."""
+        self._recording_probe_start_id = None
+        if self._recording_capability_probe is not None:
+            self._recording_capability_probe.request()
+        return False
 
     def _start_export_capability_probe(self) -> bool:
         """Warm export capabilities after launch-critical UI work has settled."""
@@ -439,6 +453,11 @@ class ClipperApplication(Adw.Application):
         if self._export_probe_start_id is not None:
             GLib.source_remove(self._export_probe_start_id)
             self._export_probe_start_id = None
+        if self._recording_probe_start_id is not None:
+            GLib.source_remove(self._recording_probe_start_id)
+            self._recording_probe_start_id = None
+        if self._recording_capability_probe is not None:
+            self._recording_capability_probe.close()
         self._stop_status_polling()
         if self.setup_window:
             self.setup_window.cleanup()
@@ -874,6 +893,11 @@ class ClipperApplication(Adw.Application):
         self._engine_client.on_error(self._on_engine_error)
         self._engine_client.on("display_target_cancelled", self._on_display_target_cancelled)
         self._engine_socket_path = socket_path
+        self._recording_capability_probe = RecordingCapabilityProbe(
+            self._engine_client, GLib,
+            self.ensure_engine_for_capabilities, self.on_capabilities_finished,
+            self._capabilities_cache,
+        )
 
     def _setup_monitor_ipc(self) -> None:
         """Start automatic host-process detection for the Flatpak app."""
@@ -1024,27 +1048,27 @@ class ClipperApplication(Adw.Application):
             self._show_error(_("Engine restart failed: %(error)s") % {"error": error})
 
     def ensure_engine_for_capabilities(self) -> bool:
-        """Temporarily start the engine so Settings can query OBS capabilities."""
-        temporary_probe = self._running_whitelist_entry() is None
-        if temporary_probe:
-            if not self._capabilities_probe_requested:
-                self._log("[clipper] OBS settings probe requested (temporary engine)")
-            self._capabilities_probe_count += 1
-            self._capabilities_probe_requested = True
+        """Keep the engine available until a capability consumer finishes."""
+        running_entry = self._running_whitelist_entry()
+        if not self._capabilities_probe_requested:
+            mode = "temporary engine" if running_entry is None else "recording engine"
+            self._log(f"[clipper] OBS settings probe requested ({mode})")
+        self._capabilities_probe_count += 1
+        self._capabilities_probe_requested = True
 
         if self._engine_manager.is_running():
             self._connect_to_engine_if_available()
             return True
 
-        if self._start_engine_for_capture(CAPTURE_MODE_GAME):
+        capture_mode = capture_mode_for_entry(running_entry) if running_entry else CAPTURE_MODE_GAME
+        if self._start_engine_for_capture(capture_mode):
             return True
 
-        if temporary_probe:
-            self._finish_capabilities_probe_unit()
+        self._finish_capabilities_probe_unit()
         return False
 
     def on_capabilities_finished(self) -> None:
-        """Stop a temporary capability probe once Settings has the response."""
+        """Release one consumer and stop the engine only when nothing needs it."""
         self._finish_capabilities_probe_unit(shutdown_when_idle=True)
 
     def _finish_capabilities_probe_unit(self, *, shutdown_when_idle: bool = False) -> None:
@@ -1089,9 +1113,7 @@ class ClipperApplication(Adw.Application):
             self.setup_window = SetupWindow(
                 application=self,
                 config=self._config,
-                engine_client=self._engine_client,
-                capabilities_requested_callback=self.ensure_engine_for_capabilities,
-                capabilities_finished_callback=self.on_capabilities_finished,
+                capabilities_probe=self._recording_capability_probe,
                 hotkey_changed_callback=self._on_save_hotkey_changed,
                 hotkey_capture_state_callback=self._set_hotkey_capture_active,
                 display_target_callback=self.change_capture_target_display,
@@ -1526,8 +1548,6 @@ class ClipperApplication(Adw.Application):
         running_entry = self._running_whitelist_entry()
 
         if running_entry is not None:
-            self._capabilities_probe_requested = False
-            self._capabilities_probe_count = 0
             self._log_running_entry(running_entry)
             capture_mode = capture_mode_for_entry(running_entry)
             if self._engine_shutdown_pending:

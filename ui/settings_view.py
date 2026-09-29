@@ -8,7 +8,7 @@ from i18n import _
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
-from capability_response import CapabilityResponseHandler
+from capability_response import RecordingCapabilityProbe
 from config import (
     DEFAULT_CLIP_SOUND_VOLUME,
     MAX_CLIP_SOUND_VOLUME,
@@ -409,10 +409,8 @@ class InlineHotkeyCapture:
             self._capture_state_callback(False, None)
 
 
-class SettingsView(Gtk.Box, CapabilityResponseHandler):
+class SettingsView(Gtk.Box):
     """View for application settings"""
-
-    _capability_scheduler = GLib
 
     def __init__(
         self,
@@ -421,14 +419,12 @@ class SettingsView(Gtk.Box, CapabilityResponseHandler):
         output_folder_changed_callback=None,
         hotkey_changed_callback=None,
         hotkey_capture_state_callback=None,
-        capabilities_requested_callback=None,
-        capabilities_finished_callback=None,
         engine_restart_required_callback=None,
         start_on_boot_changed_callback=None,
         display_target_change_callback=None,
         show_display_target_controls=True,
         tray_available_callback=None,
-        capabilities_cache=None,
+        capabilities_probe: RecordingCapabilityProbe | None = None,
         language_changed_callback=None,
     ):
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=0)
@@ -438,8 +434,8 @@ class SettingsView(Gtk.Box, CapabilityResponseHandler):
         self._output_folder_changed_callback = output_folder_changed_callback
         self._hotkey_changed_callback = hotkey_changed_callback
         self._hotkey_capture_state_callback = hotkey_capture_state_callback
-        self._capabilities_requested_callback = capabilities_requested_callback
-        self._capabilities_finished_callback = capabilities_finished_callback
+        self._capabilities_probe = capabilities_probe
+        self._closed = False
         self._engine_restart_required_callback = engine_restart_required_callback
         self._start_on_boot_changed_callback = start_on_boot_changed_callback
         self._display_target_change_callback = display_target_change_callback
@@ -451,14 +447,6 @@ class SettingsView(Gtk.Box, CapabilityResponseHandler):
         self._pending_slider_keys = set()
         self._restart_needed = False
         self._expecting_restart = False  # Track if we're expecting an engine restart
-        self._capability_start_requested = False
-        self._capability_retry_id = None
-        self._capability_retry_count = 0
-        self._capability_request_in_flight = False
-        self._capability_response_retry_count = 0
-        self._capabilities_cache = (
-            capabilities_cache if capabilities_cache is not None else {}
-        )
         self._format_values = list(_FORMAT_VALUES)
         self._video_encoder_values = list(_VIDEO_ENCODER_VALUES)
         self._audio_encoder_values = list(_AUDIO_ENCODER_VALUES)
@@ -644,76 +632,25 @@ class SettingsView(Gtk.Box, CapabilityResponseHandler):
     # ------------------------------------------------------------------
 
     def _request_capabilities(self):
-        """Ask the engine for runtime OBS capabilities when available."""
-        if (
-            self._capabilities_cache.get("ok")
-            and self._capability_response_has_encoders(self._capabilities_cache)
-        ):
-            self._apply_capabilities(self._capabilities_cache)
+        if self._closed or self._capabilities_probe is None:
             return
+        self._show_capability_loading_options()
+        self._capabilities_probe.request(self._on_capabilities)
 
-        if self._engine_client and self._engine_client.is_connected():
-            if self._capability_request_in_flight:
-                return
-            if self._capability_retry_id is not None:
-                GLib.source_remove(self._capability_retry_id)
-                self._capability_retry_id = None
-            self._capability_request_in_flight = True
-            self._capability_response_retry_count = 0
-            self._show_capability_loading_options()
-            if not self._engine_client.get_capabilities(self._on_capabilities):
-                self._capability_request_in_flight = False
-                self._restore_fallback_capability_options()
-                self._finish_capability_probe()
+    def _on_capabilities(self, response):
+        if self._closed:
             return
-
-        if self._capability_start_requested:
-            return
-
-        if self._capabilities_requested_callback:
-            self._capability_start_requested = True
-            self._capability_retry_count = 0
-            self._capability_response_retry_count = 0
-            if not self._capabilities_requested_callback():
-                self._capability_start_requested = False
-                return
-
-            if not self._capability_start_requested:
-                return
-            if self._engine_client and self._engine_client.is_connected():
-                self._request_capabilities()
-                return
-
-            self._show_capability_loading_options()
-            if self._capability_retry_id is None:
-                self._capability_retry_id = GLib.timeout_add(250, self._retry_capabilities)
-
-    def _retry_capabilities(self):
-        if not self._capability_start_requested:
-            self._capability_retry_id = None
-            return False
-
-        self._capability_retry_count += 1
-        if self._engine_client and self._engine_client.is_connected():
-            self._capability_retry_id = None
-            self._request_capabilities()
-            return False
-
-        if self._capability_retry_count >= 40:
-            self._capability_retry_id = None
+        if response is None:
             self._restore_fallback_capability_options()
-            self._finish_capability_probe()
-            return False
+        else:
+            self._apply_capabilities(response)
 
-        return True
-
-    def _finish_capability_probe(self):
-        if not self._capability_start_requested:
-            return
-
-        self._capability_start_requested = False
-        if self._capabilities_finished_callback:
-            self._capabilities_finished_callback()
+    def cleanup(self):
+        self._closed = True
+        if self._capabilities_probe is not None:
+            self._capabilities_probe.unsubscribe(self._on_capabilities)
+        if self._engine_client:
+            self._engine_client.remove_state_change_callback(self._on_engine_state_change)
 
     def _capability_rows(self):
         return (
@@ -1488,6 +1425,8 @@ class SettingsView(Gtk.Box, CapabilityResponseHandler):
 
     def _on_engine_state_change(self, new_state):
         """Handle engine connection state changes"""
+        if self._closed:
+            return
         if new_state == STATE_CONNECTED and self._expecting_restart:
             # Engine successfully restarted and reconnected
             self._expecting_restart = False
@@ -1495,15 +1434,11 @@ class SettingsView(Gtk.Box, CapabilityResponseHandler):
             self._show_toast(_("Engine restarted successfully"))
         elif new_state == STATE_CONNECTED:
             self._request_capabilities()
-        else:
-            self._capability_request_in_flight = False
 
         if new_state == STATE_DISCONNECTED and self._expecting_restart:
             # Engine restart failed after max retry attempts
             self._expecting_restart = False
             self._show_toast(_("Failed to restart engine. Please restart manually."))
-        elif new_state == STATE_DISCONNECTED:
-            self._finish_capability_probe()
 
     def _show_toast(self, message):
         """Show a toast notification"""

@@ -4,6 +4,8 @@ import sys
 import types
 from pathlib import Path
 
+import pytest
+
 
 def _load_main_module():
     module_name = "test_main_isolated"
@@ -574,6 +576,7 @@ def make_status_application(
     app._capabilities_probe_requested = False
     app._capabilities_probe_count = 0
     app._capabilities_cache = {}
+    app._recording_capability_probe = None
     app._pending_capture_mode_after_shutdown = None
     app._pending_hotkey_change = None
     app._last_running_entry_key = None
@@ -1837,6 +1840,76 @@ def test_concurrent_capability_probes_keep_temporary_engine_until_all_finish():
 
     assert app._capabilities_probe_requested is False
     assert engine_manager.terminated is True
+
+
+@pytest.mark.parametrize("consumer", ["none", "game", "display-picker"])
+def test_background_probe_caches_without_window_and_preserves_live_consumers(consumer):
+    app = make_status_application()
+    client = EngineClientStub()
+    app._engine_client = client
+    callbacks = []
+    replies = []
+    timers = {}
+    client.on_state_change = callbacks.append
+    client.get_capabilities = lambda callback: replies.append(callback) or True
+    client.disconnected = True
+    scheduler = types.SimpleNamespace(
+        timeout_add=lambda _delay, callback: timers.setdefault(1, callback) and 1,
+        source_remove=lambda source_id: timers.pop(source_id, None),
+    )
+    app._recording_capability_probe = main_module.RecordingCapabilityProbe(
+        client, scheduler, app.ensure_engine_for_capabilities,
+        app.on_capabilities_finished, app._capabilities_cache,
+    )
+    app._start_recording_capability_probe()
+    assert app.window is None
+    assert app._engine_manager.start_calls == ["game_capture"]
+    client.disconnected = False
+    callbacks[0](2)
+    assert len(replies) == 1
+
+    if consumer == "game":
+        app._running_whitelist_entry = lambda: {"capture_mode": "game_capture"}
+    elif consumer == "display-picker":
+        app._display_target_request_pending = True
+    response = {
+        "ok": True,
+        "video_encoders": [{"id": "obs_x264"}],
+        "audio_encoders": [{"id": "ffmpeg_aac"}],
+    }
+    replies.pop()(response)
+    assert app._capabilities_cache == response
+    assert app._capabilities_probe_count == 0
+    assert bool(client.shutdown_callbacks) == (consumer == "none")
+    assert not timers
+    # A startup timer after setup, or an inherited tray cache, must be free.
+    app._start_recording_capability_probe()
+    assert not replies
+    assert app._engine_manager.start_calls == ["game_capture"]
+
+
+def test_game_start_and_exit_during_probe_keeps_engine_until_discovery_finishes():
+    app = make_status_application()
+    running = []
+    app._running_whitelist_entry = lambda: running[0] if running else None
+    app._log_running_entry = lambda entry: None
+    assert app.ensure_engine_for_capabilities()
+    running.append({"capture_mode": "game_capture"})
+    app._poll_engine_status()
+    running.clear()
+    app._poll_engine_status()
+    assert not app._engine_manager.terminated
+    app.on_capabilities_finished()
+    assert app._engine_manager.terminated
+
+
+def test_probe_started_for_running_game_uses_its_capture_mode_and_preserves_recording():
+    app = make_status_application()
+    app._running_whitelist_entry = lambda: {"capture_mode": "display_capture"}
+    assert app.ensure_engine_for_capabilities()
+    assert app._engine_manager.start_calls == ["display_capture"]
+    app.on_capabilities_finished()
+    assert not app._engine_manager.terminated
 
 
 def test_capability_probe_stops_with_inactive_game_capture_rule():

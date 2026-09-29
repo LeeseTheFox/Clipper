@@ -11,11 +11,11 @@ from i18n import _
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
-from capability_response import CapabilityResponseHandler
+from capability_response import RecordingCapabilityProbe
 from config import (
     REPLAY_BUFFER_SIZE_DEFAULT_MB,
 )
-from gi.repository import Adw, GLib, Gtk
+from gi.repository import Adw, Gtk
 from hotkeys import display_hotkey, effective_hotkey_label
 from icon_names import APP_ICON
 from language_row import create_language_row
@@ -31,9 +31,6 @@ from settings_view import (
     _primary_display_resolution,
     _resolution_options,
 )
-
-_CAPABILITY_RETRY_MS = 250
-_CAPABILITY_RETRY_LIMIT = 40
 
 
 def _resolution_label(value: str) -> str:
@@ -62,19 +59,15 @@ def _initial_setup_resolution(
     return configured_resolution
 
 
-class SetupWindow(Adw.ApplicationWindow, CapabilityResponseHandler):
+class SetupWindow(Adw.ApplicationWindow):
     """Native, multi-page first-run configuration window."""
-
-    _capability_scheduler = GLib
 
     def __init__(
         self,
         *,
         application,
         config,
-        engine_client=None,
-        capabilities_requested_callback: Callable[[], bool] | None = None,
-        capabilities_finished_callback: Callable[[], None] | None = None,
+        capabilities_probe: RecordingCapabilityProbe | None = None,
         hotkey_changed_callback: Callable[[str], bool] | None = None,
         hotkey_capture_state_callback: Callable[..., None] | None = None,
         display_target_callback: Callable[[Callable[[bool, str], None]], bool]
@@ -88,9 +81,8 @@ class SetupWindow(Adw.ApplicationWindow, CapabilityResponseHandler):
         self.set_size_request(620, 500)
 
         self._config = config
-        self._engine_client = engine_client
-        self._capabilities_requested_callback = capabilities_requested_callback
-        self._capabilities_finished_callback = capabilities_finished_callback
+        self._capabilities_probe = capabilities_probe
+        self._closed = False
         self._hotkey_changed_callback = hotkey_changed_callback
         self._hotkey_capture_state_callback = hotkey_capture_state_callback
         self._display_target_callback = display_target_callback
@@ -100,9 +92,6 @@ class SetupWindow(Adw.ApplicationWindow, CapabilityResponseHandler):
         self._pages: list[Gtk.Widget] = []
         self._page_index = 0
         self._suppress_signals = False
-        self._capability_probe_requested = False
-        self._capability_retry_id: int | None = None
-        self._capability_retry_count = 0
         self._display_request_active = False
 
         configured_resolution = self._config.get("resolution", "1920x1080")
@@ -615,53 +604,13 @@ class SetupWindow(Adw.ApplicationWindow, CapabilityResponseHandler):
             self._completed_callback()
 
     def _request_capabilities(self) -> None:
-        if self._capability_probe_requested:
-            return
-        self._capability_probe_requested = True
-        self._capability_response_retry_count = 0
-        self._capability_retry_count = 0
-        if self._engine_client and self._engine_client.is_connected():
-            self._fetch_capabilities()
-            return
-        if (
-            self._capabilities_requested_callback is None
-            or not self._capabilities_requested_callback()
-        ):
-            self._finish_capability_probe()
-            return
-        if self._capability_probe_requested:
-            if self._engine_client and self._engine_client.is_connected():
-                self._fetch_capabilities()
-            else:
-                self._capability_retry_id = GLib.timeout_add(
-                    _CAPABILITY_RETRY_MS, self._retry_capabilities
-                )
+        if not self._closed and self._capabilities_probe is not None:
+            self._capabilities_probe.request(self._on_capabilities)
 
-    def _retry_capabilities(self) -> bool:
-        if not self._capability_probe_requested:
-            self._capability_retry_id = None
-            return False
-        self._capability_retry_count += 1
-        if self._engine_client and self._engine_client.is_connected():
-            self._capability_retry_id = None
-            self._fetch_capabilities()
-            return False
-        if self._capability_retry_count >= _CAPABILITY_RETRY_LIMIT:
-            self._capability_retry_id = None
-            self._finish_capability_probe()
-            return False
-        return True
-
-    def _fetch_capabilities(self) -> None:
-        self._capability_request_in_flight = True
-        if not self._engine_client or not self._engine_client.get_capabilities(
-            self._on_capabilities
-        ):
-            self._finish_capability_probe()
-
-    def _restore_fallback_capability_options(self) -> None:
+    def _on_capabilities(self, response: dict | None) -> None:
         # Setup keeps fallback choices usable throughout discovery.
-        pass
+        if not self._closed and response is not None:
+            self._apply_capabilities(response)
 
     def _apply_capabilities(self, response: dict[str, Any]) -> None:
         if response.get("ok"):
@@ -716,19 +665,10 @@ class SetupWindow(Adw.ApplicationWindow, CapabilityResponseHandler):
         finally:
             self._suppress_signals = False
 
-    def _finish_capability_probe(self) -> None:
-        if not self._capability_probe_requested:
-            return
-        self._capability_probe_requested = False
-        if self._capabilities_finished_callback:
-            self._capabilities_finished_callback()
-
     def cleanup(self) -> None:
-        self._cancel_capability_response()
-        if self._capability_retry_id is not None:
-            GLib.source_remove(self._capability_retry_id)
-            self._capability_retry_id = None
-        self._finish_capability_probe()
+        self._closed = True
+        if self._capabilities_probe is not None:
+            self._capabilities_probe.unsubscribe(self._on_capabilities)
 
     def _on_close_request(self, _window) -> bool:
         self.cleanup()

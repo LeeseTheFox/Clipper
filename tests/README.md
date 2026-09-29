@@ -48,6 +48,7 @@ process matching intentionally cover separate production implementations.
 | audio_source_watcher | Refresh discovery for relevant audio events only. |
 | audio_tracks_view | Preserve routing and offline selections, filter non-descriptive media names, synchronize whitelist routes when games change, bound synchronous executable inference, tolerate unavailable game libraries, update gain live, release inactive discovery work. |
 | autostart | Honor portal approval and native desktop-file ownership; report registration failures. |
+| capability_response | Share startup and window discovery, bound connection/response retries, release engine ownership, and reject late replies after reconnect, timeout or shutdown. |
 | capture_modes | Migrate legacy capture labels and persist stable mode IDs. |
 | clips_view | Rename and delete safely, retain drafts and game metadata, bound asynchronous gallery/cache work. |
 | config | Persist typed settings, recover malformed files, migrate schemas and preserve engine-owned tokens. |
@@ -83,7 +84,7 @@ process matching intentionally cover separate production implementations.
 | lazy_video_buffers | Execute allocation/reuse/failure cleanup against the shipped C patch helpers. |
 | log_window | Stop subscriptions and scheduled refreshes after the window closes. |
 | logs | Preserve useful diagnostics, bound history and carry logs through process handoff. |
-| main | Coordinate startup/setup, tray lifecycle, recording, engine restarts, portal decisions, updates and session shutdown. |
+| main | Coordinate startup/setup, tray lifecycle, recording, engine restarts, portal decisions, updates, background capability ownership and session shutdown. |
 | main_window_preferences | Pass catalog language IDs through preferences and track both physical Shift keys. |
 | monitor_host | Execute C host process detection, fixed Steam operations, scope isolation and live rule reloads. |
 | monitor_ipc | Validate incoming events and restrict socket access. |
@@ -93,8 +94,8 @@ process matching intentionally cover separate production implementations.
 | process_watcher | Match and deduplicate game identities across native, Steam, Wine and sandbox environments. |
 | release_notes | Generate accurate categorized history from actual Git repositories and semantic tags. |
 | release_version | Reject malformed tags and mismatched application release versions. |
-| settings_view | Apply settings correctly, respect platform approval, handle capability races and clamp encoder controls. |
-| setup_window | Persist setup choices within engine-supported clip limits, respect existing settings, retry incomplete encoder discovery, reject responses after close, and complete or skip setup consistently. |
+| settings_view | Apply settings correctly, respect platform approval, join background discovery, detach retired windows, reuse cached options and clamp encoder controls. |
+| setup_window | Persist setup choices within engine-supported clip limits, respect existing settings, share encoder discovery, reject responses after close, and complete or skip setup consistently. |
 | shortcut_dialog | Validate accelerator syntax and present the correct shortcut collection for each window. |
 | sound_feedback | Play the bundled asset with bounded gain and tolerate missing/unavailable media. |
 | startup_benchmark | Measure the right processes and decode desktop presentation/handoff state accurately. |

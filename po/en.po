@@ -31,7 +31,7 @@ msgstr "All audio sources are combined into a single track"
 msgid "Engine restart required for audio changes"
 msgstr "Engine restart required for audio changes"
 
-#: ui/audio_tracks_view.py:72 ui/main_window.py:179 ui/settings_view.py:482
+#: ui/audio_tracks_view.py:72 ui/main_window.py:179 ui/settings_view.py:470
 msgid "Restart engine"
 msgstr "Restart engine"
 
@@ -547,19 +547,19 @@ msgstr ""
 msgid "Restart Steam"
 msgstr "Restart Steam"
 
-#: ui/editor_export.py:32 ui/settings_view.py:56 ui/settings_view.py:808
+#: ui/editor_export.py:32 ui/settings_view.py:56 ui/settings_view.py:745
 msgid "Matroska video (.mkv)"
 msgstr "Matroska video (.mkv)"
 
-#: ui/editor_export.py:33 ui/settings_view.py:57 ui/settings_view.py:809
+#: ui/editor_export.py:33 ui/settings_view.py:57 ui/settings_view.py:746
 msgid "MPEG-4 (.mp4)"
 msgstr "MPEG-4 (.mp4)"
 
-#: ui/editor_export.py:34 ui/settings_view.py:58 ui/settings_view.py:810
+#: ui/editor_export.py:34 ui/settings_view.py:58 ui/settings_view.py:747
 msgid "QuickTime (.mov)"
 msgstr "QuickTime (.mov)"
 
-#: ui/editor_export.py:35 ui/settings_view.py:59 ui/settings_view.py:811
+#: ui/editor_export.py:35 ui/settings_view.py:59 ui/settings_view.py:748
 msgid "MPEG-TS (.ts)"
 msgstr "MPEG-TS (.ts)"
 
@@ -837,7 +837,7 @@ msgstr "Filename"
 msgid "Folder"
 msgstr "Folder"
 
-#: ui/editor_export_dialog.py:399 ui/settings_view.py:1139
+#: ui/editor_export_dialog.py:399 ui/settings_view.py:1076
 msgid "Choose…"
 msgstr "Choose…"
 
@@ -853,8 +853,8 @@ msgstr "Container used for the exported file"
 msgid "Encoding"
 msgstr "Encoding"
 
-#: ui/editor_export_dialog.py:429 ui/settings_view.py:1042
-#: ui/setup_window.py:352
+#: ui/editor_export_dialog.py:429 ui/settings_view.py:979
+#: ui/setup_window.py:341
 msgid "Resolution"
 msgstr "Resolution"
 
@@ -871,11 +871,11 @@ msgstr "%(width)d × %(height)d (native)"
 msgid "Native"
 msgstr "Native"
 
-#: ui/editor_export_dialog.py:455 ui/setup_window.py:379
+#: ui/editor_export_dialog.py:455 ui/setup_window.py:368
 msgid "Video codec"
 msgstr "Video codec"
 
-#: ui/editor_export_dialog.py:456 ui/settings_view.py:1057
+#: ui/editor_export_dialog.py:456 ui/settings_view.py:994
 msgid "Encoder implementation"
 msgstr "Encoder implementation"
 
@@ -887,15 +887,15 @@ msgstr "Hardware acceleration"
 msgid "libx264 — software encoding"
 msgstr "libx264 — software encoding"
 
-#: ui/editor_export_dialog.py:473 ui/settings_view.py:1074
+#: ui/editor_export_dialog.py:473 ui/settings_view.py:1011
 msgid "Rate control"
 msgstr "Rate control"
 
-#: ui/editor_export_dialog.py:524 ui/setup_window.py:388
+#: ui/editor_export_dialog.py:524 ui/setup_window.py:377
 msgid "Audio codec"
 msgstr "Audio codec"
 
-#: ui/editor_export_dialog.py:525 ui/settings_view.py:1065
+#: ui/editor_export_dialog.py:525 ui/settings_view.py:1002
 msgid "Audio compression format"
 msgstr "Audio compression format"
 
@@ -1392,7 +1392,7 @@ msgstr "Exporting…"
 msgid "Exported to %(name)s"
 msgstr "Exported to %(name)s"
 
-#: ui/editor_window.py:3697 ui/main.py:2013 ui/settings_view.py:1486
+#: ui/editor_window.py:3697 ui/main.py:2033 ui/settings_view.py:1423
 msgid "Unknown error"
 msgstr "Unknown error"
 
@@ -1522,8 +1522,8 @@ msgstr "Use one main key for the shortcut: %(shortcut)s"
 msgid "Choose a key too"
 msgstr "Choose a key too"
 
-#: ui/hotkeys.py:235 ui/hotkeys.py:252 ui/settings_view.py:1433
-#: ui/setup_window.py:605
+#: ui/hotkeys.py:235 ui/hotkeys.py:252 ui/settings_view.py:1370
+#: ui/setup_window.py:594
 msgid "Not set"
 msgstr "Not set"
 
@@ -1683,11 +1683,11 @@ msgstr "Clipper logs"
 msgid "Copy logs"
 msgstr "Copy logs"
 
-#: ui/main.py:85
+#: ui/main.py:86
 msgid "OBS Studio and Clipper are both running"
 msgstr "OBS Studio and Clipper are both running"
 
-#: ui/main.py:88
+#: ui/main.py:89
 msgid ""
 "Running both apps at the same time can overload the GPU or hardware encoder. "
 "This may also cause issues for games with \"Game capture\" method selected. "
@@ -1697,145 +1697,145 @@ msgstr ""
 "This may also cause issues for games with \"Game capture\" method selected. "
 "It is advised to close OBS Studio or Clipper before recording."
 
-#: ui/main.py:555
+#: ui/main.py:574
 msgid "Engine not running"
 msgstr "Engine not running"
 
-#: ui/main.py:561
+#: ui/main.py:580
 msgid "Could not send save command to Clipper engine"
 msgstr "Could not send save command to Clipper engine"
 
-#: ui/main.py:593
+#: ui/main.py:612
 msgid "Restart Clipper?"
 msgstr "Restart Clipper?"
 
-#: ui/main.py:594
+#: ui/main.py:613
 msgid "Clipper needs to be restarted for this change to take effect."
 msgstr "Clipper needs to be restarted for this change to take effect."
 
-#: ui/main.py:596 ui/update_controller.py:326
+#: ui/main.py:615 ui/update_controller.py:326
 msgid "Restart later"
 msgstr "Restart later"
 
-#: ui/main.py:597 ui/update_controller.py:330
+#: ui/main.py:616 ui/update_controller.py:330
 msgid "Restart now"
 msgstr "Restart now"
 
-#: ui/main.py:620
+#: ui/main.py:639
 msgid "Save or discard the video edit before logging out"
 msgstr "Save or discard the video edit before logging out"
 
-#: ui/main.py:731
+#: ui/main.py:750
 #, python-format
 msgid "Could not register save hotkey: %(error)s"
 msgstr "Could not register save hotkey: %(error)s"
 
-#: ui/main.py:770
+#: ui/main.py:789
 #, python-format
 msgid "Global hotkey unavailable: %(message)s"
 msgstr "Global hotkey unavailable: %(message)s"
 
-#: ui/main.py:954
+#: ui/main.py:978
 msgid "Acknowledge"
 msgstr "Acknowledge"
 
-#: ui/main.py:995 ui/settings_view.py:1482
+#: ui/main.py:1019 ui/settings_view.py:1419
 msgid "Restarting engine…"
 msgstr "Restarting engine…"
 
-#: ui/main.py:1006
+#: ui/main.py:1030
 msgid "Could not send restart command to Clipper engine"
 msgstr "Could not send restart command to Clipper engine"
 
-#: ui/main.py:1011
+#: ui/main.py:1035
 msgid "Engine will start when a whitelisted game is running"
 msgstr "Engine will start when a whitelisted game is running"
 
-#: ui/main.py:1024
+#: ui/main.py:1048
 #, python-format
 msgid "Engine restart failed: %(error)s"
 msgstr "Engine restart failed: %(error)s"
 
-#: ui/main.py:1142
+#: ui/main.py:1164
 msgid "X11 capture uses the primary X11 display without a system picker."
 msgstr "X11 capture uses the primary X11 display without a system picker."
 
-#: ui/main.py:1151
+#: ui/main.py:1173
 msgid "The system display picker is already open."
 msgstr "The system display picker is already open."
 
-#: ui/main.py:1161
+#: ui/main.py:1183
 msgid "Stop the active game capture before changing the target display."
 msgstr "Stop the active game capture before changing the target display."
 
-#: ui/main.py:1220
+#: ui/main.py:1242
 msgid "Could not disable automatic startup"
 msgstr "Could not disable automatic startup"
 
-#: ui/main.py:1227
+#: ui/main.py:1249
 msgid "PipeWire restore token cleared"
 msgstr "PipeWire restore token cleared"
 
-#: ui/main.py:1294
+#: ui/main.py:1316
 msgid "Clip captured"
 msgstr "Clip captured"
 
-#: ui/main.py:1295
+#: ui/main.py:1317
 msgid "Your clip has been saved."
 msgstr "Your clip has been saved."
 
-#: ui/main.py:1301
+#: ui/main.py:1323
 msgid ""
 "Could not write the clip. Check the save folder and available disk space."
 msgstr ""
 "Could not write the clip. Check the save folder and available disk space."
 
-#: ui/main.py:1303
+#: ui/main.py:1325
 #, python-format
 msgid "Failed to save clip: %(error)s"
 msgstr "Failed to save clip: %(error)s"
 
-#: ui/main.py:1339
+#: ui/main.py:1361
 #, python-format
 msgid "Could not open clip editor: %(error)s"
 msgstr "Could not open clip editor: %(error)s"
 
-#: ui/main.py:1818
+#: ui/main.py:1838
 #, python-format
 msgid "Could not start Clipper engine: %(error)s"
 msgstr "Could not start Clipper engine: %(error)s"
 
-#: ui/main.py:1883 ui/settings_view.py:1485
+#: ui/main.py:1903 ui/settings_view.py:1422
 #, python-format
 msgid "Engine shutdown failed: %(error)s"
 msgstr "Engine shutdown failed: %(error)s"
 
-#: ui/main.py:1922 ui/main.py:1958
+#: ui/main.py:1942 ui/main.py:1978
 msgid "Display selection was cancelled."
 msgstr "Display selection was cancelled."
 
-#: ui/main.py:1927
+#: ui/main.py:1947
 msgid "Capture display selected successfully."
 msgstr "Capture display selected successfully."
 
-#: ui/main.py:1931
+#: ui/main.py:1951
 msgid "No display was selected before the picker timed out."
 msgstr "No display was selected before the picker timed out."
 
-#: ui/main.py:2012
+#: ui/main.py:2032
 #, python-format
 msgid "Display capture sync failed: %(error)s"
 msgstr "Display capture sync failed: %(error)s"
 
-#: ui/main.py:2100
+#: ui/main.py:2120
 msgid "🦊 Leese"
 msgstr "🦊 Leese"
 
-#: ui/main.py:2104
+#: ui/main.py:2124
 msgid "© 2026 Leese"
 msgstr "© 2026 Leese"
 
-#: ui/main.py:2110
+#: ui/main.py:2130
 msgid "GitHub"
 msgstr "GitHub"
 
@@ -1843,7 +1843,7 @@ msgstr "GitHub"
 msgid "Ready"
 msgstr "Ready"
 
-#: ui/main_window.py:39 ui/settings_view.py:1022 ui/tray.py:144
+#: ui/main_window.py:39 ui/settings_view.py:959 ui/tray.py:144
 msgid "Recording"
 msgstr "Recording"
 
@@ -1859,7 +1859,7 @@ msgstr "Crashed"
 msgid "Clipper"
 msgstr "Clipper"
 
-#: ui/main_window.py:136 ui/main_window.py:440
+#: ui/main_window.py:136 ui/main_window.py:438
 msgid "Engine status"
 msgstr "Engine status"
 
@@ -1920,11 +1920,11 @@ msgstr "Clips"
 msgid "Games"
 msgstr "Games"
 
-#: ui/main_window.py:481
+#: ui/main_window.py:479
 msgid "Waiting for frame"
 msgstr "Waiting for frame"
 
-#: ui/main_window.py:574
+#: ui/main_window.py:572
 msgid "Preview unavailable"
 msgstr "Preview unavailable"
 
@@ -1932,8 +1932,8 @@ msgstr "Preview unavailable"
 msgid "Playback position"
 msgstr "Playback position"
 
-#: ui/playback_controls.py:222 ui/settings_view.py:1218
-#: ui/settings_view.py:1220
+#: ui/playback_controls.py:222 ui/settings_view.py:1155
+#: ui/settings_view.py:1157
 msgid "Volume"
 msgstr "Volume"
 
@@ -2049,227 +2049,227 @@ msgstr "Press shortcut"
 msgid "Press a shortcut · Backspace clears · Esc cancels"
 msgstr "Press a shortcut · Backspace clears · Esc cancels"
 
-#: ui/settings_view.py:481
+#: ui/settings_view.py:469
 msgid "Engine restart required for changes to take effect"
 msgstr "Engine restart required for changes to take effect"
 
-#: ui/settings_view.py:1023
+#: ui/settings_view.py:960
 msgid "Configure clip and encoding settings"
 msgstr "Configure clip and encoding settings"
 
-#: ui/settings_view.py:1028
+#: ui/settings_view.py:965
 msgid "How many seconds to keep in memory"
 msgstr "How many seconds to keep in memory"
 
-#: ui/settings_view.py:1037
+#: ui/settings_view.py:974
 msgid "30 FPS"
 msgstr "30 FPS"
 
-#: ui/settings_view.py:1037
+#: ui/settings_view.py:974
 msgid "60 FPS"
 msgstr "60 FPS"
 
-#: ui/settings_view.py:1037 ui/setup_window.py:361
+#: ui/settings_view.py:974 ui/setup_window.py:350
 msgid "Frame rate"
 msgstr "Frame rate"
 
-#: ui/settings_view.py:1037
+#: ui/settings_view.py:974
 msgid "Frames per second"
 msgstr "Frames per second"
 
-#: ui/settings_view.py:1042
+#: ui/settings_view.py:979
 msgid "Output video resolution"
 msgstr "Output video resolution"
 
-#: ui/settings_view.py:1049
+#: ui/settings_view.py:986
 msgid "Container format for output file"
 msgstr "Container format for output file"
 
-#: ui/settings_view.py:1049
+#: ui/settings_view.py:986
 msgid "Recording format"
 msgstr "Recording format"
 
-#: ui/settings_view.py:1057
+#: ui/settings_view.py:994
 msgid "Video encoder"
 msgstr "Video encoder"
 
-#: ui/settings_view.py:1065
+#: ui/settings_view.py:1002
 msgid "Audio encoder"
 msgstr "Audio encoder"
 
-#: ui/settings_view.py:1096
+#: ui/settings_view.py:1033
 msgid "VAAPI device"
 msgstr "VAAPI device"
 
-#: ui/settings_view.py:1097
+#: ui/settings_view.py:1034
 msgid "Hardware acceleration device"
 msgstr "Hardware acceleration device"
 
-#: ui/settings_view.py:1112
+#: ui/settings_view.py:1049
 msgid "Change capture target display"
 msgstr "Change capture target display"
 
-#: ui/settings_view.py:1113 ui/settings_view.py:1325 ui/setup_window.py:427
+#: ui/settings_view.py:1050 ui/settings_view.py:1262 ui/setup_window.py:416
 msgid "Opens the system display picker"
 msgstr "Opens the system display picker"
 
-#: ui/settings_view.py:1114 ui/setup_window.py:428
+#: ui/settings_view.py:1051 ui/setup_window.py:417
 msgid "Pick display…"
 msgstr "Pick display…"
 
-#: ui/settings_view.py:1126
+#: ui/settings_view.py:1063
 msgid "Saving"
 msgstr "Saving"
 
-#: ui/settings_view.py:1127
+#: ui/settings_view.py:1064
 msgid "Output location, shortcuts and feedback"
 msgstr "Output location, shortcuts and feedback"
 
-#: ui/settings_view.py:1131
+#: ui/settings_view.py:1068
 msgid "Output folder"
 msgstr "Output folder"
 
-#: ui/settings_view.py:1148
+#: ui/settings_view.py:1085
 msgid "Hotkey"
 msgstr "Hotkey"
 
-#: ui/settings_view.py:1150 ui/settings_view.py:1447 ui/setup_window.py:514
+#: ui/settings_view.py:1087 ui/settings_view.py:1384 ui/setup_window.py:503
 msgid "Your desktop may ask you to approve or change this shortcut"
 msgstr "Your desktop may ask you to approve or change this shortcut"
 
-#: ui/settings_view.py:1176
+#: ui/settings_view.py:1113
 msgid "Show notification when a clip is captured"
 msgstr "Show notification when a clip is captured"
 
-#: ui/settings_view.py:1177
+#: ui/settings_view.py:1114
 msgid "Display a system notification after saving a clip"
 msgstr "Display a system notification after saving a clip"
 
-#: ui/settings_view.py:1192
+#: ui/settings_view.py:1129
 msgid "Play sound when a clip is captured"
 msgstr "Play sound when a clip is captured"
 
-#: ui/settings_view.py:1193
+#: ui/settings_view.py:1130
 msgid "Play audio feedback after saving a clip"
 msgstr "Play audio feedback after saving a clip"
 
-#: ui/settings_view.py:1235
+#: ui/settings_view.py:1172
 msgid "App"
 msgstr "App"
 
-#: ui/settings_view.py:1236
+#: ui/settings_view.py:1173
 msgid "Startup and window behavior"
 msgstr "Startup and window behavior"
 
-#: ui/settings_view.py:1238
+#: ui/settings_view.py:1175
 msgid "Automatically check for updates"
 msgstr "Automatically check for updates"
 
-#: ui/settings_view.py:1239
+#: ui/settings_view.py:1176
 msgid "Check GitHub at startup and daily for new Clipper releases"
 msgstr "Check GitHub at startup and daily for new Clipper releases"
 
-#: ui/settings_view.py:1256
+#: ui/settings_view.py:1193
 msgid "Start on boot"
 msgstr "Start on boot"
 
-#: ui/settings_view.py:1257
+#: ui/settings_view.py:1194
 msgid "Launch Clipper automatically when you log in"
 msgstr "Launch Clipper automatically when you log in"
 
-#: ui/settings_view.py:1271
+#: ui/settings_view.py:1208
 msgid "Minimize to tray instead of close"
 msgstr "Minimize to tray instead of close"
 
-#: ui/settings_view.py:1273
+#: ui/settings_view.py:1210
 msgid "Hide Clipper to the tray when the window close button is pressed"
 msgstr "Hide Clipper to the tray when the window close button is pressed"
 
-#: ui/settings_view.py:1288
+#: ui/settings_view.py:1225
 msgid "Remember window sizes"
 msgstr "Remember window sizes"
 
-#: ui/settings_view.py:1290
+#: ui/settings_view.py:1227
 msgid "Restore sizes for the main window, video editor and video player"
 msgstr "Restore sizes for the main window, video editor and video player"
 
-#: ui/settings_view.py:1312
+#: ui/settings_view.py:1249
 msgid "The system display picker is unavailable"
 msgstr "The system display picker is unavailable"
 
-#: ui/settings_view.py:1316 ui/setup_window.py:544
+#: ui/settings_view.py:1253 ui/setup_window.py:533
 msgid "Waiting for the system display picker…"
 msgstr "Waiting for the system display picker…"
 
-#: ui/settings_view.py:1320
+#: ui/settings_view.py:1257
 msgid "Could not open the system display picker."
 msgstr "Could not open the system display picker."
 
-#: ui/settings_view.py:1330
+#: ui/settings_view.py:1267
 #, python-format
 msgid "Capture display was not changed: %(message)s"
 msgstr "Capture display was not changed: %(message)s"
 
-#: ui/settings_view.py:1349
+#: ui/settings_view.py:1286
 msgid "Tray unavailable. Clipper will quit when closed."
 msgstr "Tray unavailable. Clipper will quit when closed."
 
-#: ui/settings_view.py:1383
+#: ui/settings_view.py:1320
 msgid "Could not update the start-on-boot setting"
 msgstr "Could not update the start-on-boot setting"
 
-#: ui/settings_view.py:1390
+#: ui/settings_view.py:1327
 #, python-format
 msgid "Could not update the start-on-boot setting: %(error)s"
 msgstr "Could not update the start-on-boot setting: %(error)s"
 
-#: ui/settings_view.py:1397
+#: ui/settings_view.py:1334
 msgid "Choose output folder"
 msgstr "Choose output folder"
 
-#: ui/settings_view.py:1446 ui/settings_view.py:1462 ui/setup_window.py:513
-#: ui/setup_window.py:522
+#: ui/settings_view.py:1383 ui/settings_view.py:1399 ui/setup_window.py:502
+#: ui/setup_window.py:511
 msgid "Managed by your desktop's global shortcut settings"
 msgstr "Managed by your desktop's global shortcut settings"
 
-#: ui/settings_view.py:1495
+#: ui/settings_view.py:1434
 msgid "Engine restarted successfully"
 msgstr "Engine restarted successfully"
 
-#: ui/settings_view.py:1504
+#: ui/settings_view.py:1441
 msgid "Failed to restart engine. Please restart manually."
 msgstr "Failed to restart engine. Please restart manually."
 
-#: ui/setup_window.py:44
+#: ui/setup_window.py:41
 msgid "Unknown encoder"
 msgstr "Unknown encoder"
 
-#: ui/setup_window.py:86 ui/setup_window.py:137
+#: ui/setup_window.py:79 ui/setup_window.py:126
 msgid "Set up Clipper"
 msgstr "Set up Clipper"
 
-#: ui/setup_window.py:164 ui/setup_window.py:580
+#: ui/setup_window.py:153 ui/setup_window.py:569
 #, python-format
 msgid "Step %(current)d of %(total)d"
 msgstr "Step %(current)d of %(total)d"
 
-#: ui/setup_window.py:182
+#: ui/setup_window.py:171
 msgid "Skip setup"
 msgstr "Skip setup"
 
-#: ui/setup_window.py:190
+#: ui/setup_window.py:179
 msgid "Back"
 msgstr "Back"
 
-#: ui/setup_window.py:195 ui/setup_window.py:591
+#: ui/setup_window.py:184 ui/setup_window.py:580
 msgid "Next"
 msgstr "Next"
 
-#: ui/setup_window.py:226
+#: ui/setup_window.py:215
 msgid "Welcome to Clipper"
 msgstr "Welcome to Clipper"
 
-#: ui/setup_window.py:233
+#: ui/setup_window.py:222
 msgid ""
 "Set up clip length, quality, codecs, your save shortcut, and the display "
 "used for capture. Every choice can be changed later."
@@ -2277,7 +2277,7 @@ msgstr ""
 "Set up clip length, quality, codecs, your save shortcut, and the display "
 "used for capture. Every choice can be changed later."
 
-#: ui/setup_window.py:238
+#: ui/setup_window.py:227
 msgid ""
 "Set up clip length, quality, codecs, and your save shortcut. Every choice "
 "can be changed later."
@@ -2285,66 +2285,66 @@ msgstr ""
 "Set up clip length, quality, codecs, and your save shortcut. Every choice "
 "can be changed later."
 
-#: ui/setup_window.py:296
+#: ui/setup_window.py:285
 msgid "Clips and shortcut"
 msgstr "Clips and shortcut"
 
-#: ui/setup_window.py:297
+#: ui/setup_window.py:286
 msgid "Choose the clip length and how to save it."
 msgstr "Choose the clip length and how to save it."
 
-#: ui/setup_window.py:304
+#: ui/setup_window.py:293
 msgid "Clip length in seconds"
 msgstr "Clip length in seconds"
 
-#: ui/setup_window.py:315
+#: ui/setup_window.py:304
 msgid "Save shortcut"
 msgstr "Save shortcut"
 
-#: ui/setup_window.py:345
+#: ui/setup_window.py:334
 msgid "Video and audio"
 msgstr "Video and audio"
 
-#: ui/setup_window.py:346
+#: ui/setup_window.py:335
 msgid ""
 "Set the output size, frame rate, container, and encoders used for clips."
 msgstr ""
 "Set the output size, frame rate, container, and encoders used for clips."
 
-#: ui/setup_window.py:353
+#: ui/setup_window.py:342
 msgid "Output dimensions"
 msgstr "Output dimensions"
 
-#: ui/setup_window.py:362
+#: ui/setup_window.py:351
 msgid "Frames recorded each second"
 msgstr "Frames recorded each second"
 
-#: ui/setup_window.py:363
+#: ui/setup_window.py:352
 #, python-format
 msgid "%(fps)d FPS"
 msgstr "%(fps)d FPS"
 
-#: ui/setup_window.py:370
+#: ui/setup_window.py:359
 msgid "Container"
 msgstr "Container"
 
-#: ui/setup_window.py:371
+#: ui/setup_window.py:360
 msgid "File format used when a clip is saved"
 msgstr "File format used when a clip is saved"
 
-#: ui/setup_window.py:380
+#: ui/setup_window.py:369
 msgid "Encoder used for the picture"
 msgstr "Encoder used for the picture"
 
-#: ui/setup_window.py:389
+#: ui/setup_window.py:378
 msgid "Encoder used for sound"
 msgstr "Encoder used for sound"
 
-#: ui/setup_window.py:418
+#: ui/setup_window.py:407
 msgid "Capture display"
 msgstr "Capture display"
 
-#: ui/setup_window.py:420
+#: ui/setup_window.py:409
 msgid ""
 "Choose the primary display, or the display where your games will appear. The "
 "system picker controls this permission."
@@ -2352,15 +2352,15 @@ msgstr ""
 "Choose the primary display, or the display where your games will appear. The "
 "system picker controls this permission."
 
-#: ui/setup_window.py:426
+#: ui/setup_window.py:415
 msgid "Target capture display"
 msgstr "Target capture display"
 
-#: ui/setup_window.py:461
+#: ui/setup_window.py:450
 msgid "All set!"
 msgstr "All set!"
 
-#: ui/setup_window.py:468
+#: ui/setup_window.py:457
 msgid ""
 "Clipper is ready to save your recent gameplay. You can change these settings "
 "at any time."
@@ -2368,7 +2368,7 @@ msgstr ""
 "Clipper is ready to save your recent gameplay. You can change these settings "
 "at any time."
 
-#: ui/setup_window.py:591
+#: ui/setup_window.py:580
 msgid "Start using Clipper"
 msgstr "Start using Clipper"
 

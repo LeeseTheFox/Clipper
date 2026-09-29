@@ -3,6 +3,8 @@ import sys
 import types
 from pathlib import Path
 
+from capability_response import RecordingCapabilityProbe
+
 
 def _load_settings_module():
     module_name = "test_settings_view_isolated"
@@ -111,6 +113,18 @@ class EngineClientStub:
             "vaapi_devices": [{"id": "auto", "name": "Automatic"}],
         }
         self.sent = 0
+        self.state_callbacks = []
+
+    def on_state_change(self, callback):
+        self.state_callbacks.append(callback)
+
+    def remove_state_change_callback(self, callback):
+        self.state_callbacks.remove(callback)
+
+    def set_connected(self, connected):
+        self.connected = connected
+        for callback in list(self.state_callbacks):
+            callback(STATE_CONNECTED if connected else 0)
 
     def is_connected(self):
         return self.connected
@@ -236,6 +250,7 @@ def _make_view(
     capabilities_requested=None,
     capabilities_finished=None,
     capabilities_cache=None,
+    capabilities_probe=None,
 ):
     view = object.__new__(SettingsView)
     view._config = None
@@ -245,17 +260,16 @@ def _make_view(
     view._display_target_change_callback = None
     view._tray_available_callback = None
     view._engine_restart_required_callback = lambda: False
-    view._capabilities_requested_callback = capabilities_requested
-    view._capabilities_finished_callback = capabilities_finished
     view._expecting_restart = False
-    view._capability_start_requested = False
-    view._capability_retry_id = None
-    view._capability_retry_count = 0
-    view._capability_request_in_flight = False
-    view._capability_response_retry_count = 0
-    view._capabilities_cache = (
-        capabilities_cache if capabilities_cache is not None else {}
+    view._closed = False
+    view._capabilities_probe = capabilities_probe or RecordingCapabilityProbe(
+        view._engine_client,
+        settings_module.GLib,
+        capabilities_requested or (lambda: True),
+        capabilities_finished or (lambda: None),
+        capabilities_cache if capabilities_cache is not None else {},
     )
+    view._engine_client.on_state_change(view._on_engine_state_change)
     view._pending_slider_keys = set()
     view._format_values = []
     view._video_encoder_values = []
@@ -669,7 +683,6 @@ def test_settings_capability_probe_retries_until_engine_connects():
 
     view._request_capabilities()
 
-    assert view._encoder_row.model == ["Detecting…"]
     assert view._encoder_row.sensitive is False
 
     view._engine_client.connected = True
@@ -678,7 +691,6 @@ def test_settings_capability_probe_retries_until_engine_connects():
     assert requested == [True]
     assert view._engine_client.sent == 1
     assert finished == [True]
-    assert view._capability_start_requested is False
     assert view._encoder_row.sensitive is True
 
 
@@ -738,155 +750,44 @@ def test_runtime_vaapi_automatic_option_is_translated(monkeypatch):
     assert view._vaapi_device_values == ["auto", "/dev/dri/renderD128"]
 
 
-def test_settings_capability_probe_synchronous_connect_does_not_leave_retry_timer():
-    finished = []
-    holder = {}
-
-    def connect_immediately():
-        view = holder["view"]
-        view._engine_client.connected = True
-        view._on_engine_state_change(STATE_CONNECTED)
-        return True
-
-    view = _make_view(
-        capabilities_requested=connect_immediately,
-        capabilities_finished=lambda: finished.append(True),
+def test_settings_joins_startup_probe_and_reuses_cache_after_window_recreation():
+    cache = {}
+    client = EngineClientStub(connected=True)
+    pending = []
+    client.get_capabilities = lambda callback: pending.append(callback) or True
+    probe = RecordingCapabilityProbe(
+        client, settings_module.GLib, lambda: True, lambda: None, cache
     )
-    holder["view"] = view
-    timeout_count = len(settings_module._test_timeouts)
-
+    probe.request()
+    view = _make_view(capabilities_probe=probe)
     view._request_capabilities()
+    assert not view._encoder_row.sensitive
+    assert len(pending) == 1
 
-    assert finished == [True]
-    assert view._engine_client.sent == 1
-    assert view._capability_start_requested is False
-    assert len(settings_module._test_timeouts) == timeout_count
+    # Retiring a window leaves warmup alive for its replacement.
+    view.cleanup()
+    recreated = _make_view(capabilities_probe=probe)
+    recreated._request_capabilities()
+    pending.pop()(client.response)
+    assert not view._encoder_row.sensitive
+    assert recreated._video_encoder_values == ["obs_x264", "ffmpeg_vaapi"]
+    assert recreated._encoder_row.sensitive
+    assert cache == client.response
+
+    cached_view = _make_view(capabilities_probe=probe)
+    cached_view._request_capabilities()
+    assert cached_view._video_encoder_values == recreated._video_encoder_values
+    assert cached_view._encoder_row.sensitive
+    assert pending == []
 
 
-def test_completed_settings_capability_probe_ignores_stale_retry_timer():
-    view = _make_view()
-    view._capability_start_requested = False
-    view._encoder_row.set_model(["Runtime encoder"])
-    view._audio_row.set_model(["Runtime audio"])
-
-    assert view._retry_capabilities() is False
-
-    assert view._encoder_row.model == ["Runtime encoder"]
-    assert view._audio_row.model == ["Runtime audio"]
-
-
-def test_settings_capability_probe_times_out_and_finishes():
-    finished = []
-    view = _make_view(
-        capabilities_requested=lambda: True,
-        capabilities_finished=lambda: finished.append(True),
-    )
-
+def test_settings_probe_failure_restores_usable_choices():
+    view = _make_view(connected=True)
+    view._engine_client.response = {"ok": False}
     view._request_capabilities()
-    retry = settings_module._test_timeouts[-1]
-    keep_running = True
-    for _ in range(40):
-        keep_running = retry()
-
-    assert keep_running is False
-    assert finished == [True]
-    assert view._capability_start_requested is False
-    assert view._encoder_row.model == ["x264", "FFmpeg VAAPI"]
-    assert view._audio_row.model == ["FFmpeg AAC", "FFmpeg Opus", "FFmpeg FLAC"]
-    assert view._encoder_row.sensitive is True
-
-
-def test_settings_capability_probe_retries_status_shaped_response():
-    finished = []
-    view = _make_view(
-        connected=True,
-        capabilities_finished=lambda: finished.append(True),
-    )
-    view._capability_start_requested = True
-    view._engine_client.response = {
-        "ok": True,
-        "buffer_active": False,
-        "capture_mode": "game_capture",
-    }
-
-    view._request_capabilities()
-
-    assert finished == []
-    assert view._capability_request_in_flight is False
-    assert view._capability_response_retry_count == 1
-    assert view._encoder_row.model == ["Detecting…"]
-
-    view._engine_client.response = {
-        "ok": True,
-        "video_encoders": [
-            {"id": "obs_x264", "name": "x264", "codec": "h264"},
-        ],
-        "audio_encoders": [
-            {"id": "ffmpeg_aac", "name": "FFmpeg AAC", "codec": "aac"},
-        ],
-    }
-    settings_module._test_timeouts[-1]()
-
-    assert finished == [True]
-    assert view._engine_client.sent == 2
-    assert view._encoder_row.model == ["x264 (h264)"]
-    assert view._audio_row.model == ["FFmpeg AAC (aac)"]
-
-
-def test_engine_connect_during_settings_probe_fetches_capabilities_immediately():
-    finished = []
-    view = _make_view(capabilities_finished=lambda: finished.append(True))
-    view._capability_start_requested = True
-    view._capability_retry_id = 12
-    view._engine_client.connected = True
-
-    view._on_engine_state_change(STATE_CONNECTED)
-
-    assert settings_module._test_removed_sources == [12]
-    assert view._engine_client.sent == 1
-    assert finished == [True]
-
-
-def test_settings_capabilities_are_cached_across_background_window_recreation():
-    shared_cache = {}
-    view = _make_view(connected=True, capabilities_cache=shared_cache)
-
-    view._request_capabilities()
-    recreated_view = _make_view(connected=False, capabilities_cache=shared_cache)
-    recreated_view._request_capabilities()
-
-    assert view._engine_client.sent == 1
-    assert recreated_view._engine_client.sent == 0
-    assert recreated_view._encoder_row.model == [
-        "x264 (h264)",
-        "FFmpeg VAAPI (h264)",
-    ]
-
-
-def test_settings_probe_retries_after_reconnecting_state_clears_in_flight_request():
-    finished = []
-    view = _make_view(capabilities_finished=lambda: finished.append(True))
-    view._capability_start_requested = True
-    view._capability_request_in_flight = True
-
-    view._on_engine_state_change(1)
-    view._engine_client.connected = True
-    view._on_engine_state_change(STATE_CONNECTED)
-
-    assert view._engine_client.sent == 1
-    assert finished == [True]
-
-
-def test_settings_probe_final_disconnect_finishes_temporary_probe():
-    finished = []
-    view = _make_view(capabilities_finished=lambda: finished.append(True))
-    view._capability_start_requested = True
-    view._capability_request_in_flight = True
-
-    view._on_engine_state_change(settings_module.STATE_DISCONNECTED)
-
-    assert view._capability_request_in_flight is False
-    assert finished == [True]
+    assert view._video_encoder_values
+    assert view._encoder_row.sensitive
+    assert view._audio_row.sensitive
 
 
 def test_rate_control_visibility_switches_mode_specific_rows():

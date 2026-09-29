@@ -1,95 +1,147 @@
-"""Shared response handling for runtime encoder discovery.
+"""Application-owned recording capability discovery shared by all windows."""
 
-Screens retain ownership of starting/stopping the engine and presenting options.
-The mixin owns validation, bounded retries and cancellation of late responses.
-"""
-
+from collections.abc import Callable
 from typing import Any
 
-_CAPABILITY_RESPONSE_RETRY_LIMIT = 3
-_CAPABILITY_RESPONSE_RETRY_DELAY_MS = 250
+_POLL_MS = 250
+_POLL_LIMIT = 40
+_RESPONSE_RETRY_LIMIT = 3
 
 
-class CapabilityResponseHandler:
-    _capability_response_cancelled = False
-    _capability_response_retry_id: Any = None
-    _capability_response_retry_count = 0
-    _capability_request_in_flight = False
-    _capabilities_cache: Any = None
+def has_encoder_capabilities(response: dict) -> bool:
+    """Reject early status replies and incomplete encoder discovery."""
+    return bool(response.get("ok")) and all(
+        isinstance(response.get(key), list)
+        and any(isinstance(enc, dict) and enc.get("id") for enc in response[key])
+        for key in ("video_encoders", "audio_encoders")
+    )
 
-    def _cancel_capability_response(self):
-        self._capability_response_cancelled = True
-        if self._capability_response_retry_id is not None:
-            self._capability_scheduler.source_remove(self._capability_response_retry_id)
-            self._capability_response_retry_id = None
 
-    _engine_client: Any = None
-    _capability_scheduler: Any = None
+class RecordingCapabilityProbe:
+    """Share one bounded engine request and cache across startup and screens.
 
-    def _restore_fallback_capability_options(self):
-        raise NotImplementedError
+    All methods and callbacks run on the application's GLib main context.
+    Windows may unsubscribe without cancelling the application's warmup.
+    """
 
-    def _finish_capability_probe(self):
-        raise NotImplementedError
+    def __init__(
+        self,
+        engine_client: Any,
+        scheduler: Any,
+        acquire_engine: Callable[[], bool],
+        release_engine: Callable[[], None],
+        cache: dict,
+    ) -> None:
+        self._client = engine_client
+        self._scheduler = scheduler
+        self._acquire_engine = acquire_engine
+        self._release_engine = release_engine
+        self._cache = cache
+        self._callbacks: list[Callable[[dict | None], None]] = []
+        self._active = False
+        self._closed = False
+        self._starting = False
+        self._engine_acquired = False
+        self._in_flight = False
+        self._generation = 0
+        self._poll_id: int | None = None
+        self._poll_count = 0
+        self._response_retries = 0
+        self._client.on_state_change(self._on_state_change)
 
-    def _apply_capabilities(self, response):
-        raise NotImplementedError
-
-    def _capability_response_has_encoders(self, response):
-        """Return True only for a real capabilities payload, not any ok response."""
-        for key in ("video_encoders", "audio_encoders"):
-            encoders = response.get(key)
-            if not isinstance(encoders, list):
-                return False
-            if not any(isinstance(enc, dict) and enc.get("id") for enc in encoders):
-                return False
-        return True
-
-    def _retry_capability_response(self):
-        self._capability_response_retry_id = None
-        if self._capability_response_cancelled:
-            return False
-        if not self._engine_client or not self._engine_client.is_connected():
-            self._restore_fallback_capability_options()
-            self._finish_capability_probe()
-            return False
-
-        self._capability_request_in_flight = True
-        if not self._engine_client.get_capabilities(self._on_capabilities):
-            self._capability_request_in_flight = False
-            self._restore_fallback_capability_options()
-            self._finish_capability_probe()
-        return False
-
-    def _on_capabilities(self, response):
-        """Update OBS-dependent dropdowns from the engine capability response."""
-        if self._capability_response_cancelled:
+    def request(self, callback: Callable[[dict | None], None] | None = None) -> None:
+        if self._closed:
             return
-        self._capability_request_in_flight = False
+        if has_encoder_capabilities(self._cache):
+            if callback is not None:
+                callback(self._cache)
+            return
+        if callback is not None and callback not in self._callbacks:
+            self._callbacks.append(callback)
+        if self._active:
+            return
+
+        self._active = True
+        self._generation += 1
+        self._poll_count = 0
+        self._response_retries = 0
+        self._poll_id = self._scheduler.timeout_add(_POLL_MS, self._poll)
+        # Acquiring can synchronously connect IPC. Wait until ownership is
+        # established before accepting a reply that might release the engine.
+        self._starting = True
+        self._engine_acquired = self._acquire_engine()
+        self._starting = False
+        if not self._engine_acquired:
+            self._complete(None)
+        else:
+            self._fetch()
+
+    def unsubscribe(self, callback: Callable[[dict | None], None]) -> None:
+        if callback in self._callbacks:
+            self._callbacks.remove(callback)
+
+    def close(self) -> None:
+        self._closed = True
+        self._callbacks.clear()
+        self._complete(None)
+        self._client.remove_state_change_callback(self._on_state_change)
+
+    def _poll(self) -> bool:
+        if not self._active:
+            return False
+        self._poll_count += 1
+        if self._poll_count >= _POLL_LIMIT:
+            self._complete(None)
+        else:
+            self._fetch()
+        return self._active
+
+    def _on_state_change(self, _state: int) -> None:
+        if not self._active or self._starting:
+            return
+        if not self._client.is_connected():
+            # A reconnect drops the old IPC queue. Its late responses must not
+            # complete a newer request or overwrite its cache.
+            self._generation += 1
+            self._in_flight = False
+        else:
+            self._fetch()
+
+    def _fetch(self) -> None:
+        if not self._active or self._in_flight or not self._client.is_connected():
+            return
+        self._in_flight = True
+        generation = self._generation
+        if not self._client.get_capabilities(
+            lambda response: self._on_response(response, generation)
+        ):
+            self._complete(None)
+
+    def _on_response(self, response: dict, generation: int) -> None:
+        if not self._active or generation != self._generation:
+            return
+        self._in_flight = False
         if not response.get("ok"):
-            self._restore_fallback_capability_options()
-            self._finish_capability_probe()
-            return
+            self._complete(None)
+        elif not has_encoder_capabilities(response):
+            self._response_retries += 1
+            if self._response_retries > _RESPONSE_RETRY_LIMIT:
+                self._complete(None)
+        else:
+            self._cache.clear()
+            self._cache.update(response)
+            self._complete(self._cache)
 
-        if not self._capability_response_has_encoders(response):
-            if (
-                self._capability_response_retry_count
-                < _CAPABILITY_RESPONSE_RETRY_LIMIT
-            ):
-                self._capability_response_retry_count += 1
-                self._capability_response_retry_id = self._capability_scheduler.timeout_add(
-                    _CAPABILITY_RESPONSE_RETRY_DELAY_MS,
-                    self._retry_capability_response,
-                )
-                return
-
-            self._restore_fallback_capability_options()
-            self._finish_capability_probe()
-            return
-
-        self._capability_response_retry_count = 0
-        if self._capabilities_cache is not None:
-            self._capabilities_cache.clear()
-            self._capabilities_cache.update(response)
-        self._finish_capability_probe()
-        self._apply_capabilities(response)
+    def _complete(self, response: dict | None) -> None:
+        self._active = False
+        self._in_flight = False
+        self._generation += 1
+        if self._poll_id is not None:
+            self._scheduler.source_remove(self._poll_id)
+            self._poll_id = None
+        callbacks, self._callbacks = self._callbacks, []
+        if self._engine_acquired:
+            self._engine_acquired = False
+            self._release_engine()
+        for callback in callbacks:
+            callback(response)

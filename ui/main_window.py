@@ -67,7 +67,7 @@ class MainWindow(Adw.ApplicationWindow):
         display_target_change_callback=None,
         show_display_target_controls=True,
         tray_available_callback=None,
-        capabilities_cache=None,
+        capabilities_probe=None,
         edit_clip_callback=None,
         presentation_callback=None,
         language_changed_callback=None,
@@ -86,7 +86,7 @@ class MainWindow(Adw.ApplicationWindow):
         self._display_target_change_callback = display_target_change_callback
         self._show_display_target_controls = bool(show_display_target_controls)
         self._tray_available_callback = tray_available_callback
-        self._capabilities_cache = capabilities_cache
+        self._capabilities_probe = capabilities_probe
         self._edit_clip_callback = edit_clip_callback
         self._presentation_callback = presentation_callback
         self._language_changed_callback = language_changed_callback
@@ -380,14 +380,12 @@ class MainWindow(Adw.ApplicationWindow):
                 output_folder_changed_callback=self.clips_view.on_output_folder_changed,
                 hotkey_changed_callback=self._hotkey_changed_callback,
                 hotkey_capture_state_callback=self._hotkey_capture_state_callback,
-                capabilities_requested_callback=self._capabilities_requested_callback,
-                capabilities_finished_callback=self._capabilities_finished_callback,
                 engine_restart_required_callback=self._engine_restart_required_callback,
                 start_on_boot_changed_callback=self._start_on_boot_changed_callback,
                 display_target_change_callback=self._display_target_change_callback,
                 show_display_target_controls=self._show_display_target_controls,
                 tray_available_callback=self._tray_available_callback,
-                capabilities_cache=self._capabilities_cache,
+                capabilities_probe=self._capabilities_probe,
                 language_changed_callback=lambda language: self._language_changed_callback(
                     language, self._preferences_dialog, reopen_preferences=True
                 )

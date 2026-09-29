@@ -153,7 +153,6 @@ def test_runtime_codec_values_replace_fallbacks_without_staling_signal_data():
         _video_encoder_row=object(),
         _audio_encoder_row=object(),
         _replace_combo_options=lambda *_args: None,
-        _finish_capability_probe=lambda: None,
     )
 
     SetupWindow._apply_capabilities(
@@ -318,48 +317,27 @@ def test_skipping_setup_clears_default_hotkey_before_completion():
     assert completed == [True]
 
 
-def test_setup_retries_incomplete_encoders_and_ignores_response_after_close():
-    # An early status reply must not stop discovery before encoders are ready;
-    # closing during the retry must not let its late reply mutate the window.
+def test_setup_unsubscribes_from_shared_probe_on_close():
     setup = SetupWindow.__new__(SetupWindow)
     pending = []
-    removed = []
     applied = []
-    finished = []
-    setup._capability_scheduler = SimpleNamespace(
-        timeout_add=lambda _delay, callback: pending.append(callback) or len(pending),
-        source_remove=removed.append,
+    setup._closed = False
+    setup._capabilities_probe = SimpleNamespace(
+        request=pending.append, unsubscribe=pending.remove,
     )
-    setup._capability_probe_requested = True
-    setup._capability_retry_id = None
-    setup._capabilities_finished_callback = lambda: finished.append(True)
     setup._apply_capabilities = applied.append
-    setup._engine_client = SimpleNamespace(
-        is_connected=lambda: True,
-        get_capabilities=lambda callback: pending.append(callback) or True,
-    )
+    setup._request_capabilities()
     response = {
         "ok": True,
         "video_encoders": [{"id": "obs_x264"}],
         "audio_encoders": [{"id": "ffmpeg_aac"}],
     }
-
-    setup._on_capabilities({"ok": True})
-    assert finished == []
-    assert applied == []
-    pending.pop(0)()
-    pending.pop(0)(response)
-    assert applied == [response]
-    assert finished == [True]
-
-    setup._capability_probe_requested = True
-    setup._on_capabilities({"ok": True})
+    late_reply = pending[0]
+    late_reply(response)
     setup.cleanup()
-    assert removed
-    pending.pop(0)()
-    setup._on_capabilities(response)
+    assert pending == []
+    late_reply(response)
     assert applied == [response]
-    assert finished == [True, True]
 
 
 def test_setup_clip_control_cannot_save_duration_rejected_by_engine():
