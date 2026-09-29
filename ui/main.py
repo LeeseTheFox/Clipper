@@ -25,6 +25,7 @@ gi.require_version("Adw", "1")
 
 from app_icon import register_app_icon
 from audio_source_discovery import list_playback_audio_sources
+from audio_source_watcher import AudioSourceWatcher
 from autostart import AutostartManager
 from capability_response import RecordingCapabilityProbe
 from capture_modes import (
@@ -35,7 +36,7 @@ from capture_modes import (
 )
 from config import ClipperConfig, normalize_clip_sound_volume
 from display_auth import normalize_display_auth_env
-from engine_client import EngineClient
+from engine_client import STATE_CONNECTED, STATE_DISCONNECTED, EngineClient
 from engine_manager import RESTART_EXIT_CODE, EngineProcessManager
 from game_audio_learning import (
     apply_learned_game_audio_identity,
@@ -55,11 +56,7 @@ from log_window import LogWindow
 from logs import LogBuffer, consume_handoff, create_handoff, install_diagnostics
 from monitor_ipc import MonitorIpcServer, default_monitor_socket_path
 from monitor_manager import HostMonitorManager
-from process_watcher import (
-    find_running_obs_studio,
-    find_running_whitelist_entry,
-    monitor_rule_id,
-)
+from process_watcher import monitor_rule_id
 from sound_feedback import ClipSoundPlayer
 from tray import ClipperTray
 
@@ -174,13 +171,33 @@ class ClipperApplication(Adw.Application):
         self._tray: ClipperTray | None = None
         self._engine_client: EngineClient | None = None
         self._engine_socket_path = ""
-        self._engine_manager = EngineProcessManager(log_callback=self._log)
+        self._engine_manager = EngineProcessManager(
+            log_callback=self._log,
+            ready_callback=self._on_engine_ready,
+            exit_callback=self._on_engine_exited,
+        )
         self._hotkey_manager: GlobalHotkeyManager | None = None
         self._pending_hotkey_change: dict[str, Any] | None = None
         self._hotkey_capture_active = False
         self._accept_current_hotkey_capture = None
         self._hotkey_capture_release_id: int | None = None
-        self._status_poll_id: int | None = None
+        self._stopping = False
+        self._reconcile_id: int | None = None
+        self._engine_deadline_id: int | None = None
+        self._engine_recovery_id: int | None = None
+        self._engine_failures = 0
+        self._engine_generation = 0
+        self._status_revision = -1
+        self._engine_status_data: dict = {}
+        self._monitor_ready = False
+        self._monitor_retry_id: int | None = None
+        self._monitor_failures = 0
+        self._audio_learning_watcher: AudioSourceWatcher | None = None
+        self._audio_learning_confirm_id: int | None = None
+        self._audio_learning_generation = 0
+        self._audio_learning_dirty = False
+        self._display_sync_retry_id: int | None = None
+        self._config_capture_key = ""
         self._window_engine_status = _ENGINE_STATUS_READY
         self._display_capture_sync_pending = False
         self._engine_shutdown_pending = False
@@ -188,13 +205,13 @@ class ClipperApplication(Adw.Application):
         self._last_engine_exit_status: str | None = None
         self._capabilities_probe_requested = False
         self._capabilities_probe_count = 0
-        self._pending_capture_mode_after_shutdown: str | None = None
         self._last_running_entry_key: str | None = None
         self._monitor_ipc: MonitorIpcServer | None = None
         self._monitor_socket_path = default_monitor_socket_path()
         self._monitor_manager = HostMonitorManager(
             config_file=self._config.path,
             socket_path=self._monitor_socket_path,
+            exit_callback=self._on_monitor_exited,
         )
         self._monitor_active_rules: dict[str, dict[str, Any]] = {}
         self._obs_studio_running = False
@@ -204,7 +221,7 @@ class ClipperApplication(Adw.Application):
         self._display_diagnostics_logged = False
         self._display_target_request_pending = False
         self._display_target_request_callback = None
-        self._display_target_request_poll_count = 0
+        self._display_target_deadline_id: int | None = None
         self._display_target_request_temporary_engine = False
         self._audio_learning_in_flight = False
         self._audio_learning_session_key: str | None = None
@@ -362,8 +379,8 @@ class ClipperApplication(Adw.Application):
         # Global save hotkey
         self._setup_global_hotkey()
 
-        # Start polling engine status to update tray icon
-        self._start_status_polling()
+        self._config.on_saved(self._on_capture_config_changed)
+        self._on_capture_config_changed()
         self._migrate_background_autostart_command()
         from update_controller import UpdateController
 
@@ -446,6 +463,7 @@ class ClipperApplication(Adw.Application):
 
     def do_shutdown(self):
         """Called when the application shuts down"""
+        self._stopping = True
         self._log("[clipper] Application exiting; shutting down engine")
         updater = getattr(self, "_updater", None)
         if updater:
@@ -458,7 +476,10 @@ class ClipperApplication(Adw.Application):
             self._recording_probe_start_id = None
         if self._recording_capability_probe is not None:
             self._recording_capability_probe.close()
-        self._stop_status_polling()
+        for name in ("_reconcile_id", "_engine_deadline_id", "_engine_recovery_id",
+                     "_monitor_retry_id", "_display_target_deadline_id", "_display_sync_retry_id"):
+            self._cancel_source(name)
+        self._reset_game_audio_learning()
         if self.setup_window:
             self.setup_window.cleanup()
         if self.window and hasattr(self.window, "cleanup"):
@@ -891,6 +912,8 @@ class ClipperApplication(Adw.Application):
 
         self._engine_client = EngineClient(socket_path)
         self._engine_client.on_error(self._on_engine_error)
+        self._engine_client.on_state_change(self._on_engine_connection_state)
+        self._engine_client.on("status_changed", self._on_engine_status_event)
         self._engine_client.on("display_target_cancelled", self._on_display_target_cancelled)
         self._engine_socket_path = socket_path
         self._recording_capability_probe = RecordingCapabilityProbe(
@@ -908,12 +931,32 @@ class ClipperApplication(Adw.Application):
         if not self._monitor_ipc.start():
             self._monitor_ipc = None
             self._log("[clipper] WARN: could not start host monitor IPC server")
+            self._schedule_monitor_recovery()
             return
         if not self._monitor_manager.start():
             self._log("[clipper] WARN: could not start automatic process detection")
+            self._schedule_monitor_recovery()
 
     def _on_monitor_event(self, event: dict) -> bool:
         """Handle a validated event from clipper-monitor-host."""
+        if self._stopping:
+            return False
+        if event.get("event") == "monitor_disconnected":
+            self._monitor_ready = False
+            self._monitor_active_rules.clear()
+            return False
+        if event.get("event") == "snapshot":
+            # The helper also snapshots after external configuration edits.
+            self._config.load()
+            rules = {rule["rule_id"]: rule for rule in event["rules"]}
+            self._set_obs_studio_running(_OBS_STUDIO_MONITOR_RULE_ID in rules)
+            rules.pop(_OBS_STUDIO_MONITOR_RULE_ID, None)
+            self._monitor_active_rules = rules
+            self._monitor_ready = True
+            self._monitor_failures = 0
+            self._cancel_source("_monitor_retry_id")
+            self._schedule_capture_reconcile()
+            return False
         rule_id = str(event.get("rule_id") or "")
         if not rule_id:
             return False
@@ -936,7 +979,7 @@ class ClipperApplication(Adw.Application):
                     self._log(f"[clipper] {name} is no longer running, stopping capture")
                 self._last_running_entry_key = None
 
-        self._poll_engine_status()
+        self._schedule_capture_reconcile()
         return False
 
     def _set_obs_studio_running(self, running: bool) -> None:
@@ -982,35 +1025,8 @@ class ClipperApplication(Adw.Application):
         dialog.present(window)
         self._obs_conflict_dialog_shown = True
 
-    def _poll_local_obs_studio(self) -> None:
-        """Detect OBS outside Flatpak, or if the host monitor stopped."""
-        if self._monitor_manager.available() and self._monitor_manager.is_running():
-            return
-
-        self._set_obs_studio_running(find_running_obs_studio() is not None)
-
     def _on_engine_error(self, message: str):
-        """Handle engine connection/communication errors."""
-        is_disconnect = any(
-            marker in message.lower()
-            for marker in (
-                "disconnected",
-                "closed connection",
-                "socket read error",
-                "broken pipe",
-            )
-        )
-        if is_disconnect:
-            expected_shutdown = self._engine_shutdown_pending
-            self._engine_shutdown_pending = False
-            self._display_capture_sync_pending = False
-            engine_exit_code = self._engine_manager.poll()
-            if engine_exit_code is not None:
-                self._handle_engine_process_exit(engine_exit_code)
-            self._start_pending_capture_after_shutdown()
-            if expected_shutdown:
-                return
-
+        """Connection lifecycle is handled by state callbacks and the process watcher."""
         self._log(f"Engine error: {message}")
 
     def _restart_engine(self, reason: str | None = None) -> None:
@@ -1020,6 +1036,8 @@ class ClipperApplication(Adw.Application):
 
         if self._engine_client.is_connected():
             self._log(f"[clipper] Engine restart requested: {reason}")
+            self._engine_shutdown_pending = True
+            self._arm_engine_deadline()
             self._engine_client.set_auto_reconnect(True)
             if self._engine_client.shutdown(
                 lambda response: self._on_engine_restart_response(response, reason),
@@ -1027,6 +1045,8 @@ class ClipperApplication(Adw.Application):
             ):
                 return
 
+            self._engine_shutdown_pending = False
+            self._cancel_source("_engine_deadline_id")
             self._show_error(_("Could not send restart command to Clipper engine"))
             return
 
@@ -1044,6 +1064,8 @@ class ClipperApplication(Adw.Application):
         if response.get("ok"):
             self._show_toast(reason)
         else:
+            self._engine_shutdown_pending = False
+            self._cancel_source("_engine_deadline_id")
             error = response.get("error", "Unknown error")
             self._show_error(_("Engine restart failed: %(error)s") % {"error": error})
 
@@ -1155,7 +1177,7 @@ class ClipperApplication(Adw.Application):
             self.window.present()
         else:
             self.do_activate()
-        self._poll_engine_status()
+        self._schedule_capture_reconcile()
 
     def change_capture_target_display(self, completion_callback=None) -> bool:
         """Open the system display picker now and persist the selected display."""
@@ -1192,12 +1214,17 @@ class ClipperApplication(Adw.Application):
         self._config.set("display_capture_guidance_seen", True)
         self._display_target_request_pending = True
         self._display_target_request_callback = completion_callback
-        self._display_target_request_poll_count = 0
+        self._cancel_source("_display_target_deadline_id")
+        self._display_target_deadline_id = GLib.timeout_add_seconds(
+            60, self._on_display_target_timeout
+        )
         self._display_target_request_temporary_engine = running_entry is None
 
         if self._engine_client and self._engine_client.is_connected():
+            self._engine_shutdown_pending = True
             self._engine_client.set_auto_reconnect(False)
             self._engine_client.disconnect(auto_reconnect=False)
+            self._engine_shutdown_pending = False
         if self._engine_manager.is_running():
             self._log("[clipper] Stopping engine to select a new display target")
             self._engine_manager.terminate()
@@ -1273,10 +1300,14 @@ class ClipperApplication(Adw.Application):
         """Stop active services and return a reset installation to setup."""
         self._log("[clipper] Settings reset; stopping engine and returning to setup")
         self._register_save_hotkey("")
+        self._engine_shutdown_pending = True
         if self._engine_client and self._engine_client.is_connected():
             self._engine_client.set_auto_reconnect(False)
             self._engine_client.disconnect(auto_reconnect=False)
         self._engine_manager.terminate()
+        self._engine_shutdown_pending = False
+        self._cancel_source("_engine_deadline_id")
+        self._cancel_source("_engine_recovery_id")
         self._refresh_window_from_config()
         if self.window is not None:
             self.window.set_visible(False)
@@ -1521,62 +1552,171 @@ class ClipperApplication(Adw.Application):
             self._display_diagnostics_logged = True
 
     # ------------------------------------------------------------------
-    # Status polling for tray icon
+    # Event-driven engine lifecycle
     # ------------------------------------------------------------------
 
-    def _start_status_polling(self):
-        """Start periodic polling of engine status to update tray icon."""
-        if self._status_poll_id is None:
-            # Poll every 2 seconds
-            self._status_poll_id = GLib.timeout_add_seconds(2, self._poll_engine_status)
-            # Do an immediate update as well
-            self._poll_engine_status()
+    def _cancel_source(self, name: str) -> None:
+        source = getattr(self, name, None)
+        if source is not None:
+            GLib.source_remove(source)
+            setattr(self, name, None)
 
-    def _stop_status_polling(self):
-        """Stop polling engine status."""
-        if self._status_poll_id is not None:
-            GLib.source_remove(self._status_poll_id)
-            self._status_poll_id = None
+    def _on_capture_config_changed(self) -> None:
+        key = json.dumps(
+            [self._configured_whitelist(), self._config.get("audio", {})], sort_keys=True
+        )
+        if key == self._config_capture_key:
+            return
+        self._config_capture_key = key
+        self._engine_failures = 0
+        self._reset_game_audio_learning()
+        self._schedule_capture_reconcile()
 
-    def _poll_engine_status(self) -> bool:
-        """Poll engine status and request an update. Returns True to continue polling."""
-        self._poll_local_obs_studio()
-        engine_exit_code = self._engine_manager.poll()
-        if engine_exit_code is not None:
-            self._handle_engine_process_exit(engine_exit_code)
+    def _schedule_capture_reconcile(self) -> None:
+        if not self._stopping and self._reconcile_id is None:
+            self._reconcile_id = GLib.idle_add(self._reconcile_capture)
 
+    def _reconcile_capture(self) -> bool:
+        """Act once on the latest demand; unknown monitor state cannot stop capture."""
+        self._reconcile_id = None
+        if self._stopping or not self._monitor_ready:
+            return False
         running_entry = self._running_whitelist_entry()
-
         if running_entry is not None:
             self._log_running_entry(running_entry)
             capture_mode = capture_mode_for_entry(running_entry)
             if self._engine_shutdown_pending:
-                self._pending_capture_mode_after_shutdown = capture_mode
-                return True
-            self._start_engine_for_capture(capture_mode)
-        elif self._capabilities_probe_requested or self._display_target_request_pending:
-            self._reset_game_audio_learning()
-            self._connect_to_engine_if_available()
+                return False
+            if self._engine_recovery_id is not None:
+                return False
+            if (
+                not self._engine_manager.is_running()
+                or self._engine_manager.capture_mode != capture_mode
+            ):
+                if not self._start_engine_for_capture(capture_mode):
+                    self._schedule_engine_recovery()
+                    return False
+            self._maybe_learn_game_audio_identity(running_entry)
         else:
             self._reset_game_audio_learning()
-            if self._shutdown_idle_engine():
+            if not self._capabilities_probe_requested and not self._display_target_request_pending:
+                self._cancel_source("_engine_recovery_id")
+                self._shutdown_idle_engine()
                 if self._tray:
                     self._tray.set_status(ClipperTray.STATUS_IDLE)
                 self._set_window_engine_status(self._idle_window_engine_status())
-                return True
+                return False
+        status = self._engine_status_data
+        if status and status.get("capture_mode") == CAPTURE_MODE_DISPLAY:
+            self._sync_display_capture_whitelist(bool(status.get("buffer_active")))
+        return False
 
+    def _on_engine_ready(self) -> None:
+        if self._stopping:
+            return
         self._connect_to_engine_if_available()
+        if self._engine_client and not self._engine_client.is_connected():
+            self._engine_client.reconnect()
 
-        if not self._engine_client or not self._engine_client.is_connected():
-            # Engine not available - set tray to idle
+    def _on_engine_connection_state(self, state: int) -> None:
+        self._engine_generation += 1
+        self._status_revision = -1
+        self._engine_status_data = {}
+        self._display_capture_sync_pending = False
+        self._cancel_source("_display_sync_retry_id")
+        if self._stopping:
+            return
+        if state == STATE_CONNECTED:
+            generation = self._engine_generation
+            if self._engine_client:
+                self._engine_client.get_status(
+                    lambda response: self._accept_engine_status(response, generation)
+                )
+        else:
             if self._tray:
                 self._tray.set_status(ClipperTray.STATUS_IDLE)
             self._set_window_engine_status(self._idle_window_engine_status())
-            return True  # Continue polling
+            if state != STATE_DISCONNECTED and not self._engine_shutdown_pending:
+                self._arm_engine_deadline()
+            if state == STATE_DISCONNECTED and not self._engine_shutdown_pending:
+                if self._engine_manager.is_running():
+                    self._engine_manager.terminate()
+                    self._schedule_engine_recovery()
 
-        # Request status from engine
-        self._engine_client.get_status(self._on_status_response)
-        return True  # Continue polling
+    def _accept_engine_status(self, response: dict, generation: int) -> None:
+        if self._stopping or generation != self._engine_generation:
+            return
+        self._on_status_response(response)
+        self._schedule_capture_reconcile()
+
+    def _on_engine_status_event(self, event: dict) -> None:
+        if not self._stopping:
+            self._on_status_response({**event, "ok": True})
+
+    def _on_engine_exited(self, exit_code: int) -> None:
+        if self._stopping:
+            return
+        self._cancel_source("_engine_deadline_id")
+        expected = self._idle_engine_exit_expected or self._engine_shutdown_pending
+        self._handle_engine_process_exit(exit_code)
+        self._engine_shutdown_pending = True
+        if self._engine_client:
+            self._engine_client.disconnect(auto_reconnect=False)
+        self._engine_shutdown_pending = False
+        self._last_running_entry_key = None
+        if exit_code == RESTART_EXIT_CODE:
+            self._arm_engine_deadline()
+        elif expected:
+            self._schedule_capture_reconcile()
+        else:
+            self._schedule_engine_recovery()
+
+    def _arm_engine_deadline(self) -> None:
+        self._cancel_source("_engine_deadline_id")
+        self._engine_deadline_id = GLib.timeout_add_seconds(30, self._on_engine_deadline)
+
+    def _on_engine_deadline(self) -> bool:
+        self._engine_deadline_id = None
+        self._log("[clipper] Engine startup or shutdown timed out")
+        self._engine_manager.terminate()
+        self._on_engine_exited(1)
+        return False
+
+    def _schedule_engine_recovery(self) -> None:
+        if self._stopping or self._engine_recovery_id is not None:
+            return
+        if self._running_whitelist_entry() is None:
+            return
+        self._engine_failures += 1
+        # Back off while a game still needs capture; no retries when idle.
+        delay = min(30, 2 ** min(self._engine_failures, 5))
+        self._engine_recovery_id = GLib.timeout_add_seconds(delay, self._retry_engine)
+
+    def _retry_engine(self) -> bool:
+        self._engine_recovery_id = None
+        self._schedule_capture_reconcile()
+        return False
+
+    def _on_monitor_exited(self, exit_code: int) -> None:
+        self._log(f"[clipper] Host monitor exited: {exit_code}")
+        self._monitor_ready = False
+        self._monitor_active_rules.clear()
+        self._schedule_monitor_recovery()
+
+    def _schedule_monitor_recovery(self) -> None:
+        if self._stopping or self._monitor_retry_id is not None:
+            return
+        self._monitor_failures += 1
+        delay = min(30, 2 ** min(self._monitor_failures, 5))
+        self._monitor_retry_id = GLib.timeout_add_seconds(delay, self._retry_monitor)
+
+    def _retry_monitor(self) -> bool:
+        self._monitor_retry_id = None
+        if self._monitor_ipc is None:
+            self._setup_monitor_ipc()
+        elif not self._monitor_manager.start():
+            self._schedule_monitor_recovery()
+        return False
 
     def _handle_engine_process_exit(self, exit_code: int) -> None:
         if self._display_target_request_pending:
@@ -1603,11 +1743,7 @@ class ClipperApplication(Adw.Application):
         return self._last_engine_exit_status or _ENGINE_STATUS_READY
 
     def _running_whitelist_entry(self, capture_mode: str | None = None) -> dict | None:
-        whitelist = self._configured_whitelist()
-        entry = self._running_monitor_whitelist_entry(whitelist, capture_mode)
-        if entry is not None:
-            return entry
-        return find_running_whitelist_entry(whitelist, capture_mode=capture_mode)
+        return self._running_monitor_whitelist_entry(self._configured_whitelist(), capture_mode)
 
     @staticmethod
     def _game_audio_learning_key(entry: dict) -> str:
@@ -1620,6 +1756,12 @@ class ClipperApplication(Adw.Application):
         )
 
     def _reset_game_audio_learning(self) -> None:
+        self._audio_learning_generation += 1
+        self._audio_learning_dirty = False
+        self._cancel_source("_audio_learning_confirm_id")
+        if self._audio_learning_watcher is not None:
+            self._audio_learning_watcher.stop()
+            self._audio_learning_watcher = None
         self._audio_learning_session_key = None
         self._audio_learning_candidate = ""
         self._audio_learning_candidate_count = 0
@@ -1636,6 +1778,7 @@ class ClipperApplication(Adw.Application):
         if not key:
             return
         if getattr(self, "_audio_learning_session_key", None) != key:
+            self._reset_game_audio_learning()
             self._audio_learning_session_key = key
             self._audio_learning_candidate = ""
             self._audio_learning_candidate_count = 0
@@ -1648,6 +1791,9 @@ class ClipperApplication(Adw.Application):
             )
         if getattr(self, "_audio_learning_resolved", False):
             return
+        if self._audio_learning_watcher is None:
+            self._audio_learning_watcher = AudioSourceWatcher(self._on_audio_learning_event)
+            self._audio_learning_watcher.start()
         if getattr(self, "_audio_learning_in_flight", False):
             return
         if not callable(getattr(self._monitor_manager, "list_processes", None)):
@@ -1671,6 +1817,21 @@ class ClipperApplication(Adw.Application):
             return
         rule_id = monitor_rule_id(entry, entry_index)
         self._audio_learning_in_flight = True
+        generation = self._audio_learning_generation
+
+        def deliver(identity, diagnostics, error=None) -> bool:
+            self._audio_learning_in_flight = False
+            if generation != self._audio_learning_generation:
+                self._on_audio_learning_event()
+                return False
+            if error is not None:
+                self._on_game_audio_learning_error(key, error)
+            else:
+                self._on_game_audio_learning_result(key, identity, diagnostics)
+            if self._audio_learning_dirty:
+                self._audio_learning_dirty = False
+                self._on_audio_learning_event()
+            return False
 
         def probe() -> None:
             identity = ""
@@ -1685,11 +1846,10 @@ class ClipperApplication(Adw.Application):
                         list_playback_audio_sources(),
                     )
             except Exception as exc:  # noqa: BLE001
-                GLib.idle_add(self._on_game_audio_learning_error, key, str(exc))
+                GLib.idle_add(deliver, "", {}, str(exc))
                 return
             GLib.idle_add(
-                self._on_game_audio_learning_result,
-                key,
+                deliver,
                 identity,
                 diagnostics,
             )
@@ -1704,6 +1864,19 @@ class ClipperApplication(Adw.Application):
         self._audio_learning_in_flight = False
         if getattr(self, "_audio_learning_session_key", None) == key:
             self._log(f"[clipper] WARN: could not learn game audio application: {error}")
+        return False
+
+    def _on_audio_learning_event(self) -> None:
+        if self._audio_learning_in_flight:
+            self._audio_learning_dirty = True
+            return
+        entry = self._running_whitelist_entry()
+        if entry is not None and not self._stopping:
+            self._maybe_learn_game_audio_identity(entry)
+
+    def _confirm_audio_learning(self) -> bool:
+        self._audio_learning_confirm_id = None
+        self._on_audio_learning_event()
         return False
 
     def _on_game_audio_learning_result(
@@ -1754,11 +1927,16 @@ class ClipperApplication(Adw.Application):
         # Requiring the same live playback identity in two consecutive probes
         # avoids learning a short-lived launcher or splash-screen stream.
         if self._audio_learning_candidate_count < 2:
+            self._cancel_source("_audio_learning_confirm_id")
+            self._audio_learning_confirm_id = GLib.timeout_add_seconds(
+                2, self._confirm_audio_learning
+            )
             return False
 
         configured_identity = str(running_entry.get("audio_process") or "")
         if configured_identity.casefold() == identity.casefold():
             self._audio_learning_resolved = True
+            self._stop_audio_learning_watcher()
             return False
 
         whitelist, audio, changed = apply_learned_game_audio_identity(
@@ -1769,17 +1947,25 @@ class ClipperApplication(Adw.Application):
         )
         if not changed:
             self._audio_learning_resolved = True
+            self._stop_audio_learning_watcher()
             return False
 
         self._config.set("whitelist", whitelist)
         self._config.set("audio", audio)
         self._audio_learning_resolved = True
+        self._stop_audio_learning_watcher()
         name = str(running_entry.get("name") or "game")
         self._log(f"[clipper] Learned {identity} as the audio application for {name}")
         self._refresh_window_from_config()
         if self._engine_manager.is_running():
             self._restart_engine(f"Updated audio capture for {name}")
         return False
+
+    def _stop_audio_learning_watcher(self) -> None:
+        self._cancel_source("_audio_learning_confirm_id")
+        if self._audio_learning_watcher is not None:
+            self._audio_learning_watcher.stop()
+            self._audio_learning_watcher = None
 
     def _running_monitor_whitelist_entry(
         self, whitelist: list[dict], capture_mode: str | None = None
@@ -1814,13 +2000,16 @@ class ClipperApplication(Adw.Application):
         self, capture_mode: str = DEFAULT_CAPTURE_MODE, *, force_restart: bool = False
     ) -> bool:
         if self._engine_shutdown_pending:
-            self._pending_capture_mode_after_shutdown = capture_mode
             return False
 
         try:
             if force_restart and self._engine_manager.is_running():
+                self._engine_shutdown_pending = True
+                if self._engine_client:
+                    self._engine_client.disconnect(auto_reconnect=False)
                 self._log("[clipper] Stopping engine to apply capture configuration changes")
                 self._engine_manager.terminate()
+                self._engine_shutdown_pending = False
 
             if (
                 self._engine_client
@@ -1828,11 +2017,19 @@ class ClipperApplication(Adw.Application):
                 and self._engine_manager.is_running()
                 and self._engine_manager.capture_mode != capture_mode
             ):
+                self._engine_shutdown_pending = True
                 self._engine_client.set_auto_reconnect(False)
                 self._engine_client.disconnect(auto_reconnect=False)
+                self._engine_shutdown_pending = False
                 self._log(f"[clipper] Switching engine capture mode to {capture_mode}")
             elif not self._engine_manager.is_running():
                 self._log(f"[clipper] Starting engine for {capture_mode}")
+            starting = (
+                not self._engine_manager.is_running()
+                or self._engine_manager.capture_mode != capture_mode
+            )
+            if starting:
+                self._arm_engine_deadline()
             started = self._engine_manager.start(capture_mode)
         except Exception as exc:  # noqa: BLE001
             self._show_error(_("Could not start Clipper engine: %(error)s") % {"error": exc})
@@ -1840,16 +2037,7 @@ class ClipperApplication(Adw.Application):
 
         if started:
             self._last_engine_exit_status = None
-        self._connect_to_engine_if_available()
         return started
-
-    def _start_pending_capture_after_shutdown(self) -> bool:
-        capture_mode = self._pending_capture_mode_after_shutdown
-        if capture_mode is None:
-            return False
-
-        self._pending_capture_mode_after_shutdown = None
-        return self._start_engine_for_capture(capture_mode, force_restart=True)
 
     def _connect_to_engine_if_available(self) -> None:
         if (
@@ -1864,6 +2052,12 @@ class ClipperApplication(Adw.Application):
         self._engine_client.connect()
 
     def _shutdown_idle_engine(self) -> bool:
+        if self._stopping:
+            return False
+        # Losing game detection must preserve an established capture, but a
+        # temporary capability engine still belongs to its probe consumers.
+        if not self._monitor_ready and self._last_running_entry_key is not None:
+            return False
         if self._engine_shutdown_pending:
             return True
         if not self._engine_manager.is_running():
@@ -1878,6 +2072,7 @@ class ClipperApplication(Adw.Application):
         if not self._engine_client or not self._engine_client.is_connected():
             self._log("[clipper] Engine IPC unavailable; terminating process directly")
             self._engine_manager.terminate()
+            self._cancel_source("_engine_deadline_id")
             self._last_engine_exit_status = None
             self._set_window_engine_status(_ENGINE_STATUS_READY)
             self._last_running_entry_key = None
@@ -1885,6 +2080,7 @@ class ClipperApplication(Adw.Application):
 
         self._engine_shutdown_pending = True
         self._idle_engine_exit_expected = True
+        self._arm_engine_deadline()
         self._engine_client.set_auto_reconnect(False)
         if self._engine_client.shutdown(self._on_idle_engine_shutdown_response):
             return True
@@ -1893,25 +2089,15 @@ class ClipperApplication(Adw.Application):
         self._idle_engine_exit_expected = False
         self._log("[clipper] Shutdown command could not be sent; terminating process directly")
         self._engine_manager.terminate()
+        self._cancel_source("_engine_deadline_id")
         return True
 
     def _on_idle_engine_shutdown_response(self, response: dict) -> None:
-        self._engine_shutdown_pending = False
         if not response.get("ok"):
-            self._idle_engine_exit_expected = False
             error = response.get("error", "Unknown error")
             self._show_error(_("Engine shutdown failed: %(error)s") % {"error": error})
-
-        if self._engine_client:
-            self._engine_client.disconnect(auto_reconnect=False)
-        engine_exit_code = self._engine_manager.poll()
-        if engine_exit_code is not None:
-            self._handle_engine_process_exit(engine_exit_code)
-        if engine_exit_code is None or engine_exit_code == 0:
-            self._last_engine_exit_status = None
-            self._set_window_engine_status(_ENGINE_STATUS_READY)
-        self._last_running_entry_key = None
-        self._start_pending_capture_after_shutdown()
+            self._engine_manager.terminate()
+            self._on_engine_exited(1)
 
     def _on_status_response(self, response: dict):
         """Handle status response from engine and update tray icon."""
@@ -1928,6 +2114,14 @@ class ClipperApplication(Adw.Application):
         if not isinstance(status_data, dict):
             status_data = response
 
+        revision = status_data.get("revision", self._status_revision + 1)
+        if not isinstance(revision, int) or revision < self._status_revision:
+            return
+        self._status_revision = revision
+        self._engine_status_data = status_data
+        if not self._engine_shutdown_pending:
+            self._cancel_source("_engine_deadline_id")
+
         buffer_active = status_data.get("buffer_active", status_data.get("status") == "active")
         game_hooked = status_data.get("game_hooked", False)
         capture_mode = status_data.get("capture_mode", self._engine_manager.capture_mode)
@@ -1936,7 +2130,6 @@ class ClipperApplication(Adw.Application):
             self._maybe_learn_game_audio_identity(running_entry)
 
         if self._display_target_request_pending:
-            self._display_target_request_poll_count += 1
             if status_data.get("display_target_cancelled", False):
                 self._finish_display_target_request(
                     False, _("Display selection was cancelled.")
@@ -1946,13 +2139,11 @@ class ClipperApplication(Adw.Application):
                 self._finish_display_target_request(
                     True, _("Capture display selected successfully.")
                 )
-            elif self._display_target_request_poll_count >= 30:
-                self._finish_display_target_request(
-                    False, _("No display was selected before the picker timed out.")
-                )
 
         if capture_mode == CAPTURE_MODE_DISPLAY:
             self._sync_display_capture_whitelist(buffer_active)
+        if buffer_active:
+            self._engine_failures = 0
 
         # Keep tray presentation deliberately binary: the replay buffer is
         # either recording or it is idle. A prestarted game-capture engine is
@@ -1978,13 +2169,21 @@ class ClipperApplication(Adw.Application):
                 False, _("Display selection was cancelled.")
             )
 
+    def _on_display_target_timeout(self) -> bool:
+        self._display_target_deadline_id = None
+        if self._display_target_request_pending:
+            self._finish_display_target_request(
+                False, _("No display was selected before the picker timed out.")
+            )
+        return False
+
     def _finish_display_target_request(self, success: bool, message: str) -> None:
         """Finish an immediate display picker request and stop its temporary engine."""
         callback = self._display_target_request_callback
         temporary_engine = self._display_target_request_temporary_engine
         self._display_target_request_pending = False
         self._display_target_request_callback = None
-        self._display_target_request_poll_count = 0
+        self._cancel_source("_display_target_deadline_id")
         self._display_target_request_temporary_engine = False
 
         if callback:
@@ -2002,7 +2201,10 @@ class ClipperApplication(Adw.Application):
     def _sync_display_capture_whitelist(self, buffer_active: bool) -> None:
         """Start/stop display capture based on the configured whitelist."""
         if (
-            self._display_capture_sync_pending
+            not self._monitor_ready
+            or self._engine_shutdown_pending
+            or self._display_capture_sync_pending
+            or self._display_sync_retry_id is not None
             or not self._engine_client
             or not self._engine_client.is_connected()
         ):
@@ -2014,20 +2216,50 @@ class ClipperApplication(Adw.Application):
 
         if game_running and not buffer_active:
             self._display_capture_sync_pending = True
-            self._engine_client.start_replay_buffer(self._on_display_capture_sync_response)
+            generation = self._engine_generation
+            self._engine_client.start_replay_buffer(
+                lambda response: self._on_display_capture_sync_response(response, generation)
+            )
         elif not game_running and buffer_active:
             self._log("[clipper] Stopping display replay: no display-capture application running")
             self._display_capture_sync_pending = True
-            self._engine_client.stop_replay_buffer(self._on_display_capture_sync_response)
+            generation = self._engine_generation
+            self._engine_client.stop_replay_buffer(
+                lambda response: self._on_display_capture_sync_response(response, generation)
+            )
+        if self._display_capture_sync_pending:
+            self._display_sync_retry_id = GLib.timeout_add_seconds(10, self._retry_display_sync)
 
-    def _on_display_capture_sync_response(self, response: dict) -> None:
+    def _retry_display_sync(self) -> bool:
+        self._display_sync_retry_id = None
+        if self._display_capture_sync_pending:
+            # A command without a reply cannot safely remain in the FIFO.
+            if self._engine_client:
+                self._engine_client.disconnect(auto_reconnect=True)
+        else:
+            self._schedule_capture_reconcile()
+        return False
+
+    def _on_display_capture_sync_response(
+        self, response: dict, generation: int | None = None
+    ) -> None:
+        if generation is not None and generation != self._engine_generation:
+            return
+        self._cancel_source("_display_sync_retry_id")
         self._display_capture_sync_pending = False
         if response.get("ok"):
+            self._schedule_capture_reconcile()
             return
 
         error = response.get("error", "")
         if error in ("already running", "not running"):
+            if self._engine_client:
+                current_generation = self._engine_generation
+                self._engine_client.get_status(
+                    lambda status: self._accept_engine_status(status, current_generation)
+                )
             return
+        self._display_sync_retry_id = GLib.timeout_add_seconds(2, self._retry_display_sync)
         self._show_error(
             _("Display capture sync failed: %(error)s")
             % {"error": error or _("Unknown error")}

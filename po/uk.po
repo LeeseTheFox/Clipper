@@ -1410,7 +1410,7 @@ msgstr "Експорт…"
 msgid "Exported to %(name)s"
 msgstr "Експортовано до %(name)s"
 
-#: ui/editor_window.py:3695 ui/main.py:2033 ui/settings_view.py:1423
+#: ui/editor_window.py:3695 ui/main.py:2265 ui/settings_view.py:1423
 msgid "Unknown error"
 msgstr "Невідома помилка"
 
@@ -1701,11 +1701,11 @@ msgstr "Журнали Clipper"
 msgid "Copy logs"
 msgstr "Скопіювати журнали"
 
-#: ui/main.py:86
+#: ui/main.py:83
 msgid "OBS Studio and Clipper are both running"
 msgstr "OBS Studio і Clipper запущено одночасно"
 
-#: ui/main.py:89
+#: ui/main.py:86
 msgid ""
 "Running both apps at the same time can overload the GPU or hardware encoder. "
 "This may also cause issues for games with \"Game capture\" method selected. "
@@ -1715,147 +1715,147 @@ msgstr ""
 "кодер. Це також може спричинити проблеми в іграх із вибраним способом "
 "«Захоплення гри». Перед записом радимо закрити OBS Studio або Clipper."
 
-#: ui/main.py:574
+#: ui/main.py:595
 msgid "Engine not running"
 msgstr "Рушій не запущено"
 
-#: ui/main.py:580
+#: ui/main.py:601
 msgid "Could not send save command to Clipper engine"
 msgstr "Не вдалося надіслати команду збереження рушію Clipper"
 
-#: ui/main.py:612
+#: ui/main.py:633
 msgid "Restart Clipper?"
 msgstr "Перезапустити Clipper?"
 
-#: ui/main.py:613
+#: ui/main.py:634
 msgid "Clipper needs to be restarted for this change to take effect."
 msgstr "Щоб зміна набула чинності, потрібно перезапустити Clipper."
 
-#: ui/main.py:615 ui/update_controller.py:326
+#: ui/main.py:636 ui/update_controller.py:326
 msgid "Restart later"
 msgstr "Перезапустити пізніше"
 
-#: ui/main.py:616 ui/update_controller.py:330
+#: ui/main.py:637 ui/update_controller.py:330
 msgid "Restart now"
 msgstr "Перезапустити зараз"
 
-#: ui/main.py:639
+#: ui/main.py:660
 msgid "Save or discard the video edit before logging out"
 msgstr "Збережи або відкинь зміни відео перед виходом із системи"
 
-#: ui/main.py:750
+#: ui/main.py:771
 #, python-format
 msgid "Could not register save hotkey: %(error)s"
 msgstr "Не вдалося зареєструвати сполучення клавіш збереження: %(error)s"
 
-#: ui/main.py:789
+#: ui/main.py:810
 #, python-format
 msgid "Global hotkey unavailable: %(message)s"
 msgstr "Глобальне сполучення клавіш недоступне: %(message)s"
 
-#: ui/main.py:978
+#: ui/main.py:1021
 msgid "Acknowledge"
 msgstr "Зрозуміло"
 
-#: ui/main.py:1019 ui/settings_view.py:1419
+#: ui/main.py:1035 ui/settings_view.py:1419
 msgid "Restarting engine…"
 msgstr "Перезапуск рушія…"
 
-#: ui/main.py:1030
+#: ui/main.py:1050
 msgid "Could not send restart command to Clipper engine"
 msgstr "Не вдалося надіслати команду перезапуску рушію Clipper"
 
-#: ui/main.py:1035
+#: ui/main.py:1055
 msgid "Engine will start when a whitelisted game is running"
 msgstr "Рушій запуститься, коли буде запущено дозволену гру"
 
-#: ui/main.py:1048
+#: ui/main.py:1070
 #, python-format
 msgid "Engine restart failed: %(error)s"
 msgstr "Не вдалося перезапустити рушій: %(error)s"
 
-#: ui/main.py:1164
+#: ui/main.py:1186
 msgid "X11 capture uses the primary X11 display without a system picker."
 msgstr ""
 "Захоплення X11 використовує основний дисплей X11 без системного засобу "
 "вибору."
 
-#: ui/main.py:1173
+#: ui/main.py:1195
 msgid "The system display picker is already open."
 msgstr "Системний засіб вибору екрана вже відкрито."
 
-#: ui/main.py:1183
+#: ui/main.py:1205
 msgid "Stop the active game capture before changing the target display."
 msgstr "Зупини активне захоплення гри перед зміною цільового екрана."
 
-#: ui/main.py:1242
+#: ui/main.py:1269
 msgid "Could not disable automatic startup"
 msgstr "Не вдалося вимкнути автоматичний запуск"
 
-#: ui/main.py:1249
+#: ui/main.py:1276
 msgid "PipeWire restore token cleared"
 msgstr "Токен відновлення PipeWire очищено"
 
-#: ui/main.py:1316
+#: ui/main.py:1347
 msgid "Clip captured"
 msgstr "Кліп захоплено"
 
-#: ui/main.py:1317
+#: ui/main.py:1348
 msgid "Your clip has been saved."
 msgstr "Твій кліп збережено."
 
-#: ui/main.py:1323
+#: ui/main.py:1354
 msgid ""
 "Could not write the clip. Check the save folder and available disk space."
 msgstr ""
 "Не вдалося записати кліп. Перевір теку збереження та вільне місце на диску."
 
-#: ui/main.py:1325
+#: ui/main.py:1356
 #, python-format
 msgid "Failed to save clip: %(error)s"
 msgstr "Не вдалося зберегти кліп: %(error)s"
 
-#: ui/main.py:1361
+#: ui/main.py:1392
 #, python-format
 msgid "Could not open clip editor: %(error)s"
 msgstr "Не вдалося відкрити редактор кліпів: %(error)s"
 
-#: ui/main.py:1838
+#: ui/main.py:2035
 #, python-format
 msgid "Could not start Clipper engine: %(error)s"
 msgstr "Не вдалося запустити рушій Clipper: %(error)s"
 
-#: ui/main.py:1903 ui/settings_view.py:1422
+#: ui/main.py:2098 ui/settings_view.py:1422
 #, python-format
 msgid "Engine shutdown failed: %(error)s"
 msgstr "Не вдалося завершити роботу рушія: %(error)s"
 
-#: ui/main.py:1942 ui/main.py:1978
+#: ui/main.py:2135 ui/main.py:2169
 msgid "Display selection was cancelled."
 msgstr "Вибір екрана скасовано."
 
-#: ui/main.py:1947
+#: ui/main.py:2140
 msgid "Capture display selected successfully."
 msgstr "Екран для захоплення успішно вибрано."
 
-#: ui/main.py:1951
+#: ui/main.py:2176
 msgid "No display was selected before the picker timed out."
 msgstr "До завершення часу очікування засобу вибору не вибрано жодного екрана."
 
-#: ui/main.py:2032
+#: ui/main.py:2264
 #, python-format
 msgid "Display capture sync failed: %(error)s"
 msgstr "Не вдалося синхронізувати захоплення екрана: %(error)s"
 
-#: ui/main.py:2120
+#: ui/main.py:2352
 msgid "🦊 Leese"
 msgstr "🦊 Leese"
 
-#: ui/main.py:2124
+#: ui/main.py:2356
 msgid "© 2026 Leese"
 msgstr "© 2026 Leese"
 
-#: ui/main.py:2130
+#: ui/main.py:2362
 msgid "GitHub"
 msgstr "GitHub"
 

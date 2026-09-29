@@ -60,6 +60,7 @@ class AudioSourceWatcher:
         except GLib.Error as e:
             print(f"Audio source watcher unavailable: {e.message}")
             self._process = None
+            self._schedule_restart()
             return
 
         stdout_pipe = self._process.get_stdout_pipe()

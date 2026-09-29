@@ -223,3 +223,58 @@ def test_terminate_stops_running_engine(tmp_path):
     assert process.terminated
     assert process.waited
     assert not manager.is_running()
+
+
+def test_ready_and_exit_are_delivered_without_polling(tmp_path):
+    """Startup and a crash must be observable even with no UI status timer."""
+    from queue import Queue
+
+    repo, engine = _repo_with_engine(tmp_path)
+    engine.write_text("#!/bin/sh\nprintf 'READY /tmp/test-engine.sock\\n'\nexit 7\n")
+    engine.chmod(0o755)
+    callbacks = Queue()
+    observed = []
+    manager = EngineProcessManager(
+        engine_path=engine,
+        repo_root=repo,
+        ready_callback=lambda: observed.append("ready"),
+        exit_callback=lambda code: observed.append(code),
+        dispatcher=lambda callback, *args: callbacks.put((callback, args)),
+    )
+    manager.start()
+    queued = [callbacks.get(timeout=3), callbacks.get(timeout=3)]
+    # Readiness can race with waitpid; a retired process must never reconnect.
+    for callback, args in queued:
+        callback(*args)
+    assert observed in (["ready", 7], [7])
+    assert not manager.is_running()
+
+
+def test_replaced_process_cannot_announce_ready_or_exit(tmp_path):
+    from queue import Queue
+
+    repo, engine = _repo_with_engine(tmp_path)
+    engine.write_text("#!/bin/sh\nprintf 'READY /tmp/test-engine.sock\\n'\nexec sleep 30\n")
+    engine.chmod(0o755)
+    callbacks = Queue()
+    observed = []
+    manager = EngineProcessManager(
+        engine_path=engine,
+        repo_root=repo,
+        ready_callback=lambda: observed.append("ready"),
+        exit_callback=lambda code: observed.append(code),
+        dispatcher=lambda callback, *args: callbacks.put((callback, args)),
+    )
+    manager.start()
+    old_ready = callbacks.get(timeout=3)
+    manager.terminate()
+    old_exit = callbacks.get(timeout=3)
+    manager.start()
+    try:
+        new_ready = callbacks.get(timeout=3)
+        for callback, args in (old_ready, old_exit, new_ready):
+            callback(*args)
+        assert observed == ["ready"]
+        assert manager.is_running()
+    finally:
+        manager.terminate()

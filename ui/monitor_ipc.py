@@ -33,8 +33,26 @@ def validate_monitor_event(value: object) -> dict | None:
         return None
 
     event = value.get("event")
+    if event == "snapshot":
+        rules = value.get("rules")
+        if not isinstance(rules, list) or len(rules) > 257:
+            return None
+        normalized_rules = []
+        for rule in rules:
+            if not isinstance(rule, dict) or rule.get("event") != "process_started":
+                return None
+            normalized_rule = validate_monitor_event(rule)
+            if normalized_rule is None:
+                return None
+            normalized_rules.append(normalized_rule)
+        return {"event": "snapshot", "rules": normalized_rules}
     rule_id = value.get("rule_id")
-    if event not in _VALID_EVENTS or not isinstance(rule_id, str) or not rule_id:
+    if (
+        event not in _VALID_EVENTS
+        or not isinstance(rule_id, str)
+        or not rule_id
+        or len(rule_id) > 256
+    ):
         return None
 
     normalized: dict = {
@@ -76,6 +94,7 @@ class MonitorIpcServer:
         self._dispatcher = dispatcher or self._default_dispatcher
         self._sock: socket.socket | None = None
         self._thread: threading.Thread | None = None
+        self._connection: socket.socket | None = None
         self._stop_event = threading.Event()
 
     @property
@@ -97,7 +116,6 @@ class MonitorIpcServer:
             sock.bind(str(self._socket_path))
             os.chmod(self._socket_path, 0o600)
             sock.listen(4)
-            sock.settimeout(0.2)
         except OSError:
             sock.close()
             return False
@@ -114,9 +132,19 @@ class MonitorIpcServer:
 
     def stop(self) -> None:
         self._stop_event.set()
+        connection = self._connection
+        if connection is not None:
+            try:
+                connection.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
         sock = self._sock
         self._sock = None
         if sock is not None:
+            try:
+                sock.shutdown(socket.SHUT_RDWR)
+            except (OSError, AttributeError):
+                pass
             try:
                 sock.close()
             except OSError:
@@ -144,7 +172,13 @@ class MonitorIpcServer:
             except OSError:
                 return
             with conn:
-                self._handle_connection(conn)
+                self._connection = conn
+                try:
+                    self._handle_connection(conn)
+                finally:
+                    self._connection = None
+                    if not self._stop_event.is_set():
+                        self._dispatcher(self._callback, ({"event": "monitor_disconnected"},))
 
     def _handle_connection(self, conn: socket.socket) -> None:
         buffer = b""
@@ -159,7 +193,7 @@ class MonitorIpcServer:
             while b"\n" in buffer:
                 line, buffer = buffer.split(b"\n", 1)
                 self._handle_line(line)
-            if len(buffer) > 65536:
+            if len(buffer) > 262144:
                 return
 
     def _handle_line(self, line: bytes) -> None:

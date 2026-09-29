@@ -117,3 +117,35 @@ def test_monitor_ipc_server_dispatches_valid_json_lines(tmp_path):
             "pid": 42,
         }
     ]
+
+
+def test_snapshot_is_atomic_and_rejects_invalid_rules():
+    valid = {"event": "process_started", "rule_id": "game", "pid": 42}
+    assert validate_monitor_event({"event": "snapshot", "rules": [valid]}) == {
+        "event": "snapshot", "rules": [valid],
+    }
+    assert validate_monitor_event({"event": "snapshot", "rules": []}) == {
+        "event": "snapshot", "rules": [],
+    }
+    assert validate_monitor_event({
+        "event": "snapshot", "rules": [valid, {"event": "process_started", "rule_id": ""}],
+    }) is None
+
+
+def test_server_shutdown_interrupts_an_idle_connected_client(tmp_path):
+    from threading import Event
+
+    received = Event()
+    server = MonitorIpcServer(
+        lambda _event: received.set(), socket_path=tmp_path / "m.sock",
+        dispatcher=lambda callback, args: callback(*args),
+    )
+    assert server.start()
+    thread = server._thread
+    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+        client.connect(str(server.socket_path))
+        client.sendall(b'{"event":"snapshot","rules":[]}\n')
+        assert received.wait(2)
+        server.stop()
+        assert thread is not None and not thread.is_alive()
+    assert not server.socket_path.exists()

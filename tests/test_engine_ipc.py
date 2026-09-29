@@ -472,15 +472,21 @@ def test_list_audio_sources_includes_running_sink_input_apps(engine: tuple) -> N
 
 
 def test_start_replay_buffer(engine: tuple) -> None:
-    """start_replay_buffer returns ok=true; get_status then reports active."""
+    """A subscribed client learns the complete recording state without polling."""
     _, socket_path = engine
-    with EngineClient(socket_path) as client:
+    with EngineClient(socket_path) as client, EngineClient(socket_path) as observer:
+        initial = observer.send("get_status")
         resp = client.send("start_replay_buffer")
         assert resp["ok"] is True
-
-        # Status should now be active (send() skips any status_changed events).
+        event = observer.read_event(timeout=5)
+        assert event is not None
+        assert event["event"] == "status_changed"
+        assert event["buffer_active"] is True
+        assert event["revision"] > initial["revision"]
         status = client.send("get_status")
-
+        for field in ("buffer_active", "game_hooked", "capture_mode", "revision",
+                      "display_target_selected", "display_target_cancelled"):
+            assert event[field] == status[field]
     assert status["ok"] is True
     assert status["status"] == "active"
 
@@ -499,17 +505,19 @@ def test_start_already_running(engine: tuple) -> None:
 
 
 def test_stop_replay_buffer(engine: tuple) -> None:
-    """stop_replay_buffer returns ok=true and status returns to idle."""
+    """Stopping pushes idle state to clients that do not send any status requests."""
     _, socket_path = engine
-    with EngineClient(socket_path) as client:
+    with EngineClient(socket_path) as client, EngineClient(socket_path) as observer:
         client.send("start_replay_buffer")
-
+        initial = observer.send("get_status")
         resp = client.send("stop_replay_buffer")
         assert resp["ok"] is True
-
-        # send() skips any status_changed events; get_status should be idle.
+        event = observer.read_event(timeout=5)
+        assert event is not None
+        assert event["event"] == "status_changed"
+        assert event["buffer_active"] is False
+        assert event["revision"] > initial["revision"]
         status = client.send("get_status")
-
     assert status["ok"] is True
     assert status["status"] == "idle"
 

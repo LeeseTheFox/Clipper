@@ -69,7 +69,11 @@ def _load_main_module():
             {"new": staticmethod(lambda *_args, **_kwargs: None)},
         ),
     )
-    repository.GLib = types.SimpleNamespace(idle_add=lambda callback, *args: callback(*args))
+    repository.GLib = types.SimpleNamespace(
+        idle_add=lambda callback, *args: (callback(*args), None)[1],
+        timeout_add_seconds=lambda _seconds, _callback: 1,
+        source_remove=lambda _source: None,
+    )
     repository.Gtk = types.SimpleNamespace(
         ApplicationInhibitFlags=types.SimpleNamespace(LOGOUT=1),
         License=types.SimpleNamespace(GPL_3_0=0),
@@ -94,6 +98,8 @@ def _load_main_module():
     )
 
     engine_client = types.ModuleType("engine_client")
+    engine_client.STATE_CONNECTED = 2
+    engine_client.STATE_DISCONNECTED = 0
     engine_client.EngineClient = type("EngineClient", (), {})
 
     engine_manager = types.ModuleType("engine_manager")
@@ -568,6 +574,25 @@ def make_status_application(
     app._engine_client = None
     app._engine_socket_path = "/missing/clipper-engine.sock"
     app._engine_manager = engine_manager or EngineManagerStub()
+    app._stopping = False
+    app._reconcile_id = None
+    app._engine_deadline_id = None
+    app._engine_recovery_id = None
+    app._engine_failures = 0
+    app._engine_generation = 0
+    app._status_revision = -1
+    app._engine_status_data = {}
+    app._monitor_ready = True
+    app._monitor_retry_id = None
+    app._monitor_failures = 0
+    app._audio_learning_watcher = None
+    app._audio_learning_confirm_id = None
+    app._audio_learning_in_flight = False
+    app._audio_learning_generation = 0
+    app._audio_learning_dirty = False
+    app._display_sync_retry_id = None
+    app._config_capture_key = ""
+    app._display_target_deadline_id = None
     app._window_engine_status = "ready"
     app._display_capture_sync_pending = False
     app._engine_shutdown_pending = False
@@ -577,7 +602,6 @@ def make_status_application(
     app._capabilities_probe_count = 0
     app._capabilities_cache = {}
     app._recording_capability_probe = None
-    app._pending_capture_mode_after_shutdown = None
     app._pending_hotkey_change = None
     app._last_running_entry_key = None
     app._monitor_active_rules = {}
@@ -1640,7 +1664,7 @@ def test_failed_clip_does_not_play_success_sound():
 def test_idle_engine_status_defaults_to_ready():
     app = make_status_application()
 
-    assert app._poll_engine_status() is True
+    assert app._reconcile_capture() is False
 
     assert app._window_engine_status == "ready"
 
@@ -1655,7 +1679,7 @@ def test_game_capture_rule_does_not_start_engine_before_game_starts():
     app = make_status_application(engine_manager=engine_manager)
     app._config = ConfigStub(False, whitelist=[entry])
 
-    assert app._poll_engine_status() is True
+    assert app._reconcile_capture() is False
 
     assert engine_manager.start_calls == []
     assert engine_manager.is_running() is False
@@ -1671,7 +1695,7 @@ def test_inactive_game_capture_rule_does_not_keep_engine_running():
     app = make_status_application(engine_manager=engine_manager)
     app._config = ConfigStub(False, whitelist=[entry])
 
-    assert app._poll_engine_status() is True
+    assert app._reconcile_capture() is False
 
     assert engine_manager.terminated is True
     assert engine_manager.is_running() is False
@@ -1687,7 +1711,7 @@ def test_display_only_rules_do_not_prearm_game_capture_engine():
     app = make_status_application(engine_manager=engine_manager)
     app._config = ConfigStub(False, whitelist=[entry])
 
-    assert app._poll_engine_status() is True
+    assert app._reconcile_capture() is False
 
     assert engine_manager.start_calls == []
 
@@ -1771,16 +1795,17 @@ def test_active_game_capture_is_recording_in_tray():
 def test_unexpected_engine_exit_marks_window_crashed():
     app = make_status_application(engine_manager=EngineManagerStub(exit_code=1))
 
-    assert app._poll_engine_status() is True
+    app._on_engine_exited(1)
 
     assert app._window_engine_status == "crashed"
 
 
-def test_disconnect_error_marks_unexpected_engine_exit_crashed():
+def test_socket_error_waits_for_process_exit_to_classify_crash():
     app = make_status_application(engine_manager=EngineManagerStub(exit_code=1))
 
     app._on_engine_error("Engine disconnected")
-
+    assert app._window_engine_status == "ready"
+    app._on_engine_exited(1)
     assert app._window_engine_status == "crashed"
 
 
@@ -1792,8 +1817,8 @@ def test_delayed_idle_shutdown_exit_keeps_window_ready():
     app._idle_engine_exit_expected = True
 
     app._on_idle_engine_shutdown_response({"ok": True})
-    engine_manager._exit_code = 0
-    app._poll_engine_status()
+    engine_manager._running = False
+    app._on_engine_exited(0)
 
     assert app._window_engine_status == "ready"
     assert app._last_engine_exit_status is None
@@ -1802,7 +1827,7 @@ def test_delayed_idle_shutdown_exit_keeps_window_ready():
 def test_restart_exit_code_does_not_mark_window_crashed():
     app = make_status_application(engine_manager=EngineManagerStub(exit_code=42))
 
-    assert app._poll_engine_status() is True
+    app._on_engine_exited(42)
 
     assert app._window_engine_status == "ready"
 
@@ -1895,9 +1920,9 @@ def test_game_start_and_exit_during_probe_keeps_engine_until_discovery_finishes(
     app._log_running_entry = lambda entry: None
     assert app.ensure_engine_for_capabilities()
     running.append({"capture_mode": "game_capture"})
-    app._poll_engine_status()
+    app._reconcile_capture()
     running.clear()
-    app._poll_engine_status()
+    app._reconcile_capture()
     assert not app._engine_manager.terminated
     app.on_capabilities_finished()
     assert app._engine_manager.terminated
@@ -1965,10 +1990,10 @@ def test_running_whitelist_entry_filters_host_events_by_capture_mode():
     assert app._running_whitelist_entry("display_capture") == display_entry
 
 
-def test_monitor_event_updates_active_rules_and_polls_status():
+def test_monitor_event_updates_capture_demand():
     app = make_status_application()
     poll_calls = []
-    app._poll_engine_status = lambda: poll_calls.append(True) or True
+    app._schedule_capture_reconcile = lambda: poll_calls.append(True) or True
 
     assert (
         app._on_monitor_event({"event": "process_started", "rule_id": "steam-730", "pid": 123})
@@ -1991,7 +2016,7 @@ def test_monitor_events_log_capture_start_and_stop():
     }
     app = make_status_application()
     app._config = ConfigStub(False, whitelist=[entry])
-    app._poll_engine_status = lambda: True
+    app._schedule_capture_reconcile = lambda: True
     logs = []
     app._log = logs.append
 
@@ -2098,7 +2123,7 @@ def test_monitor_stop_does_not_log_capture_stop_while_another_rule_is_active():
         "steam-730": {"event": "process_started"},
         "steam-1782210": {"event": "process_started"},
     }
-    app._poll_engine_status = lambda: True
+    app._schedule_capture_reconcile = lambda: True
     logs = []
     app._log = logs.append
 
@@ -2117,7 +2142,7 @@ def test_obs_monitor_event_shows_visible_warning_once_without_becoming_game_rule
 
     app.window = VisibleWindow()
     app._show_obs_conflict_dialog = lambda: dialog_calls.append(True)
-    app._poll_engine_status = lambda: (_ for _ in ()).throw(
+    app._schedule_capture_reconcile = lambda: (_ for _ in ()).throw(
         AssertionError("OBS events must not drive capture state")
     )
 
@@ -2251,20 +2276,16 @@ def test_language_change_saves_and_offers_foreground_restart(monkeypatch):
     assert calls[-1] == ("quit",)
 
 
-def test_local_obs_detection_is_fallback_when_host_monitor_is_unavailable(monkeypatch):
+def test_monitor_snapshot_replaces_stale_games_and_obs_state():
     app = make_status_application()
-    app._monitor_manager = MonitorManagerStub(available=False)
-    observed = []
-    app._set_obs_studio_running = lambda running: observed.append(running)
-    monkeypatch.setattr(
-        main_module,
-        "find_running_obs_studio",
-        lambda: {"pid": "410", "comm": "obs"},
-    )
-
-    app._poll_local_obs_studio()
-
-    assert observed == [True]
+    app._monitor_active_rules = {"old-rule": {"event": "process_started"}}
+    app._obs_studio_running = True
+    app._config.load = lambda: None
+    app._on_monitor_event({"event": "snapshot", "rules": []})
+    assert app._monitor_active_rules == {}
+    assert app._obs_studio_running is False
+    assert app._monitor_ready is True
+    assert app._engine_manager.start_calls == []
 
 
 def test_monitor_start_event_drives_display_capture_engine_start():
@@ -2313,7 +2334,7 @@ def test_display_capture_status_uses_host_monitor_state_to_start_replay():
         }
     )
 
-    assert engine_client.start_replay_callbacks == [app._on_display_capture_sync_response]
+    assert len(engine_client.start_replay_callbacks) == 1
     assert app._display_capture_sync_pending is True
 
 
@@ -2492,3 +2513,85 @@ def test_capability_probe_logs_request_and_completion(capsys):
     log = capsys.readouterr().out
     assert "OBS settings probe requested (temporary engine)" in log
     assert "OBS settings probe finished" in log
+
+
+def test_late_engine_reply_cannot_replace_newer_recording_state():
+    app = make_status_application()
+    app._tray = StatusTrayStub()
+    app._engine_manager._running = True
+    app._config = ConfigStub(False, whitelist=[{"appid": "42", "capture_mode": "game_capture"}])
+    app._monitor_active_rules = {"steam-42": {"event": "process_started"}}
+    app._on_engine_status_event({
+        "revision": 3, "buffer_active": True, "capture_mode": "game_capture",
+    })
+    app._accept_engine_status(
+        {"ok": True, "revision": 2, "buffer_active": False}, app._engine_generation,
+    )
+    assert app._window_engine_status == "recording"
+    assert app._tray.status_values[-1] == "recording"
+    app._engine_generation += 1
+    app._accept_engine_status({"ok": True, "revision": 99, "buffer_active": False}, 0)
+    assert app._window_engine_status == "recording"
+
+
+def test_game_arriving_during_shutdown_starts_after_exit_only():
+    manager = EngineManagerStub(running=True)
+    app = make_status_application(engine_manager=manager)
+    app._engine_client = EngineClientStub()
+    app._shutdown_idle_engine()
+    entry = {"name": "Game", "appid": "42", "capture_mode": "game_capture"}
+    app._config = ConfigStub(False, whitelist=[entry])
+    app._on_monitor_event({"event": "process_started", "rule_id": "steam-42", "pid": 42})
+    app._on_idle_engine_shutdown_response({"ok": True})
+    assert manager.start_calls == []
+    manager._running = False
+    app._on_engine_exited(0)
+    assert manager.start_calls == ["game_capture"]
+    assert app._window_engine_status == "ready"
+
+
+def test_monitor_disconnect_does_not_stop_recording_before_resynchronization():
+    app = make_status_application(engine_manager=EngineManagerStub(running=True))
+    app._config.load = lambda: None
+    app._engine_client = EngineClientStub()
+    app._on_monitor_event({"event": "monitor_disconnected"})
+    app._reconcile_capture()
+    assert not app._engine_client.shutdown_callbacks
+    app._on_monitor_event({"event": "snapshot", "rules": []})
+    assert len(app._engine_client.shutdown_callbacks) == 1
+
+
+def test_reconnect_fetches_status_once_then_accepts_pushes_without_requests():
+    app = make_status_application(engine_manager=EngineManagerStub(running=True))
+    app._engine_client = EngineClientStub()
+    callbacks = []
+    app._engine_client.get_status = lambda callback: callbacks.append(callback) or True
+    app._on_engine_connection_state(main_module.STATE_CONNECTED)
+    assert len(callbacks) == 1
+    callbacks[0]({"ok": True, "revision": 0, "buffer_active": False})
+    app._on_engine_status_event({"revision": 1, "buffer_active": True})
+    app._on_engine_status_event({"revision": 2, "buffer_active": False})
+    assert len(callbacks) == 1
+    assert app._window_engine_status == "ready"
+
+
+def test_picker_deadline_releases_temporary_engine_without_status_traffic():
+    app = make_status_application(engine_manager=EngineManagerStub(running=True))
+    app._engine_client = EngineClientStub()
+    finished = []
+    app._display_target_request_pending = True
+    app._display_target_request_temporary_engine = True
+    app._display_target_request_callback = lambda success, _message: finished.append(success)
+    app._on_display_target_timeout()
+    assert finished == [False]
+    assert not app._display_target_request_pending
+    assert len(app._engine_client.shutdown_callbacks) == 1
+
+
+def test_probe_release_stops_temporary_engine_when_monitor_unavailable():
+    app = make_status_application(engine_manager=EngineManagerStub(running=True))
+    app._monitor_ready = False
+    assert app.ensure_engine_for_capabilities()
+    app.on_capabilities_finished()
+    assert not app._engine_manager.is_running()
+    assert not app._capabilities_probe_requested

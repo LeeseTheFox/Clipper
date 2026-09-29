@@ -1204,3 +1204,48 @@ def test_monitor_host_service_preserves_active_state_when_path_rules_reorder(
     assert "[clipper-monitor] reloaded config rules=2" in stderr
     assert stderr.count(f"[clipper-monitor] started {active_rule_id} pid=302") == 1
     assert f"[clipper-monitor] stopped {inactive_rule_id}" not in stderr
+
+
+def test_monitor_reconnect_and_rule_removal_replace_the_complete_snapshot(tmp_path, monitor_binary):
+    """A lost start/stop event must not leave capture permanently idle or running."""
+    import socket
+
+    proc_root = tmp_path / "proc"
+    proc_root.mkdir()
+    _add_proc(proc_root, "301", comm="game", cmdline="/games/game")
+    config = tmp_path / "config.json"
+    _write_config(config, [{"name": "game"}])
+    socket_path = tmp_path / "m.sock"
+    listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    listener.bind(str(socket_path))
+    listener.listen(2)
+    listener.settimeout(3)
+    process = subprocess.Popen(
+        [str(monitor_binary), "--service"],
+        env={**os.environ, "CLIPPER_CONFIG_FILE": str(config),
+             "CLIPPER_PROC_ROOT": str(proc_root), "CLIPPER_MONITOR_SOCKET": str(socket_path),
+             "CLIPPER_MONITOR_INTERVAL_MS": "20"},
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    )
+
+    def snapshot(stream):
+        while True:
+            message = json.loads(stream.readline())
+            if message["event"] == "snapshot":
+                return message["rules"]
+
+    try:
+        connection, _ = listener.accept()
+        connection.settimeout(3)
+        with connection, connection.makefile("r") as stream:
+            assert {rule["rule_id"] for rule in snapshot(stream)} == {"rule-0"}
+        connection, _ = listener.accept()
+        connection.settimeout(3)
+        with connection, connection.makefile("r") as stream:
+            assert {rule["rule_id"] for rule in snapshot(stream)} == {"rule-0"}
+            _write_config(config, [])
+            assert snapshot(stream) == []
+    finally:
+        process.terminate()
+        process.wait(timeout=3)
+        listener.close()

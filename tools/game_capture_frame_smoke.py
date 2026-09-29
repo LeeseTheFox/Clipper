@@ -46,7 +46,9 @@ def wait_for_hook(client, stream, game):
     deadline = time.monotonic() + 30
     while time.monotonic() < deadline:
         client.sendall(b'{"cmd":"get_status"}\n')
-        status = receive_until(stream, "game_hooked")
+        # Status events now carry the same fields as the requested snapshot.
+        # Consume its command reply so it cannot be mistaken for the next reply.
+        status = receive_until(stream, "ok")
         if status["game_hooked"]:
             return status
         if game.poll() is not None:

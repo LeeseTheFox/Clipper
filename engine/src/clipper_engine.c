@@ -176,6 +176,7 @@ typedef struct {
     GDBusConnection *display_portal_bus;
     guint display_portal_response_subscription_id;
     bool display_portal_cancelled;
+    uint64_t status_revision;
 
     /* Hook state tracking */
     struct timespec last_hook_check;
@@ -433,6 +434,8 @@ static void broadcast_event(engine_state_t *state, cJSON *event)
     pthread_mutex_unlock(&state->clients_mutex);
 }
 
+static void broadcast_status_changed(engine_state_t *state);
+
 static void on_display_portal_response(GDBusConnection *connection,
                                        const gchar *sender_name,
                                        const gchar *object_path,
@@ -468,6 +471,7 @@ static void on_display_portal_response(GDBusConnection *connection,
     cJSON_AddNumberToObject(event, "portal_response", response);
     broadcast_event(state, event);
     cJSON_Delete(event);
+    broadcast_status_changed(state);
 }
 
 static void subscribe_display_portal_response(engine_state_t *state)
@@ -773,14 +777,28 @@ static bool audio_source_kind_from_string(const char *value, audio_source_kind_t
     return false;
 }
 
-static void broadcast_status_changed(engine_state_t *state, const char *status)
+static void add_runtime_status(engine_state_t *state, cJSON *message)
+{
+    cJSON_AddNumberToObject(message, "revision", (double)state->status_revision);
+    cJSON_AddStringToObject(message, "status", state->buffer_active ? "active" : "idle");
+    cJSON_AddStringToObject(message, "capture_mode", capture_mode_to_string(state->capture_mode));
+    cJSON_AddBoolToObject(message, "buffer_active", state->buffer_active);
+    cJSON_AddBoolToObject(message, "game_hooked", state->game_hooked);
+    cJSON_AddBoolToObject(message, "display_target_selected",
+                         state->capture_mode == CAPTURE_MODE_DISPLAY &&
+                         state->pipewire_restore_token[0] != '\0');
+    cJSON_AddBoolToObject(message, "display_target_cancelled", state->display_portal_cancelled);
+}
+
+static void broadcast_status_changed(engine_state_t *state)
 {
     cJSON *ev = cJSON_CreateObject();
     if (!ev)
         return;
 
     cJSON_AddStringToObject(ev, "event", "status_changed");
-    cJSON_AddStringToObject(ev, "status", status);
+    state->status_revision++;
+    add_runtime_status(state, ev);
     broadcast_event(state, ev);
     cJSON_Delete(ev);
 }
@@ -818,7 +836,7 @@ static bool start_replay_buffer_internal(engine_state_t *state, bool emit_event)
             state->output_width, state->output_height, state->fps);
     fprintf(stderr, "[engine] [replay] Buffer active\n");
     if (emit_event)
-        broadcast_status_changed(state, "active");
+        broadcast_status_changed(state);
 
     return true;
 }
@@ -844,14 +862,7 @@ static void handle_get_status(engine_state_t *state, int fd)
     cJSON *r = cJSON_CreateObject();
     cJSON_AddBoolToObject(r, "ok", 1);
     cJSON_AddStringToObject(r, "version", ENGINE_VERSION);
-    cJSON_AddStringToObject(r, "status", state->buffer_active ? "active" : "idle");
-    cJSON_AddStringToObject(r, "capture_mode", capture_mode_to_string(state->capture_mode));
-    cJSON_AddBoolToObject(
-        r, "display_target_selected",
-        state->capture_mode == CAPTURE_MODE_DISPLAY &&
-            state->pipewire_restore_token[0] != '\0');
-    cJSON_AddBoolToObject(r, "display_target_cancelled",
-                          state->display_portal_cancelled);
+    add_runtime_status(state, r);
     cJSON_AddStringToObject(r, "audio_mode", audio_mode_to_string(state->audio_mode));
     cJSON_AddNumberToObject(r, "fps", state->fps);
     cJSON_AddNumberToObject(r, "base_width", state->base_width);
@@ -865,8 +876,6 @@ static void handle_get_status(engine_state_t *state, int fd)
     cJSON_AddNumberToObject(r, "video_bitrate", state->video_bitrate);
     cJSON_AddNumberToObject(r, "video_max_bitrate", state->video_max_bitrate);
     cJSON_AddNumberToObject(r, "replay_buffer_size_mb", state->max_size_mb);
-    cJSON_AddBoolToObject(r, "buffer_active", state->buffer_active);
-    cJSON_AddBoolToObject(r, "game_hooked", state->game_hooked);
     
     if (state->game_hooked && state->game_exe[0] != '\0') {
         cJSON_AddStringToObject(r, "game_exe", state->game_exe);
@@ -2036,7 +2045,7 @@ static void handle_stop_replay(engine_state_t *state, int fd)
     send_to_client(state, fd, r);
     cJSON_Delete(r);
 
-    broadcast_status_changed(state, "idle");
+    broadcast_status_changed(state);
 }
 
 static void handle_save_replay(engine_state_t *state, int fd, cJSON *json)
@@ -2314,10 +2323,10 @@ static void maybe_persist_pipewire_restore_token(engine_state_t *state,
 
     const char *token = obs_data_get_string(settings, "RestoreToken");
     if (token && *token && strcmp(token, state->pipewire_restore_token) != 0) {
-        copy_string(state->pipewire_restore_token,
-                    sizeof(state->pipewire_restore_token), token);
-
         if (persist_config_string("pipewire_restore_token", token)) {
+            copy_string(state->pipewire_restore_token,
+                        sizeof(state->pipewire_restore_token), token);
+            broadcast_status_changed(state);
             fprintf(stderr, "[engine] saved PipeWire restore token\n");
         } else {
             fprintf(stderr, "[engine] WARN: failed to save PipeWire restore token\n");
@@ -2485,6 +2494,7 @@ static void event_loop(engine_state_t *state)
                 
                 /* Detect state transitions */
                 if (hooked && !state->game_hooked) {
+                    state->game_hooked = true;
                     /* Transition: unhooked → hooked */
                     if (exe) {
                         strncpy(state->game_exe, exe, sizeof(state->game_exe) - 1);
@@ -2505,8 +2515,9 @@ static void event_loop(engine_state_t *state)
                             fprintf(stderr, "[engine] Auto-started replay buffer\n");
                     }
                     
-                    state->game_hooked = true;
+                    broadcast_status_changed(state);
                 } else if (!hooked && state->game_hooked) {
+                    state->game_hooked = false;
                     /* Transition: hooked → unhooked */
                     fprintf(stderr, "[engine] Game unhooked: %s\n", state->game_exe);
                     
@@ -2520,12 +2531,12 @@ static void event_loop(engine_state_t *state)
                         log_replay_metrics(state);
                         obs_output_stop(state->replay_output);
                         state->buffer_active = false;
-                        broadcast_status_changed(state, "idle");
+                        broadcast_status_changed(state);
                         fprintf(stderr, "[engine] Auto-stopped replay buffer\n");
                     }
                     
-                    state->game_hooked = false;
                     state->game_exe[0] = '\0';
+                    broadcast_status_changed(state);
                 }
                 
                 calldata_free(&cd);
@@ -4120,13 +4131,9 @@ int main(int argc, char *argv[])
 
     /* Broadcast idle if the buffer was still active */
     if (state.buffer_active) {
-        cJSON *ev = cJSON_CreateObject();
-        if (ev) {
-            cJSON_AddStringToObject(ev, "event", "status_changed");
-            cJSON_AddStringToObject(ev, "status", "idle");
-            broadcast_event(&state, ev);
-            cJSON_Delete(ev);
-        }
+        state.buffer_active = false;
+        state.game_hooked = false;
+        broadcast_status_changed(&state);
     }
 
     /* Close all client connections */

@@ -11,6 +11,7 @@ import os
 import shlex
 import subprocess
 import sys
+import threading
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -69,6 +70,8 @@ class HostMonitorManager:
         config_file: Path | None = None,
         socket_path: Path | None = None,
         logger: Callable[[str], None] | None = None,
+        exit_callback: Callable[[int], None] | None = None,
+        native_helper: Path | None = None,
     ) -> None:
         self._flatpak_info_path = flatpak_info_path
         self._runner = runner
@@ -78,10 +81,31 @@ class HostMonitorManager:
         self._socket_path = socket_path
         self._logger = logger or (lambda message: print(message, file=sys.stderr))
         self._process: Any | None = None
+        self._exit_callback = exit_callback
+        self._native_helper = native_helper or (
+            Path(__file__).resolve().parent.parent / "engine/monitor/clipper-monitor-host"
+        )
 
     def available(self) -> bool:
         env = self._env if self._env is not None else os.environ
-        return bool(env.get("FLATPAK_ID")) and self._flatpak_info_path.exists()
+        if env.get("FLATPAK_ID"):
+            return self._flatpak_info_path.exists()
+        return self._native_helper.is_file()
+
+    def _operation_env(self) -> dict[str, str]:
+        env = dict(self._env) if self._env is not None else os.environ.copy()
+        if self._config_file is not None:
+            env["CLIPPER_CONFIG_FILE"] = str(self._config_file)
+        if self._socket_path is not None:
+            env["CLIPPER_MONITOR_SOCKET"] = str(self._socket_path)
+        return env
+
+    def _notify_exit(self, process, exit_code: int) -> bool:
+        if process is self._process:
+            self._process = None
+            if self._exit_callback is not None:
+                self._exit_callback(exit_code)
+        return False
 
     def probe(self) -> MonitorCommandResult:
         return self._run_operation("probe")
@@ -187,11 +211,23 @@ class HostMonitorManager:
 
         self._log_operation("start", command)
         try:
-            self._process = self._launcher(command, stdin=subprocess.DEVNULL)
+            kwargs = {} if self._flatpak_info_path.exists() else {"env": self._operation_env()}
+            self._process = self._launcher(command, stdin=subprocess.DEVNULL, **kwargs)
         except OSError as exc:
             self._process = None
             self._logger(f"[clipper] could not start host monitor: {exc}")
             return False
+        if self._exit_callback is not None:
+            process = self._process
+            assert process is not None
+
+            def wait_for_exit() -> None:
+                from gi.repository import GLib
+
+                exit_code = process.wait()
+                GLib.idle_add(self._notify_exit, process, exit_code)
+
+            threading.Thread(target=wait_for_exit, name="clipper-monitor-exit", daemon=True).start()
         return True
 
     def stop(self) -> None:
@@ -213,6 +249,9 @@ class HostMonitorManager:
     def command_for(self, mode: str) -> list[str]:
         if mode not in self._MODES:
             raise MonitorManagerError(f"Unsupported monitor mode: {mode}")
+
+        if not self._flatpak_info_path.exists():
+            return [str(self._native_helper), self._MODES[mode]]
 
         helper = self._host_helper_path()
         command = [
@@ -238,12 +277,14 @@ class HostMonitorManager:
         self._log_operation(operation, command)
         timeout = 35 if operation.startswith(("start-steam-", "stop-steam-")) else 10
         try:
+            kwargs = {} if self._flatpak_info_path.exists() else {"env": self._operation_env()}
             completed = self._runner(
                 command,
                 check=False,
                 text=True,
                 capture_output=True,
                 timeout=timeout,
+                **kwargs,
             )
         except OSError as exc:
             self._log_result(operation, 127)

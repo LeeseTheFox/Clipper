@@ -39,6 +39,8 @@ trap cleanup EXIT INT TERM
 # ── Environment setup ────────────────────────────────────────────────────────
 
 if [ "$INSTALLED" -eq 0 ]; then
+    # Native launches use the same process-event protocol as the Flatpak.
+    make -s -C "$SCRIPT_DIR/engine/monitor"
     # Ensure lib_shim exists for the current development setup.
     if [ ! -d "$SPIKE_DIR/lib_shim" ]; then
         echo "[clipper] Setting up lib_shim..."

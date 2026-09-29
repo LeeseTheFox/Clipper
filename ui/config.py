@@ -443,6 +443,10 @@ class ClipperConfig:
         """Return the config file consumed by Clipper and its host monitor."""
         return self._path
 
+    def on_saved(self, callback) -> None:
+        """Subscribe to successful local writes, including reset operations."""
+        self._saved_callback = callback
+
     @property
     def load_status(self) -> str:
         """Describe whether the current data came from disk or defaults."""
@@ -549,6 +553,9 @@ class ClipperConfig:
         finally:
             os.close(directory_fd)
         self._data = data_to_save
+        callback = getattr(self, "_saved_callback", None)
+        if callback is not None:
+            callback()
 
     def get(self, key: str, default=None):
         """Return the value for *key*, or *default* if not present."""

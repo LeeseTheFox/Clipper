@@ -63,14 +63,16 @@ def test_removed_service_management_operation_is_rejected(tmp_path):
         manager.command_for("remove")
 
 
-def test_available_requires_flatpak_id_and_info_file(tmp_path):
+def test_available_requires_the_selected_platform_helper(tmp_path):
     info = _flatpak_info(tmp_path, "/deploy/files")
 
     assert HostMonitorManager(
         flatpak_info_path=info,
         env={"FLATPAK_ID": "io.github.leesethefox.Clipper"},
     ).available()
-    assert not HostMonitorManager(flatpak_info_path=info, env={}).available()
+    assert not HostMonitorManager(
+        flatpak_info_path=info, env={}, native_helper=tmp_path / "missing-helper"
+    ).available()
     assert not HostMonitorManager(
         flatpak_info_path=tmp_path / "missing",
         env={"FLATPAK_ID": "io.github.leesethefox.Clipper"},
@@ -274,13 +276,33 @@ def test_start_launches_one_app_scoped_process_and_stop_terminates_it(tmp_path):
     assert manager.is_running() is False
 
 
-def test_start_is_disabled_outside_flatpak(tmp_path):
+def test_native_monitor_uses_local_helper_and_explicit_paths(tmp_path):
+    helper = tmp_path / "clipper-monitor-host"
+    helper.touch()
+    launches = []
+    process = type("Process", (), {"poll": lambda self: None})()
     manager = HostMonitorManager(
-        flatpak_info_path=_flatpak_info(tmp_path, "/deploy/files"),
+        flatpak_info_path=tmp_path / "no-flatpak-info",
+        native_helper=helper,
+        config_file=tmp_path / "config.json",
+        socket_path=tmp_path / "monitor.sock",
+        env={},
+        launcher=lambda command, **kwargs: launches.append((command, kwargs)) or process,
+    )
+    assert manager.start()
+    assert launches[0][0] == [str(helper), "--service"]
+    assert launches[0][1]["env"]["CLIPPER_CONFIG_FILE"] == str(tmp_path / "config.json")
+    assert launches[0][1]["env"]["CLIPPER_MONITOR_SOCKET"] == str(tmp_path / "monitor.sock")
+    assert manager.is_running()
+
+
+def test_missing_native_monitor_does_not_launch(tmp_path):
+    manager = HostMonitorManager(
+        flatpak_info_path=tmp_path / "no-flatpak-info",
+        native_helper=tmp_path / "missing-helper",
         env={},
     )
-
-    assert manager.start() is False
+    assert not manager.start()
 
 
 def test_operation_reports_invalid_flatpak_info_as_a_result(tmp_path):

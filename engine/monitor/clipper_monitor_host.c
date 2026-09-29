@@ -12,6 +12,8 @@
 #include <dirent.h>
 #include <errno.h>
 #include <limits.h>
+#include <poll.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1234,6 +1236,33 @@ static int interval_ms(void)
     return ms > 0 ? ms : DEFAULT_INTERVAL_MS;
 }
 
+static bool send_snapshot(int fd, const monitor_config_t *config,
+                          const rule_state_t *states, const rule_state_t *obs)
+{
+    cJSON *obj = cJSON_CreateObject();
+    if (!obj)
+        return false;
+    cJSON_AddStringToObject(obj, "event", "snapshot");
+    cJSON *rules = cJSON_AddArrayToObject(obj, "rules");
+    for (size_t i = 0; i <= config->rule_count; i++) {
+        const rule_state_t *state = i == config->rule_count ? obs : &states[i];
+        if (!state->active)
+            continue;
+        cJSON *rule = cJSON_CreateObject();
+        cJSON_AddStringToObject(rule, "event", "process_started");
+        cJSON_AddStringToObject(rule, "rule_id",
+                               i == config->rule_count ? OBS_STUDIO_RULE_ID : config->rules[i].id);
+        cJSON_AddNumberToObject(rule, "pid", state->pid);
+        cJSON_AddStringToObject(rule, "name", state->name);
+        cJSON_AddItemToArray(rules, rule);
+    }
+    char *text = cJSON_PrintUnformatted(obj);
+    cJSON_Delete(obj);
+    bool ok = text && dprintf(fd, "%s\n", text) >= 0;
+    free(text);
+    return ok;
+}
+
 static int max_iterations(void)
 {
     const char *value = getenv("CLIPPER_MONITOR_MAX_ITERATIONS");
@@ -1243,6 +1272,7 @@ static int max_iterations(void)
 
 static int run_service(void)
 {
+    signal(SIGPIPE, SIG_IGN);
     monitor_config_t config;
     rule_state_t states[MAX_RULES] = {0};
     rule_state_t obs_state = {0};
@@ -1261,6 +1291,7 @@ static int run_service(void)
     process_info_t *processes = NULL;
 
     for (;;) {
+        bool snapshot_needed = false;
         size_t process_count = 0;
         config_stamp_t current_stamp = current_config_stamp();
         if (!config_stamp_equal(stamp, current_stamp)) {
@@ -1270,13 +1301,24 @@ static int run_service(void)
                 preserve_states_for_reloaded_config(states, &old_config, &reloaded);
                 config = reloaded;
                 stamp = current_stamp;
+                snapshot_needed = true;
                 fprintf(stderr, "[clipper-monitor] reloaded config rules=%zu\n",
                         config.rule_count);
             }
         }
 
-        if (fd < 0)
+        if (fd >= 0) {
+            struct pollfd connection = {.fd = fd, .events = POLLIN};
+            if (poll(&connection, 1, 0) > 0 &&
+                (connection.revents & (POLLIN | POLLHUP | POLLERR | POLLNVAL))) {
+                close(fd);
+                fd = -1;
+            }
+        }
+        if (fd < 0) {
             fd = connect_monitor_socket();
+            snapshot_needed = fd >= 0;
+        }
 
         /* Only read_processes' populated entries are initialized/touched. */
         if (!processes)
@@ -1342,6 +1384,10 @@ static int run_service(void)
                         fd = -1;
                     }
                 }
+            }
+            if (snapshot_needed && fd >= 0 && !send_snapshot(fd, &config, states, &obs_state)) {
+                close(fd);
+                fd = -1;
             }
         }
         loops++;

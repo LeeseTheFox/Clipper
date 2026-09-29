@@ -168,6 +168,12 @@ class EngineClient:
         if not enabled:
             self._stop_reconnect_timer()
 
+    def reconnect(self) -> None:
+        """Retry a pending connection; never start an idle background poll."""
+        if not self._connected:
+            self._should_reconnect = True
+            self._start_reconnect_timer()
+
     def remove_state_change_callback(self, callback: Callable[[int], None]) -> None:
         """Release a subscriber when its window or application is retired."""
         if callback in self._state_callbacks:
@@ -220,7 +226,7 @@ class EngineClient:
             self._pending_commands.append(callback)
             return True
         except OSError as e:
-            self.disconnect()
+            self.disconnect(auto_reconnect=True)
             self._handle_error(f"Failed to send command: {e}")
             return False
 

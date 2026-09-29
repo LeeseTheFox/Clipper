@@ -69,13 +69,13 @@ process matching intentionally cover separate production implementations.
 | editor_window_transport | Coordinate seeking, volume, fullscreen and close lifecycle with the preview. |
 | editor_window_wipe | Clear saved and in-memory edits only after confirmation; preserve them on cancellation. |
 | engine_client | Encode IPC requests and complete saves once despite response/event ordering. |
-| engine_ipc | Exercise the real engine socket, capabilities, recording lifecycle, saved files and concurrent clients. |
-| engine_manager | Launch with the correct environment, forward diagnostics and distinguish restart from normal exit. |
+| engine_ipc | Exercise the real engine socket, capabilities, recording lifecycle, pushed state snapshots, saved files and concurrent clients. |
+| engine_manager | Launch with the correct environment, deliver readiness/exits without polling, reject retired process callbacks and distinguish restart from normal exit. |
 | flatpak_metadata | Preserve desktop identity, icon policy, portable host helpers, pinned sources and narrow permissions. |
 | focus_helpers | Preserve stable dropdown IDs, handle invalid selection and prevent controls stealing input. |
 | game_audio_learning | Learn audio identity only from verified game processes and update the matching configuration. |
 | game_capture | Publish/repair payloads atomically, preserve working copies and quote executable launch arguments. |
-| game_capture_frame_smoke | Wait for actual save completion and fail promptly on engine errors/disconnects. |
+| game_capture_frame_smoke | Consume command replies despite interleaved state events, wait for actual save completion and fail promptly on engine errors/disconnects. |
 | game_details | Replace executable identity safely, preserve user settings and resolve the correct Steam account. |
 | game_icons | Find appropriate game artwork, avoid blocking discovery and bound extracted-icon caches. |
 | hotkeys | Normalize valid chords, use physical keys and handle portal approval/cancellation races. |
@@ -84,11 +84,11 @@ process matching intentionally cover separate production implementations.
 | lazy_video_buffers | Execute allocation/reuse/failure cleanup against the shipped C patch helpers. |
 | log_window | Stop subscriptions and scheduled refreshes after the window closes. |
 | logs | Preserve useful diagnostics, bound history and carry logs through process handoff. |
-| main | Coordinate startup/setup, tray lifecycle, recording, engine restarts, portal decisions, updates, background capability ownership and session shutdown. |
+| main | Coordinate startup/setup, tray lifecycle, recording, engine restarts, portal decisions, updates, background capability ownership, event-driven state recovery and session shutdown. |
 | main_window_preferences | Pass catalog language IDs through preferences and track both physical Shift keys. |
-| monitor_host | Execute C host process detection, fixed Steam operations, scope isolation and live rule reloads. |
-| monitor_ipc | Validate incoming events and restrict socket access. |
-| monitor_manager | Use the correct deployment/helper, validate host results and own one monitor process. |
+| monitor_host | Execute C host process detection, fixed Steam operations, scope isolation, live rule reloads and complete state recovery after reconnect. |
+| monitor_ipc | Validate complete snapshots and incoming events, restrict socket access and interrupt idle connections on shutdown. |
+| monitor_manager | Use the correct native or Flatpak helper, validate host results and own one monitor process. |
 | native_capture | Reject unsupported direct-capture scenes and preserve idle-render consumers. |
 | pipewire_import_cache | Retain/release imported buffers and synchronization handles correctly, with and without explicit sync. |
 | process_watcher | Match and deduplicate game identities across native, Steam, Wine and sandbox environments. |

@@ -32,6 +32,9 @@ class EngineProcessManager:
         popen_factory: Any = subprocess.Popen,
         env: dict[str, str] | None = None,
         log_callback: Any | None = None,
+        ready_callback: Any | None = None,
+        exit_callback: Any | None = None,
+        dispatcher: Any | None = None,
     ) -> None:
         self._base_env = env
         self._repo_root = repo_root or Path(__file__).resolve().parent.parent
@@ -45,6 +48,35 @@ class EngineProcessManager:
         self._process: Any | None = None
         self._capture_mode = DEFAULT_CAPTURE_MODE
         self._log_callback = log_callback
+        self._ready_callback = ready_callback
+        self._exit_callback = exit_callback
+        self._dispatcher = dispatcher or self._dispatch
+
+    @staticmethod
+    def _dispatch(callback, *args) -> None:
+        from gi.repository import GLib
+
+        GLib.idle_add(callback, *args)
+
+    def _notify_ready(self, process) -> bool:
+        if process is self._process and self._ready_callback is not None:
+            self._ready_callback()
+        return False
+
+    def _finish_exit(self, process, exit_code: int) -> bool:
+        if process is not self._process:
+            return False
+        self._process = None
+        if self._log_callback is not None:
+            self._log_callback(
+                f"[engine] Process exited: code={exit_code}; "
+                f"capture_mode={self._capture_mode}; restart={exit_code == RESTART_EXIT_CODE}"
+            )
+        if exit_code == RESTART_EXIT_CODE:
+            self.start(self._capture_mode)
+        if self._exit_callback is not None:
+            self._exit_callback(exit_code)
+        return False
 
     @property
     def engine_path(self) -> Path:
@@ -76,7 +108,7 @@ class EngineProcessManager:
             "cwd": str(self._repo_root),
             "env": self._build_env(),
         }
-        if self._log_callback is not None:
+        if self._log_callback is not None or self._ready_callback is not None:
             popen_kwargs.update(
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
@@ -86,15 +118,24 @@ class EngineProcessManager:
         self._process = self._popen_factory(
             [str(self._engine_path), "--capture-mode", capture_mode], **popen_kwargs
         )
-        if self._log_callback is not None:
+        if self._log_callback is not None or self._ready_callback is not None:
             self._start_log_reader(self._process)
+        if self._exit_callback is not None:
+            process = self._process
+            assert process is not None
+
+            def wait_for_exit() -> None:
+                exit_code = process.wait()
+                self._dispatcher(self._finish_exit, process, exit_code)
+
+            threading.Thread(target=wait_for_exit, name="clipper-engine-exit", daemon=True).start()
         return True
 
     def _start_log_reader(self, process: Any) -> None:
         """Forward the engine's combined stdout/stderr without blocking the UI."""
         output = getattr(process, "stdout", None)
-        log_callback = self._log_callback
-        if output is None or log_callback is None:
+        log_callback = self._log_callback or (lambda _message: None)
+        if output is None:
             return
 
         def read_output() -> None:
@@ -111,6 +152,8 @@ class EngineProcessManager:
 
             for line in output:
                 message = line.rstrip()
+                if self._ready_callback is not None and message.startswith("READY "):
+                    self._dispatcher(self._notify_ready, process)
                 if re.fullmatch(
                     r"\[libopus @ 0x[0-9a-fA-F]+\] 1 frames left in the queue on closing",
                     message,
@@ -135,14 +178,7 @@ class EngineProcessManager:
         if exit_code is None:
             return None
 
-        self._process = None
-        if self._log_callback is not None:
-            self._log_callback(
-                f"[engine] Process exited: code={exit_code}; "
-                f"capture_mode={self._capture_mode}; restart={exit_code == RESTART_EXIT_CODE}"
-            )
-        if exit_code == RESTART_EXIT_CODE:
-            self.start(self._capture_mode)
+        self._finish_exit(self._process, exit_code)
         return exit_code
 
     def terminate(self, timeout: float = 5.0) -> None:
