@@ -2986,14 +2986,6 @@ class EditorWindow(Adw.ApplicationWindow):
         for _index, segment, start, end in self._segment_rects(width):
             setting = segment.audio[track_id]
             gain = effective_audio_gain(setting)
-            if not lightweight_zoom:
-                if setting.muted:
-                    _set_source_color(
-                        context,
-                        foreground,
-                        0.10,
-                    )
-                    stroke_segment(segment, start, end, 1.0)
             if gain <= 0:
                 continue
             selected = segment.id in selected_ids
