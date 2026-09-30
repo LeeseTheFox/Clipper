@@ -1,55 +1,33 @@
 from types import SimpleNamespace
 
 import gi
+import pytest
 
 gi.require_version("Gdk", "4.0")
 gi.require_version("Gtk", "4.0")
 gi.require_version("Gst", "1.0")
 
-import video_player_window as player_module
+import video_player as player_module
 from gi.repository import Gdk, Gst, Gtk
 from icon_names import VOLUME_CROSS, VOLUME_MEDIUM
 from video_output import ClipperVideoSink
-from video_player_window import (
+from video_player import (
     _PLAYER_CSS,
-    VideoPlayerWindow,
-    discover_video_dimensions,
-    fit_video_window_size,
+    VideoPlayer,
 )
 
 
-def test_player_window_follows_landscape_video_size_up_to_1280_pixels():
-    assert fit_video_window_size(1920, 1080, 96) == (1280, 816)
-    assert fit_video_window_size(3840, 2160, 96) == (1280, 816)
-
-
-def test_player_window_caps_portrait_video_and_chrome_at_1280_pixels():
-    width, height = fit_video_window_size(1080, 1920, 96)
-
-    assert (width, height) == (666, 1280)
-    assert width <= 1280
-    assert height <= 1280
-
-
-def test_player_window_keeps_smaller_video_at_its_natural_size():
-    assert fit_video_window_size(800, 600, 96) == (800, 696)
-
-
 def test_player_letterboxes_to_keep_the_whole_frame_visible_at_any_window_ratio():
-    window = VideoPlayerWindow()
+    window = VideoPlayer()
 
-    assert window.get_resizable() is True
     assert window._picture.get_content_fit() == Gtk.ContentFit.CONTAIN
 
-    window.destroy()
+    window.cleanup()
 
 
-def test_player_controls_float_over_video_and_follow_hover():
-    window = VideoPlayerWindow()
+def test_player_reveals_controls_on_video_hover():
+    window = VideoPlayer()
 
-    video_overlay = window._controls_revealer.get_parent()
-    assert isinstance(video_overlay, Gtk.Overlay)
-    assert video_overlay.get_child() is window._picture
     assert window._controls_revealer.get_reveal_child() is False
 
     window._on_video_hover_enter()
@@ -57,7 +35,7 @@ def test_player_controls_float_over_video_and_follow_hover():
 
     window._on_video_hover_leave()
     assert window._controls_revealer.get_reveal_child() is False
-    window.destroy()
+    window.cleanup()
 
 
 def test_player_volume_slider_expands_and_controls_pipeline_volume():
@@ -66,7 +44,7 @@ def test_player_volume_slider_expands_and_controls_pipeline_volume():
         get_property=lambda name: state[name],
         set_property=lambda name, value: state.__setitem__(name, value),
     )
-    window = VideoPlayerWindow()
+    window = VideoPlayer()
     window._pipeline = pipeline
 
     assert window._volume_revealer.get_reveal_child() is False
@@ -94,7 +72,7 @@ def test_player_volume_slider_expands_and_controls_pipeline_volume():
     window._on_volume_control_leave()
     assert window._volume_revealer.get_reveal_child() is False
     window._pipeline = None
-    window.destroy()
+    window.cleanup()
 
 
 def test_player_mute_button_scroll_adjusts_volume():
@@ -103,7 +81,7 @@ def test_player_mute_button_scroll_adjusts_volume():
         get_property=lambda name: state[name],
         set_property=lambda name, value: state.__setitem__(name, value),
     )
-    window = VideoPlayerWindow()
+    window = VideoPlayer()
     window._pipeline = pipeline
     window._volume_scale.set_value(0.5)
     model = window._mute_button.observe_controllers()
@@ -119,11 +97,11 @@ def test_player_mute_button_scroll_adjusts_volume():
     assert scroll_controller.emit("scroll", 0.0, 1.0) is True
     assert state == {"volume": 0.5, "mute": False}
     window._pipeline = None
-    window.destroy()
+    window.cleanup()
 
 
 def test_player_sliders_disable_gtk_hold_to_fine_tune():
-    window = VideoPlayerWindow()
+    window = VideoPlayer()
 
     for scale in (window._seek_scale, window._volume_scale):
         model = scale.observe_controllers()
@@ -135,11 +113,11 @@ def test_player_sliders_disable_gtk_hold_to_fine_tune():
             for controller in controllers
         )
 
-    window.destroy()
+    window.cleanup()
 
 
 def test_player_progress_slider_consumes_scroll_wheel_input():
-    window = VideoPlayerWindow()
+    window = VideoPlayer()
     model = window._seek_scale.observe_controllers()
     controllers = [model.get_item(index) for index in range(model.get_n_items())]
     scroll_controller = next(
@@ -150,7 +128,7 @@ def test_player_progress_slider_consumes_scroll_wheel_input():
     )
 
     assert scroll_controller.emit("scroll", 0.0, 1.0) is True
-    window.destroy()
+    window.cleanup()
 
 
 def test_seek_hold_pauses_without_movement_and_resumes_only_previous_playback():
@@ -169,7 +147,7 @@ def test_seek_hold_pauses_without_movement_and_resumes_only_previous_playback():
         ),
         set_state=set_state,
     )
-    window = VideoPlayerWindow()
+    window = VideoPlayer()
     window._pipeline = pipeline
 
     window._begin_seek_hold()
@@ -184,7 +162,7 @@ def test_seek_hold_pauses_without_movement_and_resumes_only_previous_playback():
     assert calls == []
 
     window._pipeline = None
-    window.destroy()
+    window.cleanup()
 
 
 def test_real_scale_dragging_class_pauses_and_resumes_pipeline():
@@ -195,7 +173,7 @@ def test_real_scale_dragging_class_pauses_and_resumes_pipeline():
         calls.append(value)
         state["current"] = value
 
-    window = VideoPlayerWindow()
+    window = VideoPlayer()
     window._pipeline = SimpleNamespace(
         get_state=lambda _timeout: (
             Gst.StateChangeReturn.SUCCESS,
@@ -210,13 +188,13 @@ def test_real_scale_dragging_class_pauses_and_resumes_pipeline():
 
     assert calls == [Gst.State.PAUSED, Gst.State.PLAYING]
     window._pipeline = None
-    window.destroy()
+    window.cleanup()
 
 
 def test_old_seek_completion_cannot_resume_underneath_a_new_drag():
     calls = []
     pipeline = SimpleNamespace(set_state=calls.append)
-    window = VideoPlayerWindow()
+    window = VideoPlayer()
     window._pipeline = pipeline
     window._seek_press_pipeline = pipeline
     window._seek_range_dragging = True
@@ -249,14 +227,14 @@ def test_old_seek_completion_cannot_resume_underneath_a_new_drag():
     assert calls == [Gst.State.PLAYING]
     assert window._seek_press_pipeline is None
     window._pipeline = None
-    window.destroy()
+    window.cleanup()
 
 
 def test_seek_worker_prerolls_every_superseding_commit_before_resume(monkeypatch):
     idle_callbacks = []
     seeks = []
     states = []
-    window = VideoPlayerWindow()
+    window = VideoPlayer()
 
     def get_state(timeout):
         if timeout == player_module._SEEK_COMMIT_TIMEOUT_NS and len(seeks) == 1:
@@ -298,7 +276,7 @@ def test_seek_worker_prerolls_every_superseding_commit_before_resume(monkeypatch
     assert states == [Gst.State.PLAYING]
     assert window._seek_press_pipeline is None
     window._pipeline = None
-    window.destroy()
+    window.cleanup()
 
 
 def test_fullscreen_toggle_and_video_double_click_use_the_same_action():
@@ -309,13 +287,13 @@ def test_fullscreen_toggle_and_video_double_click_use_the_same_action():
         unfullscreen=lambda: calls.append("unfullscreen"),
     )
 
-    VideoPlayerWindow._toggle_fullscreen(window)
+    VideoPlayer._toggle_fullscreen(window)
     assert calls == ["fullscreen"]
 
     window._toggle_playback = lambda: calls.append("playback")
     window._toggle_fullscreen = lambda: calls.append("double-click")
-    VideoPlayerWindow._on_video_pressed(window, None, 1, 0, 0)
-    VideoPlayerWindow._on_video_pressed(window, None, 2, 0, 0)
+    VideoPlayer._on_video_pressed(window, None, 1, 0, 0)
+    VideoPlayer._on_video_pressed(window, None, 2, 0, 0)
     assert calls == ["fullscreen", "playback", "playback", "double-click"]
 
 
@@ -324,10 +302,10 @@ def test_escape_leaves_fullscreen_before_it_closes_the_player():
     window = SimpleNamespace(
         is_fullscreen=lambda: True,
         unfullscreen=lambda: calls.append("unfullscreen"),
-        set_visible=lambda visible: calls.append(("visible", visible)),
+        close=lambda: calls.append("close"),
     )
 
-    assert VideoPlayerWindow._on_key_pressed(window, None, Gdk.KEY_Escape, 0, 0) is True
+    assert VideoPlayer._on_key_pressed(window, None, Gdk.KEY_Escape, 0, 0) is True
     assert calls == ["unfullscreen"]
 
 
@@ -344,70 +322,15 @@ def test_player_control_css_parses_cleanly():
     assert errors == []
 
 
-def test_player_resizes_when_the_paintable_reports_video_dimensions():
-    paintable = SimpleNamespace(
-        get_intrinsic_width=lambda: 2560,
-        get_intrinsic_height=lambda: 1440,
-    )
-    window = VideoPlayerWindow()
-    window._measure_player_chrome_height = lambda _width: 96
-
-    window._resize_for_video(paintable)
-
-    assert window.get_default_size() == (1280, 816)
-    window.destroy()
-
-
-def test_player_can_be_sized_from_metadata_before_it_is_presented(tmp_path):
-    scheduled = []
-    window = VideoPlayerWindow(
-        idle_add=lambda callback, *args: scheduled.append((callback, args)) or 41
-    )
-    window._measure_player_chrome_height = lambda _width: 96
-    clip_path = tmp_path / "clip.mkv"
-
-    window.open_clip(clip_path, video_dimensions=(1920, 1080))
-
-    assert window.get_visible() is False
-    assert window.get_default_size() == (1280, 816)
-    window._load_source_id = None
-    window.destroy()
-
-
-def test_video_discovery_uses_pixel_aspect_ratio(tmp_path):
-    clip_path = tmp_path / "anamorphic.mkv"
-    clip_path.touch()
-    stream = SimpleNamespace(
-        get_width=lambda: 720,
-        get_height=lambda: 576,
-        get_par_num=lambda: 64,
-        get_par_denom=lambda: 45,
-    )
-    info = SimpleNamespace(get_video_streams=lambda: [stream])
-    calls = []
-    discoverer = SimpleNamespace(
-        discover_uri=lambda uri: calls.append(uri) or info,
-    )
-
-    dimensions = discover_video_dimensions(
-        clip_path,
-        discoverer_factory=lambda timeout: calls.append(timeout) or discoverer,
-    )
-
-    assert dimensions == (1024, 576)
-    assert calls == [2 * Gst.SECOND, clip_path.resolve().as_uri()]
-
-
 def test_missing_clip_uses_a_clear_in_window_error_state(tmp_path):
     scheduled = []
-    window = VideoPlayerWindow(
+    window = VideoPlayer(
         idle_add=lambda callback, *args: scheduled.append((callback, args)) or 41
     )
     missing_clip = tmp_path / "missing.mkv"
 
     window.open_clip(missing_clip, "Missing clip.mkv")
 
-    assert window.get_title() == "Missing clip.mkv — Clipper"
     assert len(scheduled) == 1
     callback, args = scheduled.pop()
     callback(*args)
@@ -418,7 +341,7 @@ def test_missing_clip_uses_a_clear_in_window_error_state(tmp_path):
     # The fake scheduler returned an ID after invoking no GLib source. Avoid
     # asking GLib to remove it when the test tears down the window.
     window._load_source_id = None
-    window.destroy()
+    window.cleanup()
 
 
 def test_player_keyboard_controls_toggle_and_seek_media():
@@ -432,7 +355,7 @@ def test_player_keyboard_controls_toggle_and_seek_media():
             calls.append(("seek", timestamp)) or True
         ),
     )
-    window = VideoPlayerWindow()
+    window = VideoPlayer()
     window._pipeline = pipeline
     window._duration_ns = 30 * Gst.SECOND
 
@@ -447,7 +370,7 @@ def test_player_keyboard_controls_toggle_and_seek_media():
     ]
 
     window._pipeline = None
-    window.destroy()
+    window.cleanup()
 
 
 def test_player_seeks_to_exact_timestamps_instead_of_nearby_keyframes():
@@ -458,7 +381,7 @@ def test_player_seeks_to_exact_timestamps_instead_of_nearby_keyframes():
             or True
         ),
     )
-    window = VideoPlayerWindow()
+    window = VideoPlayer()
     window._pipeline = pipeline
     window._duration_ns = 30 * Gst.SECOND
 
@@ -476,7 +399,7 @@ def test_player_seeks_to_exact_timestamps_instead_of_nearby_keyframes():
         )
     ]
     window._pipeline = None
-    window.destroy()
+    window.cleanup()
 
 
 def test_seek_drag_coalesces_preview_work_off_gtk_thread_and_finishes_exactly(
@@ -562,7 +485,7 @@ def test_seek_drag_coalesces_preview_work_off_gtk_thread_and_finishes_exactly(
         preview_factory_calls.append("pipeline")
         return preview_pipeline
 
-    window = VideoPlayerWindow()
+    window = VideoPlayer()
     window._new_seek_preview_pipeline = make_preview_pipeline
     window._new_seek_preview_sink = lambda: (preview_video_sink, preview_sink)
     window._seek_worker_wakeup = WakeupStub()
@@ -628,7 +551,7 @@ def test_seek_drag_coalesces_preview_work_off_gtk_thread_and_finishes_exactly(
         )
     ]
     window._pipeline = None
-    window.destroy()
+    window.cleanup()
 
 
 def test_seek_preview_builds_a_separate_muted_cpu_frame_graph(tmp_path):
@@ -659,7 +582,7 @@ def test_seek_preview_builds_a_separate_muted_cpu_frame_graph(tmp_path):
             )
         ),
     )
-    window = VideoPlayerWindow()
+    window = VideoPlayer()
     window._new_seek_preview_pipeline = lambda: preview_pipeline
     window._new_seek_preview_sink = lambda: (preview_video_sink, preview_sink)
     window._clip_path = tmp_path / "clip.mkv"
@@ -678,11 +601,11 @@ def test_seek_preview_builds_a_separate_muted_cpu_frame_graph(tmp_path):
     window._release_seek_preview_pipeline(window._seek_worker_generation)
     assert states == [Gst.State.PAUSED, Gst.State.NULL]
     assert sample_connections[-1] == ("disconnect", 19)
-    window.destroy()
+    window.cleanup()
 
 
 def test_seek_preview_pipeline_forces_software_decoding_away_from_the_gpu():
-    pipeline = VideoPlayerWindow._new_seek_preview_pipeline()
+    pipeline = VideoPlayer._new_seek_preview_pipeline()
 
     assert pipeline is not None
     assert pipeline.get_factory().get_name() == "playbin"
@@ -704,7 +627,7 @@ def test_seek_preview_publishes_a_completed_cpu_frame():
     )
     frame_data = player_module.GLib.Bytes.new(bytes(16 * 9 * 4))
 
-    result = VideoPlayerWindow._publish_seek_preview_frame(
+    result = VideoPlayer._publish_seek_preview_frame(
         window,
         frame_data,
         16,
@@ -730,11 +653,11 @@ def test_player_keyboard_shortcuts_mute_fullscreen_and_adjust_volume():
         _toggle_playback=lambda: calls.append("playback"),
         _seek_relative=lambda offset: calls.append(("seek", offset)),
         is_fullscreen=lambda: False,
-        set_visible=lambda visible: calls.append(("visible", visible)),
+        close=lambda: calls.append("close"),
     )
 
     for keyval in (Gdk.KEY_m, Gdk.KEY_f, Gdk.KEY_Up, Gdk.KEY_Down):
-        assert VideoPlayerWindow._on_key_pressed(window, None, keyval, 0, 0) is True
+        assert VideoPlayer._on_key_pressed(window, None, keyval, 0, 0) is True
 
     assert calls == [
         "mute",
@@ -764,11 +687,11 @@ def test_player_letter_shortcuts_use_physical_base_layout_keys(monkeypatch):
         _toggle_muted=lambda: calls.append("mute"),
         _toggle_fullscreen=lambda: calls.append("fullscreen"),
         is_fullscreen=lambda: False,
-        set_visible=lambda visible: calls.append(("visible", visible)),
+        close=lambda: calls.append("close"),
     )
 
-    assert VideoPlayerWindow._on_key_pressed(window, None, Gdk.KEY_Cyrillic_a, 41, 0)
-    assert VideoPlayerWindow._on_key_pressed(window, None, Gdk.KEY_Cyrillic_softsign, 58, 0)
+    assert VideoPlayer._on_key_pressed(window, None, Gdk.KEY_Cyrillic_a, 41, 0)
+    assert VideoPlayer._on_key_pressed(window, None, Gdk.KEY_Cyrillic_softsign, 58, 0)
 
     assert calls == ["fullscreen", "mute"]
 
@@ -778,7 +701,7 @@ def test_volume_keyboard_step_is_five_percent_and_clamped():
     pipeline = SimpleNamespace(
         set_property=lambda name, value: state.__setitem__(name, value),
     )
-    window = VideoPlayerWindow()
+    window = VideoPlayer()
     window._pipeline = pipeline
     window._volume_scale.set_value(0.5)
 
@@ -792,12 +715,28 @@ def test_volume_keyboard_step_is_five_percent_and_clamped():
     assert window._volume_scale.get_value() == 1
 
     window._pipeline = None
-    window.destroy()
+    window.cleanup()
 
 
-def test_releasing_player_stops_and_clears_media():
+@pytest.fixture
+def deferred_teardown(monkeypatch):
+    workers = []
+
+    class DeferredThread:
+        def __init__(self, *, target, args, **_kwargs):
+            self.target, self.args = target, args
+
+        def start(self):
+            workers.append(self)
+
+    monkeypatch.setattr(player_module.threading, "Thread", DeferredThread)
+    return workers
+
+
+def test_releasing_player_detaches_media_before_background_teardown(deferred_teardown):
     calls = []
     pipeline = SimpleNamespace(
+        set_property=lambda name, value: calls.append((name, value)),
         set_state=lambda state: calls.append(("state", state)),
     )
     bus = SimpleNamespace(
@@ -805,11 +744,15 @@ def test_releasing_player_stops_and_clears_media():
         remove_signal_watch=lambda: calls.append("remove-watch"),
     )
     picture = SimpleNamespace(set_paintable=lambda value: calls.append(("paintable", value)))
-    window = VideoPlayerWindow()
+    window = VideoPlayer()
     window._picture = picture
     window._pipeline = pipeline
     window._bus = bus
     window._bus_handler_id = 11
+    window._paintable_sink = SimpleNamespace(
+        set_locked_state=lambda value: calls.append(("lock GTK sink", value)),
+        set_state=lambda state: calls.append(("GTK sink state", state)),
+    )
 
     window._release_media()
 
@@ -820,62 +763,55 @@ def test_releasing_player_stops_and_clears_media():
         ("paintable", None),
         ("disconnect", 11),
         "remove-watch",
-        ("state", Gst.State.NULL),
+        ("lock GTK sink", True),
+        ("GTK sink state", Gst.State.NULL),
+        ("mute", True),
     ]
-    window.destroy()
+    worker = deferred_teardown.pop()
+    worker.target(*worker.args)
+    assert calls[-1] == ("state", Gst.State.NULL)
+    window.cleanup()
 
 
-def test_escape_is_captured_before_controls_and_stops_active_pipeline():
+def test_escape_is_captured_before_controls_and_stops_active_pipeline(deferred_teardown):
     calls = []
     pipeline = SimpleNamespace(
         set_state=lambda state: calls.append(("state", state)),
     )
-    window = VideoPlayerWindow()
+    window = VideoPlayer()
     window._pipeline = pipeline
 
     assert window._key_controller.get_propagation_phase() == Gtk.PropagationPhase.CAPTURE
     window.set_visible(True)
     assert window._on_key_pressed(None, Gdk.KEY_Escape, 0, 0) is True
-    assert window.get_visible() is False
     assert window._pipeline is None
+    worker = deferred_teardown.pop()
+    worker.target(*worker.args)
     assert calls == [("state", Gst.State.NULL)]
+    window.cleanup()
 
 
-def test_window_close_hides_and_stops_active_pipeline():
+def test_close_stops_media_before_returning_control_to_host(deferred_teardown):
     calls = []
     pipeline = SimpleNamespace(
         set_state=lambda state: calls.append(("state", state)),
     )
-    window = VideoPlayerWindow()
+    window = VideoPlayer(close_callback=lambda: (window.stop(), calls.append("return")))
     window._pipeline = pipeline
     window.set_visible(True)
 
     window.close()
 
-    assert window.get_visible() is False
     assert window._pipeline is None
-    assert calls == [("state", Gst.State.NULL)]
-
-
-def test_helper_close_callback_bypasses_blocking_in_process_teardown():
-    calls = []
-    pipeline = SimpleNamespace(
-        set_property=lambda *_args: calls.append("unexpected mute"),
-        set_state=lambda *_args: calls.append("unexpected state change"),
-    )
-    window = VideoPlayerWindow(closed_callback=lambda: calls.append("exit helper"))
-    window._pipeline = pipeline
-
-    window._on_hide()
-
-    assert calls == ["exit helper"]
-    assert window._pipeline is pipeline
-    window._pipeline = None
-    window.destroy()
+    assert calls == ["return"]
+    worker = deferred_teardown.pop()
+    worker.target(*worker.args)
+    assert calls == ["return", ("state", Gst.State.NULL)]
+    window.cleanup()
 
 
 def test_player_audio_sink_uses_a_dedicated_restore_identity():
-    sink = VideoPlayerWindow._new_audio_sink()
+    sink = VideoPlayer._new_audio_sink()
 
     assert sink is not None
     assert sink.get_property("client-name") == "Clipper player"
@@ -893,7 +829,7 @@ def test_loading_clip_clears_any_persisted_mute(monkeypatch, tmp_path):
         set_state=lambda _state: Gst.StateChangeReturn.ASYNC,
     )
     sink = SimpleNamespace(get_property=lambda _name: None)
-    window = VideoPlayerWindow(
+    window = VideoPlayer(
         pipeline_factory=lambda: pipeline,
         sink_factory=lambda: sink,
         audio_sink_factory=lambda: None,
@@ -911,7 +847,7 @@ def test_loading_clip_clears_any_persisted_mute(monkeypatch, tmp_path):
     window._bus = None
     window._bus_handler_id = None
     window._position_source_id = None
-    window.destroy()
+    window.cleanup()
 
 
 def test_loading_clip_uses_outer_color_bin_and_inner_gtk_paintable(monkeypatch, tmp_path):
@@ -931,7 +867,7 @@ def test_loading_clip_uses_outer_color_bin_and_inner_gtk_paintable(monkeypatch, 
         get_property=lambda name: paintable if name == "paintable" else None
     )
     sink_result = ClipperVideoSink(outer_sink, inner_sink, True)
-    window = VideoPlayerWindow(
+    window = VideoPlayer(
         pipeline_factory=lambda: pipeline,
         sink_factory=lambda: sink_result,
         audio_sink_factory=lambda: None,
@@ -955,51 +891,7 @@ def test_loading_clip_uses_outer_color_bin_and_inner_gtk_paintable(monkeypatch, 
     window._bus = None
     window._bus_handler_id = None
     window._position_source_id = None
-    window.destroy()
-
-
-def test_helper_uses_clipper_desktop_identity(monkeypatch):
-    calls = []
-    monkeypatch.setattr(
-        player_module.GLib,
-        "set_prgname",
-        lambda value: calls.append(("program", value)),
-    )
-    monkeypatch.setattr(
-        player_module.GLib,
-        "set_application_name",
-        lambda value: calls.append(("application", value)),
-    )
-
-    player_module._configure_desktop_identity()
-
-    assert calls == [
-        ("program", player_module.APP_ID),
-        ("application", "Clipper"),
-    ]
-
-
-def test_helper_imports_exported_wayland_parent_before_presenting(monkeypatch):
-    calls = []
-
-    class SurfaceStub:
-        def set_transient_for_exported(self, parent_handle):
-            calls.append(("parent", parent_handle))
-            return True
-
-    surface = SurfaceStub()
-    window = SimpleNamespace(
-        realize=lambda: calls.append("realize"),
-        get_surface=lambda: surface,
-    )
-    monkeypatch.setattr(
-        player_module,
-        "GdkWayland",
-        SimpleNamespace(WaylandToplevel=SurfaceStub),
-    )
-
-    assert player_module._set_exported_parent(window, "clipper-parent-handle") is True
-    assert calls == ["realize", ("parent", "clipper-parent-handle")]
+    window.cleanup()
 
 
 def test_released_pipeline_memory_is_collected_and_trimmed(monkeypatch):

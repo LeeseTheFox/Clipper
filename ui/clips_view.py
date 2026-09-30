@@ -7,7 +7,6 @@ import os
 import re
 import stat as stat_module
 import subprocess
-import sys
 import tempfile
 import threading
 from datetime import datetime
@@ -19,12 +18,6 @@ from i18n import _, ngettext
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-
-try:
-    gi.require_version("GdkWayland", "4.0")
-    from gi.repository import GdkWayland
-except (ImportError, ValueError):
-    GdkWayland = None
 
 import steam
 from config import ClipperConfig
@@ -197,6 +190,7 @@ class ClipsView(Gtk.Box):
         config=None,
         edit_clip_callback=None,
         clips_rendered_callback=None,
+        play_clip_callback=None,
     ):
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         self.set_margin_start(6)
@@ -207,6 +201,7 @@ class ClipsView(Gtk.Box):
         self.config = config or ClipperConfig()
         self.edit_clip_callback = edit_clip_callback
         self.clips_rendered_callback = clips_rendered_callback
+        self.play_clip_callback = play_clip_callback
         self.clips_data = []
         self._sort_cache = None
         self._artwork_cache = {}
@@ -244,9 +239,6 @@ class ClipsView(Gtk.Box):
         self._edit_buttons = set()
         self._delete_buttons = set()
         self._shift_edit_mode = False
-        self._player_process = None
-        self._player_launch_generation = 0
-        self._exported_player_parents = {}
 
         self.setup_ui()
         self._watch_output_folder()
@@ -1926,92 +1918,12 @@ class ClipsView(Gtk.Box):
         self._launch_path(output_folder, "Could not open folder")
 
     def on_play_clip(self, clip_data):
-        """Open the selected clip in an isolated native GTK player."""
-        self._player_launch_generation = getattr(self, "_player_launch_generation", 0) + 1
-        generation = self._player_launch_generation
-        previous = getattr(self, "_player_process", None)
-        if previous is not None and previous.poll() is None:
-            previous.terminate()
-
-        if self._export_player_parent(clip_data, generation):
+        """Expand the selected clip's visible preview into in-window playback."""
+        if self.play_clip_callback is None:
             return
-        self._launch_clip_player(clip_data)
-
-    def _export_player_parent(self, clip_data, generation):
-        """Export the Clipper surface so Wayland can place the helper over it."""
-        if GdkWayland is None:
-            return False
-        try:
-            root = self.get_root()
-            surface = root.get_surface() if root is not None else None
-        except Exception:
-            return False
-        if surface is None:
-            return False
-        if not isinstance(surface, GdkWayland.WaylandToplevel):
-            return False
-
-        def parent_exported(exported_surface, parent_handle, _user_data):
-            if generation != self._player_launch_generation:
-                exported_surface.drop_exported_handle(parent_handle)
-                return
-            self._launch_clip_player(
-                clip_data,
-                parent_handle=parent_handle,
-                parent_surface=exported_surface,
-            )
-
-        try:
-            return bool(surface.export_handle(parent_exported, None))
-        except Exception:
-            return False
-
-    def _launch_clip_player(self, clip_data, *, parent_handle=None, parent_surface=None):
-        """Start the isolated helper, optionally related to an exported parent."""
-        player_script = Path(__file__).with_name("video_player_window.py")
-        args = [
-            sys.executable,
-            str(player_script),
-            str(clip_data["path"]),
-            "--title",
-            str(clip_data.get("name") or Path(clip_data["path"]).name),
-            "--parent-pid",
-            str(os.getpid()),
-        ]
-        if parent_handle:
-            args.extend(("--parent-handle", parent_handle))
-        try:
-            self._player_process = subprocess.Popen(args, close_fds=True)
-        except Exception as error:
-            self._player_process = None
-            if parent_handle and parent_surface is not None:
-                parent_surface.drop_exported_handle(parent_handle)
-            print(f"Could not open clip player: {error}")
-            self._show_toast(_("Could not play clip"))
-            return
-
-        if parent_handle and parent_surface is not None:
-            process_id = self._player_process.pid
-            self._exported_player_parents[process_id] = (parent_surface, parent_handle)
-            GLib.child_watch_add(
-                GLib.PRIORITY_DEFAULT,
-                process_id,
-                self._on_player_process_exited,
-            )
-
-    def _on_player_process_exited(self, process_id, _status):
-        """Release the cross-process Wayland relationship with the player."""
-        exported = self._exported_player_parents.pop(process_id, None)
-        if exported is not None:
-            surface, parent_handle = exported
-            try:
-                surface.drop_exported_handle(parent_handle)
-            except Exception:
-                pass
-        process = getattr(self, "_player_process", None)
-        if process is not None and getattr(process, "pid", None) == process_id:
-            self._player_process = None
-        GLib.spawn_close_pid(process_id)
+        widgets = self._media_widgets.get(str(clip_data["path"]))
+        thumbnail = widgets[0] if widgets is not None else None
+        self.play_clip_callback(clip_data, thumbnail)
 
     def on_reveal_clip(self, clip_data):
         """Reveal clip in file manager"""

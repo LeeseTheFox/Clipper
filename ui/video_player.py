@@ -1,40 +1,23 @@
-"""Compact native GTK video player for recorded clips."""
+"""Reusable native GTK video player for recorded clips."""
 
 from __future__ import annotations
 
-import argparse
 import ctypes
 import gc
 import os
-import sys
 import threading
 from collections.abc import Callable
 from pathlib import Path
 
 import gi
-import i18n
-
-# The player is launched as a standalone helper process, so it must initialize
-# gettext before its module-level shortcut labels are constructed.
-i18n.bootstrap()
-
 from i18n import _
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 gi.require_version("Gst", "1.0")
-gi.require_version("GstPbutils", "1.0")
-
-try:
-    gi.require_version("GdkWayland", "4.0")
-    from gi.repository import GdkWayland
-except (ImportError, ValueError):
-    GdkWayland = None
-
-from app_icon import register_app_icon
-from gi.repository import Adw, Gdk, Gio, GLib, Gst, GstPbutils, Gtk
+from gi.repository import Adw, Gdk, Gio, GLib, GObject, Gst, Gtk
 from icon_names import (
-    APP_ID,
+    BACK,
     FULLSCREEN,
     HAMBURGER_MENU,
     PAUSE,
@@ -58,7 +41,6 @@ from shortcut_dialog import (
 from video_output import ClipperVideoSink, make_clipper_video_sink
 
 _PLAYER_CSS_INSTALLED = False
-_MAX_PLAYER_DIMENSION = 1280
 _SEEK_PREVIEW_INTERVAL_SECONDS = 0.1
 _SEEK_PREVIEW_MAX_DIMENSION = 1280
 _SEEK_COMMIT_TIMEOUT_NS = 5 * Gst.SECOND
@@ -134,10 +116,6 @@ def _reclaim_released_media_memory() -> bool:
     return GLib.SOURCE_REMOVE
 
 
-
-
-
-
 def _install_player_css() -> None:
     """Install the small amount of styling around GTK's native video UI."""
     global _PLAYER_CSS_INSTALLED
@@ -158,103 +136,37 @@ def _install_player_css() -> None:
     _PLAYER_CSS_INSTALLED = True
 
 
-def fit_video_window_size(
-    source_width: int,
-    source_height: int,
-    chrome_height: int,
-    *,
-    max_dimension: int = _MAX_PLAYER_DIMENSION,
-) -> tuple[int, int]:
-    """Fit a video's natural size inside a square maximum, including window chrome."""
-    if source_width <= 0 or source_height <= 0:
-        raise ValueError("Video dimensions must be positive")
-    if max_dimension <= 0:
-        raise ValueError("Maximum window dimension must be positive")
+class VideoPlayer(Gtk.Box):
+    """Play one clip at a time inside the owning application window."""
 
-    chrome_height = min(max(0, chrome_height), max_dimension - 1)
-    available_video_height = max_dimension - chrome_height
-    scale = min(
-        1.0,
-        max_dimension / source_width,
-        available_video_height / source_height,
-    )
-    video_width = max(1, round(source_width * scale))
-    video_height = max(1, round(source_height * scale))
-    return min(max_dimension, video_width), min(max_dimension, video_height + chrome_height)
+    __gsignals__ = {
+        "prepared": (GObject.SignalFlags.RUN_LAST, None, ()),
+        "content-ready": (GObject.SignalFlags.RUN_LAST, None, ()),
+    }
 
-
-def discover_video_dimensions(
-    clip_path: Path,
-    *,
-    discoverer_factory: Callable[[int], object] = GstPbutils.Discoverer.new,
-) -> tuple[int, int] | None:
-    """Read display dimensions before presenting the player window."""
-    path = Path(clip_path)
-    if not path.is_file():
-        return None
-
-    Gst.init(None)
-    try:
-        discoverer = discoverer_factory(2 * Gst.SECOND)
-        info = discoverer.discover_uri(path.resolve().as_uri())
-        for stream in info.get_video_streams():
-            width = int(stream.get_width())
-            height = int(stream.get_height())
-            if width <= 0 or height <= 0:
-                continue
-            par_numerator = int(stream.get_par_num()) or 1
-            par_denominator = int(stream.get_par_denom()) or 1
-            display_width = max(1, round(width * par_numerator / par_denominator))
-            return display_width, height
-    except Exception:
-        return None
-    return None
-
-
-class VideoPlayerWindow(Adw.Window):
-    """Play one clip at a time in a lightweight transient window."""
-
-    DEFAULT_WIDTH = 720
-    DEFAULT_HEIGHT = 450
     SEEK_STEP_NS = 5 * Gst.SECOND
     POSITION_UPDATE_MS = 100
 
     def __init__(
         self,
-        transient_for=None,
         *,
-        config=None,
         pipeline_factory: Callable[[], object] | None = None,
         sink_factory: Callable[[], object] | None = None,
         audio_sink_factory: Callable[[], object] | None = None,
         idle_add: Callable[..., int] = GLib.idle_add,
-        closed_callback: Callable[[], None] | None = None,
+        close_callback: Callable[[], None] | None = None,
     ) -> None:
-        super().__init__(title=_("Clip player"), transient_for=transient_for)
+        super().__init__(orientation=Gtk.Orientation.VERTICAL)
         _install_player_css()
-
-        if transient_for is not None:
-            application = transient_for.get_application()
-            if application is not None:
-                self.set_application(application)
-
-        self.set_default_size(self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT)
-        self.set_size_request(420, 280)
-        from window_state import WindowSizeManager
-
-        self._window_size = WindowSizeManager(
-            self,
-            config,
-            "player",
-            minimum_size=(420, 280),
-        )
+        self.set_hexpand(True)
+        self.set_vexpand(True)
 
         Gst.init(None)
         self._pipeline_factory = pipeline_factory or self._new_pipeline
         self._sink_factory = sink_factory or self._new_video_sink
         self._audio_sink_factory = audio_sink_factory or self._new_audio_sink
         self._idle_add = idle_add
-        self._closed_callback = closed_callback
+        self._close_callback = close_callback
         self._load_source_id = None
         self._position_source_id = None
         self._load_generation = 0
@@ -266,7 +178,9 @@ class VideoPlayerWindow(Adw.Window):
         self._bus_handler_id = None
         self._video_paintable = None
         self._paintable_size_handler_id = None
-        self._video_dimensions = None
+        self._paintable_contents_handler_id = None
+        self._has_video_frame = False
+        self._autoplay = True
         self._duration_ns = 0
         self._updating_seek = False
         self._seek_range_dragging = False
@@ -291,15 +205,15 @@ class VideoPlayerWindow(Adw.Window):
         self._build_ui()
         self._install_actions()
         self._install_keyboard_controls()
-        self.connect("notify::fullscreened", self._on_fullscreen_changed)
-        # A retained Adw.Window closes by hiding; close-request and destroy are
-        # not emitted in that lifecycle. Stop playback on the signal that is
-        # guaranteed for titlebar close, Escape, and programmatic close alike.
-        self.connect("hide", self._on_hide)
 
     def _build_ui(self) -> None:
         toolbar = Adw.ToolbarView()
         header = Adw.HeaderBar()
+        header.set_show_start_title_buttons(False)
+        header.set_show_end_title_buttons(False)
+        back_button = Gtk.Button(icon_name=BACK, tooltip_text=_("Back"))
+        back_button.connect("clicked", lambda _button: self.close())
+        header.pack_start(back_button)
         self._header = header
         self._window_title = Adw.WindowTitle(title=_("Clip player"), subtitle="")
         header.set_title_widget(self._window_title)
@@ -317,6 +231,7 @@ class VideoPlayerWindow(Adw.Window):
         self._picture.set_content_fit(Gtk.ContentFit.CONTAIN)
         self._picture.set_hexpand(True)
         self._picture.set_vexpand(True)
+        self._picture.set_focusable(True)
         self._picture.add_css_class("clipper-player-surface")
 
         self._loading = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
@@ -382,7 +297,7 @@ class VideoPlayerWindow(Adw.Window):
         self._content_stack.set_visible_child_name("video")
 
         toolbar.set_content(self._content_stack)
-        self.set_content(toolbar)
+        self.append(toolbar)
 
     def _install_actions(self) -> None:
         self._window_actions = Gio.SimpleActionGroup()
@@ -399,7 +314,7 @@ class VideoPlayerWindow(Adw.Window):
     def _install_keyboard_controls(self) -> None:
         self._key_controller = Gtk.EventControllerKey()
         # Capture Escape before media controls can consume it. This guarantees
-        # there is always a keyboard route out of the player window.
+        # there is always a keyboard route back to the gallery.
         self._key_controller.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
         self._key_controller.connect("key-pressed", self._on_key_pressed)
         self.add_controller(self._key_controller)
@@ -409,19 +324,20 @@ class VideoPlayerWindow(Adw.Window):
         clip_path: Path,
         display_name: str | None = None,
         *,
-        video_dimensions: tuple[int, int] | None = None,
+        autoplay: bool = True,
     ) -> None:
-        """Size for known metadata and queue playback for the next main-loop turn."""
+        """Queue playback for the next main-loop turn."""
+        if self._closed:
+            return
         path = Path(clip_path)
         self._load_generation += 1
         generation = self._load_generation
         self._cancel_pending_load()
         self._release_media()
+        self._autoplay = autoplay
 
         self._clip_path = path
-        self._video_dimensions = None
         title = str(display_name or path.name)
-        self.set_title(_("%(title)s — Clipper") % {"title": title})
         self._window_title.set_title(title)
         self._window_title.set_subtitle(_("Clip playback"))
         self._loading.set_visible(True)
@@ -429,9 +345,6 @@ class VideoPlayerWindow(Adw.Window):
         self._volume_revealer.set_reveal_child(False)
         self._transport.reset_volume()
         self._content_stack.set_visible_child_name("video")
-        if video_dimensions is not None:
-            self._apply_video_dimensions(*video_dimensions)
-
         self._load_source_id = self._idle_add(self._load_clip, path, generation)
 
     @staticmethod
@@ -516,14 +429,15 @@ class VideoPlayerWindow(Adw.Window):
         return pipeline
 
     def _load_clip(self, path: Path, generation: int) -> bool:
-        self._load_source_id = None
         if self._closed or generation != self._load_generation:
             return GLib.SOURCE_REMOVE
+        self._load_source_id = None
 
         if not path.is_file():
             self._show_error(
                 _("Clip unavailable"), _("The video file could not be found.")
             )
+            self.emit("prepared")
             return GLib.SOURCE_REMOVE
 
         try:
@@ -558,35 +472,41 @@ class VideoPlayerWindow(Adw.Window):
             self._bus = pipeline.get_bus()
             self._bus.add_signal_watch()
             self._bus_handler_id = self._bus.connect("message", self._on_bus_message, generation)
-            result = pipeline.set_state(Gst.State.PLAYING)
+            result = pipeline.set_state(Gst.State.PLAYING if self._autoplay else Gst.State.PAUSED)
             if result == Gst.StateChangeReturn.FAILURE:
                 raise RuntimeError("GStreamer rejected the clip")
 
             self._ended = False
-            self._set_playing_ui(True)
+            self._set_playing_ui(self._autoplay)
             self._position_source_id = GLib.timeout_add(
                 self.POSITION_UPDATE_MS,
                 self._update_position,
                 generation,
             )
-        except Exception as error:  # Media loading should fail inside the player window.
+        except Exception as error:  # Media failures belong inside the player.
             print(f"Could not play clip {path.name}: {error}")
             self._release_media()
             self._show_playback_error()
 
+        self.emit("prepared")
         return GLib.SOURCE_REMOVE
 
     def _set_video_paintable(self, paintable) -> None:
         previous = self._video_paintable
         handler_id = self._paintable_size_handler_id
+        contents_handler_id = self._paintable_contents_handler_id
         self._video_paintable = paintable
         self._paintable_size_handler_id = None
+        self._paintable_contents_handler_id = None
+        self._has_video_frame = False
 
         if previous is not None and handler_id is not None:
             try:
                 previous.disconnect(handler_id)
             except Exception:
                 pass
+        if previous is not None and contents_handler_id is not None:
+            previous.disconnect(contents_handler_id)
 
         self._picture.set_paintable(paintable)
         if paintable is None:
@@ -594,26 +514,35 @@ class VideoPlayerWindow(Adw.Window):
 
         try:
             self._paintable_size_handler_id = paintable.connect(
-                "invalidate-size", self._on_video_size_invalidated
+                "invalidate-size", lambda *_args: self._picture.queue_resize()
             )
         except Exception:
             self._paintable_size_handler_id = None
-        self._resize_for_video(paintable)
 
-    def _on_video_size_invalidated(self, paintable) -> None:
-        self._resize_for_video(paintable)
+        try:
+            self._paintable_contents_handler_id = paintable.connect(
+                "invalidate-contents", self._on_video_contents_invalidated
+            )
+            self._on_video_contents_invalidated(paintable)
+        except Exception:
+            self._paintable_contents_handler_id = None
 
-    def _measure_player_chrome_height(self, window_width: int) -> int:
-        """Return the vertical space used by non-overlay window chrome."""
-        allocated_window_height = self.get_height()
-        allocated_video_height = self._picture.get_height()
-        if allocated_window_height > 0 and allocated_video_height > 0:
-            return max(0, allocated_window_height - allocated_video_height)
+    def _on_video_contents_invalidated(self, paintable) -> None:
+        if self._has_video_frame or paintable is not self._video_paintable:
+            return
+        image = paintable.get_current_image()
+        if image.get_intrinsic_width() <= 0 or image.get_intrinsic_height() <= 0:
+            return
+        self._has_video_frame = True
+        self._loading.set_visible(False)
+        self.emit("content-ready")
 
-        _minimum, natural, _minimum_baseline, _natural_baseline = self._header.measure(
-            Gtk.Orientation.VERTICAL, window_width
-        )
-        return natural
+    def start_playback(self) -> None:
+        """Start the prepared clip after the host has revealed its first frame."""
+        if self._pipeline is None or self._closed:
+            return
+        self._pipeline.set_state(Gst.State.PLAYING)
+        self._set_playing_ui(True)
 
     def _on_video_hover_enter(self, *_args) -> None:
         self._controls_revealer.set_reveal_child(True)
@@ -637,47 +566,6 @@ class VideoPlayerWindow(Adw.Window):
             self._toggle_playback()
             self._toggle_fullscreen()
 
-    def _resize_for_video(self, paintable) -> None:
-        """Resize once the sink publishes the decoded video's natural dimensions."""
-        try:
-            source_width = int(paintable.get_intrinsic_width())
-            source_height = int(paintable.get_intrinsic_height())
-        except Exception:
-            return
-        if source_width <= 0 or source_height <= 0:
-            return
-
-        try:
-            intrinsic_aspect_ratio = float(paintable.get_intrinsic_aspect_ratio())
-        except Exception:
-            intrinsic_aspect_ratio = 0
-        if intrinsic_aspect_ratio > 0:
-            source_width = max(1, round(source_height * intrinsic_aspect_ratio))
-
-        self._apply_video_dimensions(source_width, source_height)
-
-    def _apply_video_dimensions(self, source_width: int, source_height: int) -> None:
-        """Apply known display dimensions to initial and runtime window sizing."""
-        if source_width <= 0 or source_height <= 0:
-            return
-        dimensions = (source_width, source_height)
-        if dimensions == self._video_dimensions:
-            return
-
-        # A remembered user size takes precedence over automatic first-open
-        # sizing derived from the video's aspect ratio.
-        if self._window_size.restored:
-            self._video_dimensions = dimensions
-            return
-
-        chrome_height = self._measure_player_chrome_height(source_width)
-        window_width, window_height = fit_video_window_size(
-            source_width,
-            source_height,
-            chrome_height,
-        )
-        self._video_dimensions = dimensions
-        self.set_default_size(window_width, window_height)
 
     def _on_bus_message(self, _bus, message, generation: int) -> None:
         if self._closed or generation != self._load_generation:
@@ -692,7 +580,6 @@ class VideoPlayerWindow(Adw.Window):
             return
 
         if message.type in (Gst.MessageType.ASYNC_DONE, Gst.MessageType.DURATION_CHANGED):
-            self._loading.set_visible(False)
             self._content_stack.set_visible_child_name("video")
             self._update_position(generation)
         elif message.type == Gst.MessageType.EOS:
@@ -735,7 +622,8 @@ class VideoPlayerWindow(Adw.Window):
             f"{self._format_time(displayed_position_ns)} / "
             f"{self._format_time(duration_ns)}"
         )
-        self._loading.set_visible(False)
+        if self._has_video_frame:
+            self._loading.set_visible(False)
         return GLib.SOURCE_CONTINUE
 
     @staticmethod
@@ -1193,6 +1081,23 @@ class VideoPlayerWindow(Adw.Window):
         else:
             self.fullscreen()
 
+    def is_fullscreen(self) -> bool:
+        root = self.get_root()
+        return isinstance(root, Gtk.Window) and root.is_fullscreen()
+
+    def fullscreen(self) -> None:
+        root = self.get_root()
+        if isinstance(root, Gtk.Window):
+            root.fullscreen()
+
+    def unfullscreen(self) -> None:
+        root = self.get_root()
+        if isinstance(root, Gtk.Window):
+            root.unfullscreen()
+
+    def focus_video(self) -> None:
+        self._picture.grab_focus()
+
     def _on_fullscreen_changed(self, *_args) -> None:
         fullscreen = self.is_fullscreen()
         self._header.set_visible(not fullscreen)
@@ -1212,6 +1117,7 @@ class VideoPlayerWindow(Adw.Window):
         self._error_page.set_title(title)
         self._error_page.set_description(description)
         self._content_stack.set_visible_child_name("error")
+        self.emit("content-ready")
 
     def _on_key_pressed(self, _controller, keyval, keycode, _state) -> bool:
         if matches_shortcuts_key(keyval, keycode, _state):
@@ -1221,7 +1127,7 @@ class VideoPlayerWindow(Adw.Window):
             if self.is_fullscreen():
                 self.unfullscreen()
                 return True
-            self.set_visible(False)
+            self.close()
             return True
 
         if self._pipeline is None:
@@ -1252,8 +1158,21 @@ class VideoPlayerWindow(Adw.Window):
         return False
 
     def close(self) -> None:
-        """Close through the same deterministic hide-and-stop path as the titlebar."""
-        self.set_visible(False)
+        """Stop media and let the host animate its return to the gallery."""
+        if self._close_callback is not None:
+            self._close_callback()
+        else:
+            self.stop()
+
+    def stop(self) -> None:
+        """Invalidate queued loads and seeks before detaching the media graph."""
+        self._load_generation += 1
+        self._cancel_pending_load()
+        self._release_media()
+
+    def cleanup(self) -> None:
+        self._closed = True
+        self.stop()
 
     def _cancel_pending_load(self) -> None:
         if self._load_source_id is None:
@@ -1267,6 +1186,7 @@ class VideoPlayerWindow(Adw.Window):
             self._position_source_id = None
 
         pipeline = self._pipeline
+        paintable_sink = self._paintable_sink
         bus = self._bus
         bus_handler_id = self._bus_handler_id
         with self._seek_worker_lock:
@@ -1310,137 +1230,48 @@ class VideoPlayerWindow(Adw.Window):
             except Exception:
                 pass
 
-        if pipeline is not None:
-            try:
-                pipeline.set_state(Gst.State.NULL)
-            except Exception:  # The window must still close after backend failure.
-                pass
         if preview_sink is not None and sample_handler_id is not None:
             try:
                 preview_sink.disconnect(sample_handler_id)
             except Exception:
                 pass
-        if preview_pipeline is not None:
+        pipelines = tuple(item for item in (pipeline, preview_pipeline) if item is not None)
+        if pipelines:
+            # State transitions may wait on decoder/GL threads. Detach the UI
+            # first so a slow backend cannot freeze the gallery or its zoom.
+            # The GTK sink owns objects guarded to the main thread. Stop and
+            # lock that child here so the decoder worker cannot transition it
+            # after the application has stopped owning the main context.
+            if paintable_sink is not None:
+                try:
+                    paintable_sink.set_locked_state(True)
+                    paintable_sink.set_state(Gst.State.NULL)
+                except Exception:
+                    pass
+            if pipeline is not None:
+                try:
+                    pipeline.set_property("mute", True)
+                except Exception:
+                    pass
+            threading.Thread(
+                target=self._stop_pipelines,
+                args=(pipelines, paintable_sink),
+                name="clipper-player-stop",
+                daemon=True,
+            ).start()
+
+    @staticmethod
+    def _stop_pipelines(pipelines, paintable_sink) -> None:
+        for pipeline in pipelines:
             try:
-                preview_pipeline.set_state(Gst.State.NULL)
+                pipeline.set_state(Gst.State.NULL)
             except Exception:
                 pass
+        # Retain the graph until an idle callback can drop its last references
+        # on GTK's thread. Gtk4paintablesink also has guarded finalizers.
+        GLib.idle_add(VideoPlayer._finish_pipeline_stop, pipelines, paintable_sink)
 
-        # PyGObject and GStreamer form collectible cycles, while glibc keeps
-        # freed decoder arenas for reuse by default. Reclaim both on idle,
-        # after this method's last strong pipeline references have gone away.
+    @staticmethod
+    def _finish_pipeline_stop(_pipelines, _paintable_sink) -> bool:
         GLib.idle_add(_reclaim_released_media_memory)
-
-    def _on_hide(self, *_args) -> None:
-        """Stop all playback whenever the retained player window is hidden."""
-        if self._closed_callback is not None:
-            self._closed_callback()
-            return
-        self._load_generation += 1
-        self._cancel_pending_load()
-        self._release_media()
-
-
-def _parent_is_alive(parent_pid: int) -> bool:
-    if parent_pid <= 1 or os.getppid() != parent_pid:
-        return False
-    try:
-        os.kill(parent_pid, 0)
-    except OSError:
-        return False
-    return True
-
-
-def _configure_desktop_identity() -> None:
-    """Make the isolated process group with Clipper in Wayland shells."""
-    GLib.set_prgname(APP_ID)
-    GLib.set_application_name("Clipper")
-
-
-def _set_exported_parent(window, parent_handle: str) -> bool:
-    """Relate the helper to Clipper so the compositor places it over its parent."""
-    if not parent_handle or GdkWayland is None:
-        return False
-    try:
-        window.realize()
-        surface = window.get_surface()
-        if not isinstance(surface, GdkWayland.WaylandToplevel):
-            return False
-        return bool(surface.set_transient_for_exported(parent_handle))
-    except Exception:
-        return False
-
-
-def run_player_helper(
-    clip_path: Path,
-    display_name: str,
-    parent_pid: int,
-    parent_handle: str = "",
-) -> int:
-    """Run the player in an isolated process with fail-safe close semantics."""
-    _configure_desktop_identity()
-    video_dimensions = discover_video_dimensions(clip_path)
-    application = Adw.Application(
-        # NON_UNIQUE preserves process isolation while the canonical ID makes
-        # the compositor match Clipper's desktop file, icon, and taskbar group.
-        application_id=APP_ID,
-        flags=Gio.ApplicationFlags.NON_UNIQUE,
-    )
-    holder = {}
-    from config import ClipperConfig
-
-    config = ClipperConfig()
-
-    def exit_player() -> None:
-        # This process owns only ephemeral playback state. Exiting here lets
-        # Linux and PipeWire tear down every decoder and audio stream even if
-        # a GStreamer state transition would otherwise deadlock.
-        os._exit(0)
-
-    def on_activate(app) -> None:
-        register_app_icon()
-        window = holder.get("window")
-        if window is not None:
-            window.present()
-            return
-        window = VideoPlayerWindow(config=config, closed_callback=exit_player)
-        window.set_application(app)
-        _set_exported_parent(window, parent_handle)
-        holder["window"] = window
-        window.open_clip(
-            clip_path,
-            display_name,
-            video_dimensions=video_dimensions,
-        )
-        window.present()
-
-        def check_parent() -> bool:
-            if not _parent_is_alive(parent_pid):
-                exit_player()
-            return GLib.SOURCE_CONTINUE
-
-        GLib.timeout_add_seconds(1, check_parent)
-
-    application.connect("activate", on_activate)
-    return application.run([])
-
-
-def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(description=_("Play a Clipper video"))
-    parser.add_argument("clip_path", type=Path)
-    parser.add_argument("--title", default="")
-    parser.add_argument("--parent-pid", type=int, required=True)
-    parser.add_argument("--parent-handle", default="")
-    args = parser.parse_args(argv)
-    return run_player_helper(
-        args.clip_path,
-        args.title or args.clip_path.name,
-        args.parent_pid,
-        args.parent_handle,
-    )
-
-
-if __name__ == "__main__":
-    # Avoid interpreter/GObject finalization retaining or blocking on a media
-    # backend. The helper owns no persistent data, so process exit is cleanup.
-    os._exit(main(sys.argv[1:]))
+        return GLib.SOURCE_REMOVE

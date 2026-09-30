@@ -7,11 +7,11 @@ gi.require_version("Adw", "1")
 gi.require_version("Gtk", "4.0")
 
 import editor_window
-import video_player_window
+import video_player
 from editor_window import EDITOR_SHORTCUT_SECTIONS, EditorWindow
 from gi.repository import Gdk, Gtk
 from shortcut_dialog import matches_shortcuts_key
-from video_player_window import PLAYER_SHORTCUT_SECTIONS, VideoPlayerWindow
+from video_player import PLAYER_SHORTCUT_SECTIONS, VideoPlayer
 
 
 def _accelerators(sections):
@@ -50,19 +50,19 @@ def test_player_shortcuts_action_presents_the_player_list(monkeypatch):
     presented = []
     dialog = SimpleNamespace(present=presented.append)
     monkeypatch.setattr(
-        video_player_window,
+        video_player,
         "create_shortcuts_dialog",
         lambda sections: presented.append(sections) or dialog,
     )
-    window = VideoPlayerWindow()
+    window = VideoPlayer()
 
     assert window.activate_action("win.shortcuts", None) is True
     assert presented == [PLAYER_SHORTCUT_SECTIONS, window]
     assert window._shortcuts_dialog is dialog
-    window.destroy()
+    window.cleanup()
 
 
-@pytest.mark.parametrize("window_type", [EditorWindow, VideoPlayerWindow])
+@pytest.mark.parametrize("window_type", [EditorWindow, VideoPlayer])
 def test_shortcuts_chord_opens_the_window_list_under_non_latin_layout(
     monkeypatch, window_type
 ):
@@ -77,7 +77,7 @@ def test_shortcuts_chord_opens_the_window_list_under_non_latin_layout(
     )
     presented = []
     dialog = SimpleNamespace(present=presented.append)
-    module = editor_window if window_type is EditorWindow else video_player_window
+    module = editor_window if window_type is EditorWindow else video_player
     sections = (
         EDITOR_SHORTCUT_SECTIONS
         if window_type is EditorWindow
@@ -93,7 +93,7 @@ def test_shortcuts_chord_opens_the_window_list_under_non_latin_layout(
             window_type._show_shortcuts(window) or True
         )
     else:
-        window = VideoPlayerWindow()
+        window = VideoPlayer()
     try:
         assert window_type._on_key_pressed(
             window, None, Gdk.KEY_Cyrillic_yu, 61,
@@ -101,8 +101,8 @@ def test_shortcuts_chord_opens_the_window_list_under_non_latin_layout(
         )
         assert presented == [sections, window]
     finally:
-        if window_type is VideoPlayerWindow:
-            window.destroy()
+        if window_type is VideoPlayer:
+            window.cleanup()
 
 
 def test_shortcuts_chord_requires_control_shift_and_the_physical_slash(monkeypatch):

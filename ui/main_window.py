@@ -104,6 +104,7 @@ class MainWindow(Adw.ApplicationWindow):
         self._preview_active = False
         self._preview_generation = 0
         self._preferences_dialog = None
+        self._player_overlay = None
 
         # Keep the established default size while allowing a narrow, phone-like
         # layout. Navigation moves from the header to the bottom at 600sp.
@@ -207,6 +208,7 @@ class MainWindow(Adw.ApplicationWindow):
             config=self._config,
             edit_clip_callback=self._edit_clip_callback,
             clips_rendered_callback=lambda: self._notify_presentable("clips"),
+            play_clip_callback=self._play_clip,
         )
         self.view_stack.add_titled_with_icon(self.clips_view, "clips", _("Clips"), CLIPS)
         self._clips_shift_keycodes = set()
@@ -253,7 +255,21 @@ class MainWindow(Adw.ApplicationWindow):
         # Clear focus from clips view search entry when switching tabs
         self.view_stack.connect("notify::visible-child", self._on_view_stack_changed)
 
-        self.set_content(self.toolbar_view)
+        self._content_overlay = Gtk.Overlay()
+        self._content_overlay.set_child(self.toolbar_view)
+        self.set_content(self._content_overlay)
+
+    def _play_clip(self, clip_data, thumbnail):
+        if self._player_overlay is None:
+            from clip_player_overlay import ClipPlayerOverlay
+
+            self._player_overlay = ClipPlayerOverlay(closed_callback=self._on_player_closed)
+            self._content_overlay.add_overlay(self._player_overlay)
+        self._player_overlay.present_clip(clip_data, thumbnail)
+        self.toolbar_view.set_sensitive(False)
+
+    def _on_player_closed(self):
+        self.toolbar_view.set_sensitive(True)
 
     @staticmethod
     def _add_breakpoint_setter(breakpoint, widget, property_name: str, value) -> None:
@@ -289,6 +305,8 @@ class MainWindow(Adw.ApplicationWindow):
 
     def cleanup(self) -> None:
         """Stop child-view background work before the application exits."""
+        if self._player_overlay is not None:
+            self._player_overlay.cleanup()
         self._hide_preview_popover()
         if self._preview_fade_id is not None:
             GLib.source_remove(self._preview_fade_id)

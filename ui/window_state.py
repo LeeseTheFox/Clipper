@@ -34,7 +34,7 @@ def clear_window_state(config_path: Path) -> None:
 
 
 class WindowStateStore:
-    """Small cross-process-safe JSON store used by the isolated player."""
+    """Small JSON store that preserves each window's saved size atomically."""
 
     def __init__(self, path: Path | None):
         self.path = path

@@ -6,6 +6,7 @@ APP_ICON = APP_ID
 ADD = "plus-circle-filled-symbolic"
 ADD_CIRCLE_BOLD = "plus-circle-filled-symbolic"
 AUDIO = "sound-wave-symbolic"
+BACK = "arrow2-left-symbolic"
 CHECKMARK = "checkmark-symbolic"
 CLAPPERBOARD_EDIT = "pencil-symbolic"
 CLIPS = "video-reel-symbolic"

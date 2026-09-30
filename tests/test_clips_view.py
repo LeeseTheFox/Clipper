@@ -193,37 +193,6 @@ def test_thumbnail_play_hover_keeps_real_thumbnail_visible():
     assert button.visible is True
 
 
-def test_play_clip_launches_isolated_native_player(monkeypatch, tmp_path):
-    popen_calls = []
-    process = types.SimpleNamespace()
-    monkeypatch.setattr(
-        clips_module.subprocess,
-        "Popen",
-        lambda args, **kwargs: popen_calls.append((args, kwargs)) or process,
-    )
-    monkeypatch.setattr(clips_module.os, "getpid", lambda: 4321)
-    view = object.__new__(ClipsView)
-    view._player_process = None
-    clip_path = tmp_path / "Game_2026-08-13_12-00-00.mkv"
-
-    view.on_play_clip({"path": clip_path, "name": clip_path.name})
-
-    assert view._player_process is process
-    args, kwargs = popen_calls[0]
-    module_file = clips_module.__file__
-    assert module_file is not None
-    assert args == [
-        clips_module.sys.executable,
-        str(Path(module_file).with_name("video_player_window.py")),
-        str(clip_path),
-        "--title",
-        clip_path.name,
-        "--parent-pid",
-        "4321",
-    ]
-    assert kwargs == {"close_fds": True}
-
-
 def test_activating_clip_row_opens_player(tmp_path):
     view = object.__new__(ClipsView)
     clip_path = tmp_path / "recorded-clip.mkv"
@@ -231,89 +200,18 @@ def test_activating_clip_row_opens_player(tmp_path):
     view._clip_string_model = clips_module.Gtk.StringList.new([str(clip_path)])
     view._clips_by_path = {str(clip_path): clip_data}
     opened = []
-    view.on_play_clip = opened.append
+    thumbnail = object()
+    view._media_widgets = {str(clip_path): (thumbnail, object())}
+    view.play_clip_callback = lambda clip, source: opened.append((clip, source))
 
     view._on_clip_activated(None, 0)
 
-    assert opened == [clip_data]
+    assert opened == [(clip_data, thumbnail)]
 
-
-def test_play_clip_exports_wayland_parent_for_compositor_placement(monkeypatch, tmp_path):
-    events = []
-
-    class SurfaceStub:
-        def export_handle(self, callback, user_data):
-            events.append("export")
-            callback(self, "clipper-parent-handle", user_data)
-            return True
-
-        def drop_exported_handle(self, handle):
-            events.append(("drop", handle))
-
-    surface = SurfaceStub()
-    process = types.SimpleNamespace(pid=9876)
-    popen_calls = []
-    watched = []
-    monkeypatch.setattr(
-        clips_module,
-        "GdkWayland",
-        types.SimpleNamespace(WaylandToplevel=SurfaceStub),
-    )
-    monkeypatch.setattr(
-        clips_module.subprocess,
-        "Popen",
-        lambda args, **kwargs: popen_calls.append((args, kwargs)) or process,
-    )
-    monkeypatch.setattr(clips_module.os, "getpid", lambda: 4321)
-    monkeypatch.setattr(clips_module.GLib, "PRIORITY_DEFAULT", 0, raising=False)
-    monkeypatch.setattr(
-        clips_module.GLib,
-        "child_watch_add",
-        lambda priority, pid, callback: watched.append((priority, pid, callback)),
-        raising=False,
-    )
-    monkeypatch.setattr(clips_module.GLib, "spawn_close_pid", lambda pid: None, raising=False)
-    view = object.__new__(ClipsView)
-    view._player_process = None
-    view._player_launch_generation = 0
-    view._exported_player_parents = {}
-    view.get_root = lambda: types.SimpleNamespace(get_surface=lambda: surface)
-    clip_path = tmp_path / "centered.mkv"
-
-    view.on_play_clip({"path": clip_path, "name": clip_path.name})
-
-    args, kwargs = popen_calls[0]
-    assert args[-2:] == ["--parent-handle", "clipper-parent-handle"]
-    assert kwargs == {"close_fds": True}
-    assert view._exported_player_parents == {
-        9876: (surface, "clipper-parent-handle")
-    }
-    assert watched[0][:2] == (0, 9876)
-
-    watched[0][2](9876, 0)
-    assert events == ["export", ("drop", "clipper-parent-handle")]
-
-
-def test_play_clip_terminates_previous_isolated_player(monkeypatch, tmp_path):
-    events = []
-    previous = types.SimpleNamespace(
-        poll=lambda: None,
-        terminate=lambda: events.append("terminate"),
-    )
-    replacement = object()
-    monkeypatch.setattr(
-        clips_module.subprocess,
-        "Popen",
-        lambda *_args, **_kwargs: events.append("launch") or replacement,
-    )
-    view = object.__new__(ClipsView)
-    view._player_process = previous
-    clip_path = tmp_path / "another-clip.mp4"
-
-    view.on_play_clip({"path": clip_path, "name": clip_path.name})
-
-    assert view._player_process is replacement
-    assert events == ["terminate", "launch"]
+    # A row can be recycled while keyboard activation still identifies a clip.
+    view._media_widgets.clear()
+    view._on_clip_activated(None, 0)
+    assert opened[-1] == (clip_data, None)
 
 
 class ListStub:

@@ -1224,7 +1224,7 @@ class SettingsView(Gtk.Box):
         remember_sizes_row = Adw.ActionRow()
         remember_sizes_row.set_title(_("Remember window sizes"))
         remember_sizes_row.set_subtitle(
-            _("Restore sizes for the main window, video editor and video player")
+            _("Restore sizes for the main window and video editor")
         )
 
         self._remember_window_sizes_switch = Gtk.Switch()

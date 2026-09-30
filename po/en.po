@@ -31,7 +31,7 @@ msgstr "All audio sources are combined into a single track"
 msgid "Engine restart required for audio changes"
 msgstr "Engine restart required for audio changes"
 
-#: ui/audio_tracks_view.py:72 ui/main_window.py:182 ui/settings_view.py:470
+#: ui/audio_tracks_view.py:72 ui/main_window.py:183 ui/settings_view.py:470
 msgid "Restart engine"
 msgstr "Restart engine"
 
@@ -169,75 +169,75 @@ msgstr "Display capture"
 msgid "Game capture"
 msgstr "Game capture"
 
-#: ui/clips_view.py:269
+#: ui/clips_view.py:261
 msgid "Search clips by name"
 msgstr "Search clips by name"
 
-#: ui/clips_view.py:286
+#: ui/clips_view.py:278
 msgid "Newest"
 msgstr "Newest"
 
-#: ui/clips_view.py:287
+#: ui/clips_view.py:279
 msgid "Oldest"
 msgstr "Oldest"
 
-#: ui/clips_view.py:288
+#: ui/clips_view.py:280
 msgid "A-Z"
 msgstr "A-Z"
 
-#: ui/clips_view.py:291
+#: ui/clips_view.py:283
 msgid "Sort clips"
 msgstr "Sort clips"
 
-#: ui/clips_view.py:297
+#: ui/clips_view.py:289
 msgid "Open clips folder"
 msgstr "Open clips folder"
 
-#: ui/clips_view.py:564
+#: ui/clips_view.py:556
 msgid "Edit clip from scratch"
 msgstr "Edit clip from scratch"
 
-#: ui/clips_view.py:567
+#: ui/clips_view.py:559
 msgid "Edit clip"
 msgstr "Edit clip"
 
-#: ui/clips_view.py:572
+#: ui/clips_view.py:564
 msgid "Permanently delete the clip"
 msgstr "Permanently delete the clip"
 
-#: ui/clips_view.py:575
+#: ui/clips_view.py:567
 msgid "Move clip to trash"
 msgstr "Move clip to trash"
 
-#: ui/clips_view.py:622
+#: ui/clips_view.py:614
 msgid "Enter a valid clip name"
 msgstr "Enter a valid clip name"
 
-#: ui/clips_view.py:628
+#: ui/clips_view.py:620
 msgid "A clip with that name already exists"
 msgstr "A clip with that name already exists"
 
-#: ui/clips_view.py:633 ui/clips_view.py:651
+#: ui/clips_view.py:625 ui/clips_view.py:643
 msgid "Could not rename clip"
 msgstr "Could not rename clip"
 
-#: ui/clips_view.py:648
+#: ui/clips_view.py:640
 msgid "Clip renamed, but saved edits could not be moved"
 msgstr "Clip renamed, but saved edits could not be moved"
 
-#: ui/clips_view.py:681
+#: ui/clips_view.py:673
 msgid "Could not update clip metadata"
 msgstr "Could not update clip metadata"
 
-#: ui/clips_view.py:692
+#: ui/clips_view.py:684
 msgid "Could not save clip name"
 msgstr "Could not save clip name"
 
-#: ui/clips_view.py:1379
+#: ui/clips_view.py:1371
 msgid "No clips yet"
 msgstr "No clips yet"
 
-#: ui/clips_view.py:1381
+#: ui/clips_view.py:1373
 msgid ""
 "Recorded clips will appear here.\n"
 "Press your save hotkey to capture a clip."
@@ -245,94 +245,90 @@ msgstr ""
 "Recorded clips will appear here.\n"
 "Press your save hotkey to capture a clip."
 
-#: ui/clips_view.py:1389
+#: ui/clips_view.py:1381
 msgid "No matching clips"
 msgstr "No matching clips"
 
-#: ui/clips_view.py:1390
+#: ui/clips_view.py:1382
 msgid "No clip names match the current search."
 msgstr "No clip names match the current search."
 
-#: ui/clips_view.py:1396
+#: ui/clips_view.py:1388
 msgid "Loading clips…"
 msgstr "Loading clips…"
 
-#: ui/clips_view.py:1547
+#: ui/clips_view.py:1539
 msgid "Just now"
 msgstr "Just now"
 
-#: ui/clips_view.py:1551
+#: ui/clips_view.py:1543
 #, python-format
 msgid "%(count)d minute ago"
 msgid_plural "%(count)d minutes ago"
 msgstr[0] "%(count)d minute ago"
 msgstr[1] "%(count)d minutes ago"
 
-#: ui/clips_view.py:1555
+#: ui/clips_view.py:1547
 #, python-format
 msgid "%(count)d hour ago"
 msgid_plural "%(count)d hours ago"
 msgstr[0] "%(count)d hour ago"
 msgstr[1] "%(count)d hours ago"
 
-#: ui/clips_view.py:1559
+#: ui/clips_view.py:1551
 msgid "Yesterday"
 msgstr "Yesterday"
 
-#: ui/clips_view.py:1562
+#: ui/clips_view.py:1554
 #, python-format
 msgid "%(count)d day ago"
 msgid_plural "%(count)d days ago"
 msgstr[0] "%(count)d day ago"
 msgstr[1] "%(count)d days ago"
 
-#: ui/clips_view.py:1568
+#: ui/clips_view.py:1560
 msgid "B"
 msgstr "B"
 
-#: ui/clips_view.py:1568
+#: ui/clips_view.py:1560
 msgid "GB"
 msgstr "GB"
 
-#: ui/clips_view.py:1568
+#: ui/clips_view.py:1560
 msgid "KB"
 msgstr "KB"
 
-#: ui/clips_view.py:1568
+#: ui/clips_view.py:1560
 msgid "MB"
 msgstr "MB"
 
-#: ui/clips_view.py:1570
+#: ui/clips_view.py:1562
 #, python-format
 msgid "%(size).1f %(unit)s"
 msgstr "%(size).1f %(unit)s"
 
-#: ui/clips_view.py:1572
+#: ui/clips_view.py:1564
 #, python-format
 msgid "%(size).1f TB"
 msgstr "%(size).1f TB"
 
-#: ui/clips_view.py:1685
+#: ui/clips_view.py:1677
 msgid "Play clip"
 msgstr "Play clip"
 
-#: ui/clips_view.py:1770
+#: ui/clips_view.py:1762
 msgid "Reveal in file manager"
 msgstr "Reveal in file manager"
 
-#: ui/clips_view.py:1847 ui/editor_window.py:3559
+#: ui/clips_view.py:1839 ui/editor_window.py:3559
 msgid "Could not wipe saved edits"
 msgstr "Could not wipe saved edits"
 
-#: ui/clips_view.py:1990
-msgid "Could not play clip"
-msgstr "Could not play clip"
-
-#: ui/clips_view.py:2135
+#: ui/clips_view.py:2047
 msgid "Move clip to trash?"
 msgstr "Move clip to trash?"
 
-#: ui/clips_view.py:2137
+#: ui/clips_view.py:2049
 #, python-format
 msgid ""
 "'%(name)s' will be moved to the trash.\n"
@@ -341,30 +337,30 @@ msgstr ""
 "'%(name)s' will be moved to the trash.\n"
 "This can be reversed."
 
-#: ui/clips_view.py:2140 ui/dialogs.py:842 ui/editor_export_dialog.py:344
+#: ui/clips_view.py:2052 ui/dialogs.py:842 ui/editor_export_dialog.py:344
 #: ui/editor_export_dialog.py:602 ui/editor_export_dialog.py:630
 #: ui/editor_export_dialog.py:738 ui/editor_window.py:3733 ui/editor_wipe.py:16
 #: ui/game_details_dialog.py:37 ui/update_controller.py:376
 msgid "Cancel"
 msgstr "Cancel"
 
-#: ui/clips_view.py:2141
+#: ui/clips_view.py:2053
 msgid "Move to trash"
 msgstr "Move to trash"
 
-#: ui/clips_view.py:2196
+#: ui/clips_view.py:2108
 msgid "Clip deleted"
 msgstr "Clip deleted"
 
-#: ui/clips_view.py:2196
+#: ui/clips_view.py:2108
 msgid "Clip moved to trash"
 msgstr "Clip moved to trash"
 
-#: ui/clips_view.py:2203
+#: ui/clips_view.py:2115
 msgid "Could not delete clip"
 msgstr "Could not delete clip"
 
-#: ui/clips_view.py:2205
+#: ui/clips_view.py:2117
 msgid "Could not move clip to trash"
 msgstr "Could not move clip to trash"
 
@@ -1125,19 +1121,19 @@ msgstr "Undo"
 msgid "Redo"
 msgstr "Redo"
 
-#: ui/editor_window.py:118 ui/video_player_window.py:69
+#: ui/editor_window.py:118 ui/video_player.py:51
 msgid "Playback"
 msgstr "Playback"
 
-#: ui/editor_window.py:120 ui/video_player_window.py:71
+#: ui/editor_window.py:120 ui/video_player.py:53
 msgid "Play or pause"
 msgstr "Play or pause"
 
-#: ui/editor_window.py:121 ui/video_player_window.py:72
+#: ui/editor_window.py:121 ui/video_player.py:54
 msgid "Seek backward 5 seconds"
 msgstr "Seek backward 5 seconds"
 
-#: ui/editor_window.py:122 ui/video_player_window.py:73
+#: ui/editor_window.py:122 ui/video_player.py:55
 msgid "Seek forward 5 seconds"
 msgstr "Seek forward 5 seconds"
 
@@ -1149,7 +1145,7 @@ msgstr "Seek backward one frame"
 msgid "Seek forward one frame"
 msgstr "Seek forward one frame"
 
-#: ui/editor_window.py:125 ui/video_player_window.py:76
+#: ui/editor_window.py:125 ui/video_player.py:58
 msgid "Mute or unmute"
 msgstr "Mute or unmute"
 
@@ -1157,7 +1153,7 @@ msgstr "Mute or unmute"
 msgid "View"
 msgstr "View"
 
-#: ui/editor_window.py:131 ui/video_player_window.py:82
+#: ui/editor_window.py:131 ui/video_player.py:64
 msgid "Toggle fullscreen"
 msgstr "Toggle fullscreen"
 
@@ -1169,12 +1165,11 @@ msgstr "Zoom in"
 msgid "Zoom out"
 msgstr "Zoom out"
 
-#: ui/editor_window.py:142 ui/video_player_window.py:83
+#: ui/editor_window.py:142 ui/video_player.py:65
 msgid "Close or exit fullscreen"
 msgstr "Close or exit fullscreen"
 
-#: ui/editor_window.py:143 ui/shortcut_dialog.py:60
-#: ui/video_player_window.py:84
+#: ui/editor_window.py:143 ui/shortcut_dialog.py:60 ui/video_player.py:66
 msgid "Keyboard shortcuts"
 msgstr "Keyboard shortcuts"
 
@@ -1259,12 +1254,11 @@ msgstr "Delete selected segments (Del)"
 msgid "Zoom 100%"
 msgstr "Zoom 100%"
 
-#: ui/editor_window.py:1594 ui/video_player_window.py:1201
+#: ui/editor_window.py:1594 ui/video_player.py:1106
 msgid "Exit fullscreen"
 msgstr "Exit fullscreen"
 
-#: ui/editor_window.py:1594 ui/playback_controls.py:254
-#: ui/video_player_window.py:1201
+#: ui/editor_window.py:1594 ui/playback_controls.py:254 ui/video_player.py:1106
 msgid "Fullscreen"
 msgstr "Fullscreen"
 
@@ -1316,7 +1310,7 @@ msgstr "%(action)s %(track)s"
 msgid "Audio %(number)d"
 msgstr "Audio %(number)d"
 
-#: ui/editor_window.py:1850 ui/main_window.py:231
+#: ui/editor_window.py:1850 ui/main_window.py:233
 msgid "Audio"
 msgstr "Audio"
 
@@ -1379,12 +1373,11 @@ msgid "Select one segment to split"
 msgstr "Select one segment to split"
 
 #: ui/editor_window.py:3152 ui/hotkeys.py:540 ui/playback_controls.py:162
-#: ui/video_player_window.py:1170
+#: ui/video_player.py:1058
 msgid "Pause"
 msgstr "Pause"
 
-#: ui/editor_window.py:3152 ui/playback_controls.py:162
-#: ui/video_player_window.py:1170
+#: ui/editor_window.py:3152 ui/playback_controls.py:162 ui/video_player.py:1058
 msgid "Play"
 msgstr "Play"
 
@@ -1868,72 +1861,72 @@ msgstr "Crashed"
 msgid "Clipper"
 msgstr "Clipper"
 
-#: ui/main_window.py:139 ui/main_window.py:441
+#: ui/main_window.py:140 ui/main_window.py:459
 msgid "Engine status"
 msgstr "Engine status"
 
-#: ui/main_window.py:170
+#: ui/main_window.py:171
 msgid "Main menu"
 msgstr "Main menu"
 
-#: ui/main_window.py:172 ui/preferences_dialog.py:19
+#: ui/main_window.py:173 ui/preferences_dialog.py:19
 #: ui/preferences_dialog.py:27
 msgid "Preferences"
 msgstr "Preferences"
 
-#: ui/main_window.py:173
+#: ui/main_window.py:174
 msgid "Check for updates"
 msgstr "Check for updates"
 
-#: ui/main_window.py:175
+#: ui/main_window.py:176
 msgid "Show logs"
 msgstr "Show logs"
 
-#: ui/main_window.py:178
+#: ui/main_window.py:179
 msgid "Clear PipeWire restore token"
 msgstr "Clear PipeWire restore token"
 
-#: ui/main_window.py:180
+#: ui/main_window.py:181
 msgid "Reset config"
 msgstr "Reset config"
 
-#: ui/main_window.py:181
+#: ui/main_window.py:182
 msgid "Reset to factory settings"
 msgstr "Reset to factory settings"
 
-#: ui/main_window.py:183
+#: ui/main_window.py:184
 msgid "Debug menu"
 msgstr "Debug menu"
 
-#: ui/main_window.py:184
+#: ui/main_window.py:185
 msgid "About Clipper"
 msgstr "About Clipper"
 
-#: ui/main_window.py:185 ui/tray.py:528 ui/tray.py:633
+#: ui/main_window.py:186 ui/tray.py:528 ui/tray.py:633
 msgid "Quit"
 msgstr "Quit"
 
-#: ui/main_window.py:194 ui/update_controller.py:219
+#: ui/main_window.py:195 ui/update_controller.py:219
 msgid "A Clipper update is available"
 msgstr "A Clipper update is available"
 
-#: ui/main_window.py:195
+#: ui/main_window.py:196
 msgid "View update"
 msgstr "View update"
 
-#: ui/main_window.py:211
+#: ui/main_window.py:213
 msgid "Clips"
 msgstr "Clips"
 
-#: ui/main_window.py:226
+#: ui/main_window.py:228
 msgid "Games"
 msgstr "Games"
 
-#: ui/main_window.py:482
+#: ui/main_window.py:500
 msgid "Waiting for frame"
 msgstr "Waiting for frame"
 
-#: ui/main_window.py:575
+#: ui/main_window.py:593
 msgid "Preview unavailable"
 msgstr "Preview unavailable"
 
@@ -2199,8 +2192,8 @@ msgid "Remember window sizes"
 msgstr "Remember window sizes"
 
 #: ui/settings_view.py:1227
-msgid "Restore sizes for the main window, video editor and video player"
-msgstr "Restore sizes for the main window, video editor and video player"
+msgid "Restore sizes for the main window and video editor"
+msgstr "Restore sizes for the main window and video editor"
 
 #: ui/settings_view.py:1249
 msgid "The system display picker is unavailable"
@@ -2266,7 +2259,7 @@ msgstr "Step %(current)d of %(total)d"
 msgid "Skip setup"
 msgstr "Skip setup"
 
-#: ui/setup_window.py:179
+#: ui/setup_window.py:179 ui/video_player.py:214
 msgid "Back"
 msgstr "Back"
 
@@ -2520,58 +2513,49 @@ msgstr "Close the editor and wait for clip saving to finish before restarting."
 msgid "Could not restart Clipper. Quit and open it again to use the update."
 msgstr "Could not restart Clipper. Quit and open it again to use the update."
 
-#: ui/video_player_window.py:74
+#: ui/video_player.py:56
 msgid "Raise volume"
 msgstr "Raise volume"
 
-#: ui/video_player_window.py:75
+#: ui/video_player.py:57
 msgid "Lower volume"
 msgstr "Lower volume"
 
-#: ui/video_player_window.py:80
+#: ui/video_player.py:62
 msgid "Window"
 msgstr "Window"
 
-#: ui/video_player_window.py:233 ui/video_player_window.py:304
+#: ui/video_player.py:218
 msgid "Clip player"
 msgstr "Clip player"
 
-#: ui/video_player_window.py:308
+#: ui/video_player.py:222
 msgid "Player menu"
 msgstr "Player menu"
 
-#: ui/video_player_window.py:331
+#: ui/video_player.py:246
 msgid "Loading clip…"
 msgstr "Loading clip…"
 
-#: ui/video_player_window.py:424
-#, python-format
-msgid "%(title)s — Clipper"
-msgstr "%(title)s — Clipper"
-
-#: ui/video_player_window.py:426
+#: ui/video_player.py:342
 msgid "Clip playback"
 msgstr "Clip playback"
 
-#: ui/video_player_window.py:525
+#: ui/video_player.py:438
 msgid "Clip unavailable"
 msgstr "Clip unavailable"
 
-#: ui/video_player_window.py:525
+#: ui/video_player.py:438
 msgid "The video file could not be found."
 msgstr "The video file could not be found."
 
-#: ui/video_player_window.py:1206
+#: ui/video_player.py:1111
 msgid "Couldn’t play this clip"
 msgstr "Couldn’t play this clip"
 
-#: ui/video_player_window.py:1207
+#: ui/video_player.py:1112
 msgid "The file may use an unsupported video or audio format."
 msgstr "The file may use an unsupported video or audio format."
-
-#: ui/video_player_window.py:1429
-msgid "Play a Clipper video"
-msgstr "Play a Clipper video"
 
 #: ui/whitelist_view.py:102
 msgid "This game"

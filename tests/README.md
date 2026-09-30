@@ -50,7 +50,8 @@ process matching intentionally cover separate production implementations.
 | autostart | Honor portal approval and native desktop-file ownership; report registration failures. |
 | capability_response | Share startup and window discovery, bound connection/response retries, release engine ownership, and reject late replies after reconnect, timeout or shutdown. |
 | capture_modes | Migrate legacy capture labels and persist stable mode IDs. |
-| clips_view | Rename and delete safely, retain drafts and game metadata, bound asynchronous gallery/cache work. |
+| clips_view | Rename and delete safely, retain drafts and game metadata, bound asynchronous gallery/cache work, activate previews for in-window playback. |
+| clip_player_overlay | Render preview clipping and handoffs correctly, wait for a decoded frame before revealing or playing, cancel stale loads and animations, preserve playback across fullscreen layout changes, restore gallery focus and release media when the host is hidden. |
 | config | Persist typed settings, recover malformed files, migrate schemas and preserve engine-owned tokens. |
 | copy_pacing | Execute capture pacing, lifecycle and wire-format checks in the C implementation. |
 | dialogs | Expose the appropriate capture instructions and copy the actual launch option. |
@@ -109,6 +110,6 @@ process matching intentionally cover separate production implementations.
 | updates | Reject invalid/untrusted updates, verify downloads and installation commits, prevent downgrades. |
 | vaapi_direct_surfaces | Execute queue ownership, teardown, fence-wait and validation-cache C contracts. |
 | video_output | Connect the color pipeline and fall back safely when GL elements or links fail. |
-| video_player_window | Preserve playback/seek state, release media, size correctly and honor physical shortcuts. |
+| video_player | Preserve playback/seek state, detach media before background teardown, letterbox and honor physical shortcuts. |
 | whitelist_view | Persist scoped identities and present/search/remove the intended game. |
 | window_state | Restore usable sizes after monitor changes and preserve other windows' saved state. |
