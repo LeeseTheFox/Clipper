@@ -560,9 +560,11 @@ class ClipsView(Gtk.Box):
 
     def _style_delete_button(self, button):
         if self._shift_edit_mode:
+            button.add_css_class("destructive-action")
             button.set_icon_name(EMPTY_TRASH_BIN)
             button.set_tooltip_text(_("Permanently delete the clip"))
         else:
+            button.remove_css_class("destructive-action")
             button.set_icon_name(TRASH)
             button.set_tooltip_text(_("Move clip to trash"))
 
@@ -1768,7 +1770,6 @@ class ClipsView(Gtk.Box):
         self._delete_buttons.add(delete_button)
         self._style_delete_button(delete_button)
         row_box._clipper_delete_button = delete_button
-        delete_button.add_css_class("destructive-action")
         delete_button._shift_delete_armed = False
         shift_delete_gesture = Gtk.GestureClick()
         shift_delete_gesture.connect(

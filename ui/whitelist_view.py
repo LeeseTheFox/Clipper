@@ -651,7 +651,6 @@ class WhitelistView(Gtk.Box):
         remove_button = Gtk.Button.new_from_icon_name(TRASH)
         remove_button.set_valign(Gtk.Align.CENTER)
         remove_button.set_tooltip_text(_("Remove %(name)s") % {"name": display_name})
-        remove_button.add_css_class("destructive-action")
         remove_button.connect("clicked", lambda button: self.on_remove_game(button, row))
         row_box.append(remove_button)
 
