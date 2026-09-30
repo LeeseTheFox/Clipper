@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Callable
 
 import gi
@@ -108,13 +109,13 @@ class SuikaGameWindow(Adw.Window):
         self._board.add_controller(click)
         motion = Gtk.EventControllerMotion()
         motion.connect("motion", self._on_board_motion)
-        motion.connect("leave", self._on_board_leave)
         self._board.add_controller(motion)
         self.connect("close-request", self._on_close_request)
         self.connect("destroy", self._on_destroy)
         self._theme_handler_id = self._style_manager.connect(
             "notify::dark", self._on_theme_changed
         )
+        self._last_tick_time = GLib.get_monotonic_time()
         self._tick_id = GLib.timeout_add(_TICK_INTERVAL_MS, self._on_tick)
 
     @staticmethod
@@ -186,12 +187,9 @@ class SuikaGameWindow(Adw.Window):
         self._pointer_x = self._board_x(x)
         self._board.queue_draw()
 
-    def _on_board_leave(self, _motion) -> None:
-        self._pointer_x = BOARD_WIDTH / 2
-        self._board.queue_draw()
-
     def _on_new_game(self, _button) -> None:
         self._game.reset()
+        self._last_tick_time = GLib.get_monotonic_time()
         self._game_over_box.set_visible(False)
         self._score_value.set_label("0")
         self._board.queue_draw()
@@ -200,7 +198,10 @@ class SuikaGameWindow(Adw.Window):
         if self._closed:
             return False
         was_over = self._game.game_over
-        self._game.advance(_TICK_INTERVAL_MS / 1000)
+        now = GLib.get_monotonic_time()
+        elapsed = (now - self._last_tick_time) / 1_000_000
+        self._last_tick_time = now
+        self._game.advance(elapsed)
         if self._game.score > self._high_score:
             self._high_score = self._game.score
             self._best_value.set_label(str(self._high_score))
@@ -273,7 +274,11 @@ class SuikaGameWindow(Adw.Window):
                 alpha=0.42,
             )
         for fruit in self._game.fruits:
-            self._draw_fruit(context, fruit)
+            # A gentle pulse every 1.5 seconds warns about this fruit's deadline.
+            alpha = 1.0
+            if fruit.danger_time > 0.0 and not self._game.game_over:
+                alpha = 0.65 + 0.35 * math.cos(math.tau * fruit.danger_time / 1.5)
+            self._draw_fruit(context, fruit, alpha=alpha)
         context.restore()
 
     @staticmethod

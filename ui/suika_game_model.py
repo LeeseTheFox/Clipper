@@ -12,10 +12,14 @@ BOARD_INSET = 14.0
 FLOOR_INSET = 18.0
 SPAWN_Y = 48.0
 DANGER_LINE_Y = 82.0
-GRAVITY = 1_150.0
-MAX_FALL_SPEED = 1_050.0
+GRAVITY = 650.0
+MAX_FALL_SPEED = 790.0
+BOUNDARY_RESTITUTION = 0.18
 DROP_COOLDOWN_SECONDS = 0.32
-GAME_OVER_DELAY_SECONDS = 1.6
+DROP_JITTER_PIXELS = 0.25
+GAME_OVER_DELAY_SECONDS = 5.0
+PHYSICS_STEP_SECONDS = 1.0 / 120.0
+MERGE_CONTACT_TOLERANCE = 0.5
 
 # The deliberately compact set of eleven growing fruit is enough for the
 # familiar Suika-style progression without making the little board too busy.
@@ -37,6 +41,7 @@ class Fruit:
     vx: float = 0.0
     vy: float = 0.0
     age: float = 0.0
+    danger_time: float = 0.0
 
     @property
     def radius(self) -> float:
@@ -56,8 +61,8 @@ class FruitDropGame:
         self.score = 0
         self.next_kind = self._next_kind()
         self.drop_cooldown = 0.0
-        self.danger_time = 0.0
         self.game_over = False
+        self._pending_time = 0.0
 
     @property
     def can_drop(self) -> bool:
@@ -72,6 +77,8 @@ class FruitDropGame:
             return False
 
         radius = FRUIT_RADII[self.next_kind]
+        # Subpixel variation breaks perfectly vertical, unnaturally stable stacks.
+        x += self._random.uniform(-DROP_JITTER_PIXELS, DROP_JITTER_PIXELS)
         clamped_x = min(BOARD_WIDTH - BOARD_INSET - radius, max(BOARD_INSET + radius, x))
         self.fruits.append(Fruit(self.next_kind, clamped_x, SPAWN_Y))
         self.next_kind = self._next_kind()
@@ -79,15 +86,16 @@ class FruitDropGame:
         return True
 
     def advance(self, elapsed: float) -> None:
-        """Advance the simulation by at most one interactive frame's worth of time."""
+        """Advance fixed physics steps using elapsed real time, independent of frames."""
         if self.game_over:
             return
 
-        remaining = min(max(0.0, elapsed), 0.05)
-        while remaining > 0.0:
-            step = min(remaining, 1.0 / 120.0)
-            self._advance_step(step)
-            remaining -= step
+        self._pending_time += max(0.0, elapsed)
+        while self._pending_time + 1e-12 >= PHYSICS_STEP_SECONDS:
+            self._pending_time = max(0.0, self._pending_time - PHYSICS_STEP_SECONDS)
+            self._advance_step(PHYSICS_STEP_SECONDS)
+            if self.game_over:
+                break
 
     def _advance_step(self, elapsed: float) -> None:
         self.drop_cooldown = max(0.0, self.drop_cooldown - elapsed)
@@ -106,11 +114,13 @@ class FruitDropGame:
         # the game comfortable on low-powered hardware.
         for _pass in range(2):
             self._resolve_collisions()
+            # Separation of other pairs can bring matching fruit into contact.
+            self._merge_matching_fruits()
         self._update_game_over(elapsed)
 
     @staticmethod
     def _next_velocity_after_bounce(velocity: float) -> float:
-        return -velocity * 0.28 if velocity > 0.0 else velocity
+        return -velocity * BOUNDARY_RESTITUTION if velocity > 0.0 else velocity
 
     def _constrain_to_board(self, fruit: Fruit) -> None:
         radius = fruit.radius
@@ -119,10 +129,10 @@ class FruitDropGame:
         floor = BOARD_HEIGHT - FLOOR_INSET - radius
         if fruit.x < left:
             fruit.x = left
-            fruit.vx = abs(fruit.vx) * 0.28
+            fruit.vx = abs(fruit.vx) * BOUNDARY_RESTITUTION
         elif fruit.x > right:
             fruit.x = right
-            fruit.vx = -abs(fruit.vx) * 0.28
+            fruit.vx = -abs(fruit.vx) * BOUNDARY_RESTITUTION
         if fruit.y > floor:
             fruit.y = floor
             fruit.vy = self._next_velocity_after_bounce(fruit.vy)
@@ -157,7 +167,8 @@ class FruitDropGame:
                     second.vy - first.vy
                 ) * normal_y
                 if relative_velocity < 0.0:
-                    impulse = -relative_velocity * 0.46
+                    # Cancel closing speed without adding a rebound to the pile.
+                    impulse = -relative_velocity * 0.5
                     first.vx -= impulse * normal_x
                     first.vy -= impulse * normal_y
                     second.vx += impulse * normal_x
@@ -173,7 +184,8 @@ class FruitDropGame:
                 if other_index in consumed or first.kind != second.kind:
                     continue
                 distance = math.hypot(second.x - first.x, second.y - first.y)
-                if distance > first.radius + second.radius:
+                # Resting contacts can retain a subpixel solver gap.
+                if distance > first.radius + second.radius + MERGE_CONTACT_TOLERANCE:
                     continue
                 consumed.update((index, other_index))
                 next_kind = first.kind + 1
@@ -183,7 +195,7 @@ class FruitDropGame:
                         (first.x + second.x) / 2,
                         (first.y + second.y) / 2,
                         (first.vx + second.vx) / 2,
-                        min(-110.0, (first.vy + second.vy) / 2),
+                        (first.vy + second.vy) / 2,
                     )
                 )
                 self.score += FRUIT_POINTS[next_kind]
@@ -193,12 +205,32 @@ class FruitDropGame:
             self.fruits = [
                 fruit for index, fruit in enumerate(self.fruits) if index not in consumed
             ] + merged
+            for fruit in merged:
+                self._apply_merge_impulse(fruit)
+
+    def _apply_merge_impulse(self, source: Fruit) -> None:
+        """Give nearby fruit a small outward nudge, with a soft distance falloff."""
+        reach = source.radius * 1.5
+        strength = min(180.0, 65.0 + source.radius * 1.2)
+        for neighbor in self.fruits:
+            if neighbor is source:
+                continue
+            dx, dy = neighbor.x - source.x, neighbor.y - source.y
+            distance = math.hypot(dx, dy)
+            if distance <= 0.001:
+                continue
+            gap = max(0.0, distance - source.radius - neighbor.radius)
+            if gap >= reach:
+                continue
+            # Bigger neighbors resist small merges rather than flying away.
+            resistance = min(1.0, source.radius / neighbor.radius)
+            impulse = strength * (1.0 - gap / reach) * resistance
+            neighbor.vx += dx / distance * impulse
+            neighbor.vy += dy / distance * impulse
 
     def _update_game_over(self, elapsed: float) -> None:
-        danger = any(
-            fruit.age >= 0.7 and fruit.y - fruit.radius < DANGER_LINE_Y
-            for fruit in self.fruits
-        )
-        self.danger_time = self.danger_time + elapsed if danger else 0.0
-        if self.danger_time >= GAME_OVER_DELAY_SECONDS:
-            self.game_over = True
+        for fruit in self.fruits:
+            danger = fruit.age >= 0.7 and fruit.y - fruit.radius < DANGER_LINE_Y
+            fruit.danger_time = fruit.danger_time + elapsed if danger else 0.0
+            if fruit.danger_time >= GAME_OVER_DELAY_SECONDS:
+                self.game_over = True

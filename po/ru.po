@@ -2397,27 +2397,27 @@ msgstr "Начать работу с Clipper"
 msgid "Shortcuts"
 msgstr "Горячие клавиши"
 
-#: ui/suika_game.py:52 ui/suika_game.py:68
+#: ui/suika_game.py:53 ui/suika_game.py:69
 msgid "Fruit drop"
 msgstr "Фруктопад"
 
-#: ui/suika_game.py:81
+#: ui/suika_game.py:82
 msgid "Score"
 msgstr "Счёт"
 
-#: ui/suika_game.py:82
+#: ui/suika_game.py:83
 msgid "Best"
 msgstr "Лучший"
 
-#: ui/suika_game.py:95
+#: ui/suika_game.py:96
 msgid "Fruit drop game board"
 msgstr "Игровое поле «Фруктопад»"
 
-#: ui/suika_game.py:170
+#: ui/suika_game.py:171
 msgid "Game over"
 msgstr "Игра окончена"
 
-#: ui/suika_game.py:173
+#: ui/suika_game.py:174
 msgid "Play again"
 msgstr "Играть снова"
 

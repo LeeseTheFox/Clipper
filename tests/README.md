@@ -104,7 +104,7 @@ process matching intentionally cover separate production implementations.
 | sound_feedback | Play the bundled asset with bounded gain and tolerate missing/unavailable media. |
 | startup_benchmark | Measure the right processes and decode desktop presentation/handoff state accurately. |
 | steam | Discover installations/accounts and change launch options without corrupting or claiming user-owned data. |
-| suika_game_model | Keep drops in bounds and enforce fruit merge, score and terminal-size rules. |
+| suika_game_model | Keep drops in bounds, prevent perfectly balanced repeated-drop towers and enforce momentum-preserving fruit merges at resting and solver-created contacts, bounded size-scaled neighbor impulses, score, terminal-size rules, per-fruit overflow grace/reset timing and real-time fixed-step physics independent of frame timing. |
 | text_helpers | Preserve readable/full labels and escape user-controlled markup. |
 | theme_adaptation | Parse editor CSS with GTK and reject errors. |
 | tray | Maintain the public D-Bus/icon contract and flush replies before activation or shutdown. |
