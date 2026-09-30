@@ -91,7 +91,6 @@ _OBS_CONFLICT_BODY = (
 )
 _HOTKEY_CAPTURE_RELEASE_DELAY_MS = 500
 _EXPORT_PROBE_DELAY_SECONDS = 3
-_RECORDING_PROBE_DELAY_SECONDS = 3
 _PRESENTATION_ACTION = "presentation-state"
 _VERSION_EASTER_EGG_CLICKS = 5
 _VERSION_EASTER_EGG_INTERVAL_SECONDS = 0.7
@@ -201,6 +200,7 @@ class ClipperApplication(Adw.Application):
         self._config_capture_key = ""
         self._window_engine_status = _ENGINE_STATUS_READY
         self._capture_starting = False
+        self._capture_active = False
         self._display_capture_sync_pending = False
         self._engine_shutdown_pending = False
         self._idle_engine_exit_expected = False
@@ -232,7 +232,6 @@ class ClipperApplication(Adw.Application):
         self._audio_learning_last_diagnostic = ""
         self._audio_learning_resolved = False
         self._export_probe_start_id: int | None = None
-        self._recording_probe_start_id: int | None = None
         self._recording_capability_probe: RecordingCapabilityProbe | None = None
         self._presentation_action: Gio.SimpleAction | None = None
         self._presentation_marks = {"window": 0, "clips": 0}
@@ -367,12 +366,10 @@ class ClipperApplication(Adw.Application):
             window_visible_callback=self._is_window_visible,
         )
 
-        # Delay recording discovery until the first window has had time to
-        # appear. Setup or Preferences can join or start the same probe sooner.
+        # Setup and Preferences discover recording options on demand. Other
+        # launches reuse a capture engine when it becomes ready, so idle
+        # foreground and background startups need no temporary OBS process.
         self._setup_engine_client()
-        self._recording_probe_start_id = GLib.timeout_add_seconds(
-            _RECORDING_PROBE_DELAY_SECONDS, self._start_recording_capability_probe
-        )
         if self._monitor_manager.available():
             self._setup_monitor_ipc()
 
@@ -398,12 +395,15 @@ class ClipperApplication(Adw.Application):
             separators=(",", ":"),
         )
 
-    def _start_recording_capability_probe(self) -> bool:
-        """Warm recording options without constructing a preferences window."""
-        self._recording_probe_start_id = None
-        if self._recording_capability_probe is not None:
+    def _warm_recording_capabilities(self) -> None:
+        """Cache recording options using an engine that already has a consumer."""
+        if (
+            not self._stopping
+            and not self._engine_shutdown_pending
+            and self._engine_manager.is_running()
+            and self._recording_capability_probe is not None
+        ):
             self._recording_capability_probe.request()
-        return False
 
     def _start_export_capability_probe(self) -> bool:
         """Warm export capabilities after launch-critical UI work has settled."""
@@ -471,9 +471,6 @@ class ClipperApplication(Adw.Application):
         if self._export_probe_start_id is not None:
             GLib.source_remove(self._export_probe_start_id)
             self._export_probe_start_id = None
-        if self._recording_probe_start_id is not None:
-            GLib.source_remove(self._recording_probe_start_id)
-            self._recording_probe_start_id = None
         if self._recording_capability_probe is not None:
             self._recording_capability_probe.close()
         for name in ("_reconcile_id", "_engine_deadline_id", "_engine_recovery_id",
@@ -1083,7 +1080,9 @@ class ClipperApplication(Adw.Application):
             return True
 
         capture_mode = capture_mode_for_entry(running_entry) if running_entry else CAPTURE_MODE_GAME
-        if self._start_engine_for_capture(capture_mode):
+        if self._start_engine_for_capture(
+            capture_mode, capture_requested=running_entry is not None
+        ):
             return True
 
         self._finish_capabilities_probe_unit()
@@ -1229,7 +1228,9 @@ class ClipperApplication(Adw.Application):
             self._log("[clipper] Stopping engine to select a new display target")
             self._engine_manager.terminate()
 
-        if self._start_engine_for_capture(CAPTURE_MODE_DISPLAY):
+        if self._start_engine_for_capture(
+            CAPTURE_MODE_DISPLAY, capture_requested=running_entry is not None
+        ):
             self._log("[clipper] Opened system picker for target display")
             return True
 
@@ -1619,6 +1620,7 @@ class ClipperApplication(Adw.Application):
         self._connect_to_engine_if_available()
         if self._engine_client and not self._engine_client.is_connected():
             self._engine_client.reconnect()
+        self._warm_recording_capabilities()
 
     def _on_engine_connection_state(self, state: int) -> None:
         self._engine_generation += 1
@@ -1659,6 +1661,7 @@ class ClipperApplication(Adw.Application):
         if self._stopping:
             return
         self._capture_starting = False
+        self._capture_active = False
         self._cancel_source("_engine_deadline_id")
         expected = self._idle_engine_exit_expected or self._engine_shutdown_pending
         self._handle_engine_process_exit(exit_code)
@@ -2012,7 +2015,8 @@ class ClipperApplication(Adw.Application):
         self._log(f"[clipper] {name} detected, starting recording with {mode} mode")
 
     def _start_engine_for_capture(
-        self, capture_mode: str = DEFAULT_CAPTURE_MODE, *, force_restart: bool = False
+        self, capture_mode: str = DEFAULT_CAPTURE_MODE, *, force_restart: bool = False,
+        capture_requested: bool = True,
     ) -> bool:
         if self._engine_shutdown_pending:
             return False
@@ -2053,8 +2057,11 @@ class ClipperApplication(Adw.Application):
         if started:
             self._last_engine_exit_status = None
             if starting:
-                self._capture_starting = True
-                self._set_window_engine_status(_ENGINE_STATUS_STARTING)
+                self._capture_active = False
+                self._capture_starting = capture_requested
+                self._set_window_engine_status(
+                    _ENGINE_STATUS_STARTING if capture_requested else _ENGINE_STATUS_READY
+                )
         return started
 
     def _connect_to_engine_if_available(self) -> None:
@@ -2074,7 +2081,9 @@ class ClipperApplication(Adw.Application):
             return False
         # Losing game detection must preserve an established capture, but a
         # temporary capability engine still belongs to its probe consumers.
-        if not self._monitor_ready and self._last_running_entry_key is not None:
+        if not self._monitor_ready and (
+            self._last_running_entry_key is not None or self._capture_active
+        ):
             return False
         if self._engine_shutdown_pending:
             return True
@@ -2143,6 +2152,9 @@ class ClipperApplication(Adw.Application):
             self._cancel_source("_engine_deadline_id")
 
         buffer_active = status_data.get("buffer_active", status_data.get("status") == "active")
+        # Keep the last observed buffer state through IPC reconnection. Until
+        # detection resynchronizes, missing game rules do not prove it is idle.
+        self._capture_active = bool(buffer_active)
         capture_mode = status_data.get("capture_mode", self._engine_manager.capture_mode)
         running_entry = self._running_whitelist_entry(capture_mode)
         if buffer_active or running_entry is None:

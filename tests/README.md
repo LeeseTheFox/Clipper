@@ -85,7 +85,7 @@ process matching intentionally cover separate production implementations.
 | lazy_video_buffers | Execute allocation/reuse/failure cleanup against the shipped C patch helpers. |
 | log_window | Stop subscriptions and scheduled refreshes after the window closes. |
 | logs | Preserve useful diagnostics, bound history and carry logs through process handoff. |
-| main | Coordinate startup/setup, tray lifecycle, recording, engine restarts, portal decisions, updates, background capability ownership, event-driven state recovery and session shutdown; distinguish capture startup from an active replay buffer. |
+| main | Coordinate startup/setup, tray lifecycle, recording, engine restarts, portal decisions, updates, capability ownership, event-driven state recovery and session shutdown; keep idle foreground/background launches free of recording engines, reuse live engines for discovery, distinguish capture startup from temporary probes and protect active replay through unknown monitor state and IPC reconnects. |
 | main_window_preferences | Pass catalog language IDs through preferences and track both physical Shift keys. |
 | monitor_host | Execute C host process detection, fixed Steam operations, scope isolation, live rule reloads and complete state recovery after reconnect. |
 | monitor_ipc | Validate complete snapshots and incoming events, restrict socket access and interrupt idle connections on shutdown. |

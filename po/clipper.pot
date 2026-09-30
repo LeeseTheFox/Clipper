@@ -1366,7 +1366,7 @@ msgstr ""
 msgid "Exported to %(name)s"
 msgstr ""
 
-#: ui/editor_window.py:3695 ui/main.py:2288 ui/settings_view.py:1423
+#: ui/editor_window.py:3695 ui/main.py:2300 ui/settings_view.py:1423
 msgid "Unknown error"
 msgstr ""
 
@@ -1668,144 +1668,144 @@ msgid ""
 "It is advised to close OBS Studio or Clipper before recording."
 msgstr ""
 
-#: ui/main.py:595
+#: ui/main.py:592
 msgid "Engine not running"
 msgstr ""
 
-#: ui/main.py:601
+#: ui/main.py:598
 msgid "Could not send save command to Clipper engine"
 msgstr ""
 
-#: ui/main.py:633
+#: ui/main.py:630
 msgid "Restart Clipper?"
 msgstr ""
 
-#: ui/main.py:634
+#: ui/main.py:631
 msgid "Clipper needs to be restarted for this change to take effect."
 msgstr ""
 
-#: ui/main.py:636 ui/update_controller.py:326
+#: ui/main.py:633 ui/update_controller.py:326
 msgid "Restart later"
 msgstr ""
 
-#: ui/main.py:637 ui/update_controller.py:330
+#: ui/main.py:634 ui/update_controller.py:330
 msgid "Restart now"
 msgstr ""
 
-#: ui/main.py:660
+#: ui/main.py:657
 msgid "Save or discard the video edit before logging out"
 msgstr ""
 
-#: ui/main.py:771
+#: ui/main.py:768
 #, python-format
 msgid "Could not register save hotkey: %(error)s"
 msgstr ""
 
-#: ui/main.py:810
+#: ui/main.py:807
 #, python-format
 msgid "Global hotkey unavailable: %(message)s"
 msgstr ""
 
-#: ui/main.py:1021
+#: ui/main.py:1018
 msgid "Acknowledge"
 msgstr ""
 
-#: ui/main.py:1035 ui/settings_view.py:1419
+#: ui/main.py:1032 ui/settings_view.py:1419
 msgid "Restarting engine…"
 msgstr ""
 
-#: ui/main.py:1050
+#: ui/main.py:1047
 msgid "Could not send restart command to Clipper engine"
 msgstr ""
 
-#: ui/main.py:1055
+#: ui/main.py:1052
 msgid "Engine will start when a whitelisted game is running"
 msgstr ""
 
-#: ui/main.py:1070
+#: ui/main.py:1067
 #, python-format
 msgid "Engine restart failed: %(error)s"
 msgstr ""
 
-#: ui/main.py:1186
+#: ui/main.py:1185
 msgid "X11 capture uses the primary X11 display without a system picker."
 msgstr ""
 
-#: ui/main.py:1195
+#: ui/main.py:1194
 msgid "The system display picker is already open."
 msgstr ""
 
-#: ui/main.py:1205
+#: ui/main.py:1204
 msgid "Stop the active game capture before changing the target display."
 msgstr ""
 
-#: ui/main.py:1269
+#: ui/main.py:1270
 msgid "Could not disable automatic startup"
 msgstr ""
 
-#: ui/main.py:1276
+#: ui/main.py:1277
 msgid "PipeWire restore token cleared"
 msgstr ""
 
-#: ui/main.py:1347
+#: ui/main.py:1348
 msgid "Clip captured"
 msgstr ""
 
-#: ui/main.py:1348
+#: ui/main.py:1349
 msgid "Your clip has been saved."
 msgstr ""
 
-#: ui/main.py:1354
+#: ui/main.py:1355
 msgid ""
 "Could not write the clip. Check the save folder and available disk space."
 msgstr ""
 
-#: ui/main.py:1356
+#: ui/main.py:1357
 #, python-format
 msgid "Failed to save clip: %(error)s"
 msgstr ""
 
-#: ui/main.py:1392
+#: ui/main.py:1393
 #, python-format
 msgid "Could not open clip editor: %(error)s"
 msgstr ""
 
-#: ui/main.py:2050
+#: ui/main.py:2054
 #, python-format
 msgid "Could not start Clipper engine: %(error)s"
 msgstr ""
 
-#: ui/main.py:2118 ui/settings_view.py:1422
+#: ui/main.py:2127 ui/settings_view.py:1422
 #, python-format
 msgid "Engine shutdown failed: %(error)s"
 msgstr ""
 
-#: ui/main.py:2156 ui/main.py:2192
+#: ui/main.py:2168 ui/main.py:2204
 msgid "Display selection was cancelled."
 msgstr ""
 
-#: ui/main.py:2161
+#: ui/main.py:2173
 msgid "Capture display selected successfully."
 msgstr ""
 
-#: ui/main.py:2199
+#: ui/main.py:2211
 msgid "No display was selected before the picker timed out."
 msgstr ""
 
-#: ui/main.py:2287
+#: ui/main.py:2299
 #, python-format
 msgid "Display capture sync failed: %(error)s"
 msgstr ""
 
-#: ui/main.py:2375
+#: ui/main.py:2387
 msgid "🦊 Leese"
 msgstr ""
 
-#: ui/main.py:2379
+#: ui/main.py:2391
 msgid "© 2026 Leese"
 msgstr ""
 
-#: ui/main.py:2385
+#: ui/main.py:2397
 msgid "GitHub"
 msgstr ""
 

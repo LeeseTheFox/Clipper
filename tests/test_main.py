@@ -595,6 +595,7 @@ def make_status_application(
     app._display_target_deadline_id = None
     app._window_engine_status = "ready"
     app._capture_starting = False
+    app._capture_active = False
     app._display_capture_sync_pending = False
     app._engine_shutdown_pending = False
     app._idle_engine_exit_expected = False
@@ -891,6 +892,58 @@ def test_background_activation_starts_services_without_creating_window(monkeypat
     assert presented == [True]
     assert released == [True]
     assert app._background_hold is False
+
+
+@pytest.mark.parametrize("background", [False, True], ids=["foreground", "background"])
+def test_idle_startup_and_scheduled_work_never_launch_recording_engine(monkeypatch, background):
+    app = make_status_application()
+    app._start_hidden = background
+    app._monitor_ready = False
+    app._presentation_marks = {"window": 0, "clips": 0}
+    app.props = types.SimpleNamespace()
+    app.connect = lambda *_args: None
+    app.add_action = lambda _action: None
+    app.set_accels_for_action = lambda *_args: None
+    app._log_startup_diagnostics = lambda: None
+    app._setup_global_hotkey = lambda: None
+    app._start_export_capability_probe = lambda: False
+    app._config.on_saved = lambda _callback: None
+    app._config.load = lambda: None
+    app._monitor_manager._available = False
+    timers = []
+    monkeypatch.setattr(
+        main_module.GLib, "timeout_add_seconds",
+        lambda _delay, callback: timers.append(callback) or len(timers),
+    )
+    monkeypatch.setattr(
+        main_module.Adw.Application, "do_startup", lambda _app: None, raising=False,
+    )
+    action = types.SimpleNamespace(connect=lambda *_args: None, set_enabled=lambda _value: None)
+    monkeypatch.setattr(main_module.Gio.SimpleAction, "new", lambda *_args: action)
+    monkeypatch.setattr(
+        main_module.Gio.SimpleAction, "new_stateful", lambda *_args: action, raising=False,
+    )
+    monkeypatch.setattr(main_module.GLib, "Variant", lambda *_args: None, raising=False)
+    monkeypatch.setattr(main_module, "ClipperTray", lambda **_kwargs: None)
+    client = EngineClientStub()
+    client.disconnected = True
+    client.on_error = lambda _callback: None
+    client.on_state_change = lambda _callback: None
+    client.on = lambda *_args: None
+    monkeypatch.setattr(main_module, "EngineClient", lambda _path: client)
+    updater = types.ModuleType("update_controller")
+    updater.UpdateController = lambda _app: None
+    monkeypatch.setitem(sys.modules, "update_controller", updater)
+
+    app.do_startup()
+    app._on_monitor_event({"event": "snapshot", "rules": []})
+    for callback in timers:
+        callback()
+
+    assert not app._engine_manager.start_calls
+    assert not app._engine_manager.is_running()
+    assert not app._capabilities_probe_requested
+    assert app._window_engine_status == "ready"
 
 
 def test_recording_window_can_be_retired_and_recreated(monkeypatch):
@@ -1421,6 +1474,7 @@ def test_display_target_button_opens_wayland_picker_engine_immediately(monkeypat
     assert ("display_capture_guidance_seen", True) in app._config.saved
     assert engine_manager.start_calls == ["display_capture"]
     assert app._display_target_request_pending is True
+    assert app._window_engine_status == "ready"
 
     app._on_status_response(
         {
@@ -1871,6 +1925,7 @@ def test_delayed_idle_shutdown_exit_keeps_window_ready():
     app._engine_client = EngineClientStub()
     app._engine_shutdown_pending = True
     app._idle_engine_exit_expected = True
+    app._capture_active = True
 
     app._on_idle_engine_shutdown_response({"ok": True})
     engine_manager._running = False
@@ -1878,6 +1933,7 @@ def test_delayed_idle_shutdown_exit_keeps_window_ready():
 
     assert app._window_engine_status == "ready"
     assert app._last_engine_exit_status is None
+    assert not app._capture_active
 
 
 def test_restart_exit_code_does_not_mark_window_crashed():
@@ -1924,7 +1980,7 @@ def test_concurrent_capability_probes_keep_temporary_engine_until_all_finish():
 
 
 @pytest.mark.parametrize("consumer", ["none", "game", "display-picker"])
-def test_background_probe_caches_without_window_and_preserves_live_consumers(consumer):
+def test_requested_probe_caches_without_window_and_preserves_live_consumers(consumer):
     app = make_status_application()
     client = EngineClientStub()
     app._engine_client = client
@@ -1942,9 +1998,12 @@ def test_background_probe_caches_without_window_and_preserves_live_consumers(con
         client, scheduler, app.ensure_engine_for_capabilities,
         app.on_capabilities_finished, app._capabilities_cache,
     )
-    app._start_recording_capability_probe()
+    app._recording_capability_probe.request()
     assert app.window is None
     assert app._engine_manager.start_calls == ["game_capture"]
+    assert app._window_engine_status == "ready"
+    app._on_engine_connection_state(1)  # Reconnecting a probe is still idle.
+    assert app._window_engine_status == "ready"
     client.disconnected = False
     callbacks[0](2)
     assert len(replies) == 1
@@ -1963,10 +2022,48 @@ def test_background_probe_caches_without_window_and_preserves_live_consumers(con
     assert app._capabilities_probe_count == 0
     assert bool(client.shutdown_callbacks) == (consumer == "none")
     assert not timers
-    # A startup timer after setup, or an inherited tray cache, must be free.
-    app._start_recording_capability_probe()
+    # Reopening Preferences, or an inherited tray cache, must be free.
+    app._recording_capability_probe.request()
     assert not replies
     assert app._engine_manager.start_calls == ["game_capture"]
+
+
+@pytest.mark.parametrize("capture_mode", ["game_capture", "display_capture"])
+def test_ready_capture_engine_warms_options_without_relaunch_or_stopping_recording(capture_mode):
+    manager = EngineManagerStub(running=True)
+    manager.capture_mode = capture_mode
+    app = make_status_application(engine_manager=manager)
+    app._config = ConfigStub(False, whitelist=[{"appid": "42", "capture_mode": capture_mode}])
+    app._monitor_active_rules = {"steam-42": {"event": "process_started"}}
+    app._on_engine_status_event({"buffer_active": True, "capture_mode": capture_mode})
+    client = EngineClientStub()
+    app._engine_client = client
+    replies = []
+    client.on_state_change = lambda _callback: None
+    client.get_capabilities = lambda callback: replies.append(callback) or True
+    scheduler = types.SimpleNamespace(
+        timeout_add=lambda _delay, _callback: 1, source_remove=lambda _source: None,
+    )
+    app._recording_capability_probe = main_module.RecordingCapabilityProbe(
+        client, scheduler, app.ensure_engine_for_capabilities,
+        app.on_capabilities_finished, app._capabilities_cache,
+    )
+
+    app._on_engine_ready()
+    app._on_engine_ready()
+    assert len(replies) == 1
+    response = {
+        "ok": True, "video_encoders": [{"id": "obs_x264"}],
+        "audio_encoders": [{"id": "ffmpeg_aac"}],
+    }
+    replies.pop()(response)
+    app._on_engine_ready()
+
+    assert app.window is None  # Recording in the background also warms options.
+    assert app._capabilities_cache == response
+    assert not manager.start_calls
+    assert not client.shutdown_callbacks
+    assert app._window_engine_status == "recording"
 
 
 def test_game_start_and_exit_during_probe_keeps_engine_until_discovery_finishes():
@@ -2651,3 +2748,27 @@ def test_probe_release_stops_temporary_engine_when_monitor_unavailable():
     app.on_capabilities_finished()
     assert not app._engine_manager.is_running()
     assert not app._capabilities_probe_requested
+
+
+@pytest.mark.parametrize("reconnecting", [False, True], ids=["connected", "reconnecting"])
+def test_probe_release_preserves_hooked_capture_before_monitor_snapshot(reconnecting):
+    app = make_status_application(engine_manager=EngineManagerStub(running=True))
+    app._monitor_ready = False
+    app._config.load = lambda: None
+    client = EngineClientStub()
+    app._engine_client = client
+    assert app.ensure_engine_for_capabilities()
+    app._on_engine_status_event({
+        "revision": 1, "capture_mode": "game_capture", "buffer_active": True,
+    })
+    if reconnecting:
+        app._on_engine_connection_state(1)
+
+    app.on_capabilities_finished()
+
+    assert not client.shutdown_callbacks
+    assert app._engine_manager.is_running()
+    assert not app._capabilities_probe_requested
+    # Only a complete process snapshot may establish that the game has ended.
+    app._on_monitor_event({"event": "snapshot", "rules": []})
+    assert len(client.shutdown_callbacks) == 1
