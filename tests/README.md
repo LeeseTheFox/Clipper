@@ -83,6 +83,7 @@ process matching intentionally cover separate production implementations.
 | i18n | Discover catalogs, resolve locales, load the saved language early and validate translated UI coverage. |
 | launchers | Reject shell syntax errors using the shell parser. |
 | lazy_video_buffers | Execute allocation/reuse/failure cleanup against the shipped C patch helpers. |
+| local_flatpak_install | Install bundles without competing repository origins, preserve data across migration and retries, and leave running apps untouched when bundle preparation fails. Real Flatpak origin behavior requires an isolated integration check. |
 | log_window | Stop subscriptions and scheduled refreshes after the window closes. |
 | logs | Preserve useful diagnostics, bound history and carry logs through process handoff. |
 | main | Coordinate startup/setup, tray lifecycle, recording, engine restarts, portal decisions, updates, capability ownership, event-driven state recovery and session shutdown; keep idle foreground/background launches free of recording engines, reuse live engines for discovery, distinguish capture startup from temporary probes and protect active replay through unknown monitor state and IPC reconnects. |

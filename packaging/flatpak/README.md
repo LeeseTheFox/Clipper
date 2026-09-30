@@ -40,6 +40,20 @@ It limits the build to 6 GiB of memory, disables swap, and uses one job. It reus
 
 Do not commit local build output. `.gitignore` excludes `build-dir/`, `build-dir-bounded/`, `build-dir-download/`, `repo/`, and `.flatpak-builder/`.
 
+Install the completed local build with:
+
+```bash
+./tools/install_flatpak_quiet.sh
+```
+
+The installer exports and prepares a bundle before closing Clipper. `repo/` is
+build output, not an application update source: local builds and GitHub releases
+are installed as bundles, and Clipper's updater manages release updates.
+If the installed app still has a repository origin, the installer migrates it
+once through a normal uninstall and bundle install. It retains application data,
+including settings, editor drafts and exported game-capture hooks. Subsequent
+installs replace the bundle without repeating the migration.
+
 ## Why Clipper talks to Flatpak
 
 The manifest requests `--talk-name=org.freedesktop.Flatpak` so Clipper can run its own fixed host-monitor helper with `flatpak-spawn --host`. Flatpak hides the host process list, and no XDG portal lets an app watch an allowlist of host processes.

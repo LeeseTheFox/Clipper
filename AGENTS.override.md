@@ -115,9 +115,9 @@ instructions needed to work safely in Clipper.
 - After adding a feature or fixing a bug, always build and install the Flatpak
   unless I say otherwise. Run `./tools/run_flatpak_build_quiet.sh`, then
   `./tools/install_flatpak_quiet.sh` to force-close the installed Clipper app
-  and quietly reinstall the latest build from the local `clipper-local`
-  repository. This is standing user consent and does not require additional
-  confirmation.
+  and quietly install the latest local build as a bundle, retaining application
+  data when migrating an existing repository origin. This is standing user
+  consent and does not require additional confirmation.
 - Do not add new project/runtime dependencies unless the task requires them.
 
 ## Documentation Policy
