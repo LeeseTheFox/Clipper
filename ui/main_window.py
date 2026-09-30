@@ -72,6 +72,7 @@ class MainWindow(Adw.ApplicationWindow):
         edit_clip_callback=None,
         presentation_callback=None,
         language_changed_callback=None,
+        recording_entry_callback=None,
     ):
         super().__init__(application=application, title=_("Clipper"))
 
@@ -89,11 +90,15 @@ class MainWindow(Adw.ApplicationWindow):
         self._edit_clip_callback = edit_clip_callback
         self._presentation_callback = presentation_callback
         self._language_changed_callback = language_changed_callback
+        self._recording_entry_callback = recording_entry_callback
         self._current_toast = None
         self._engine_status = None
         self._preview_popover = None
         self._preview_picture = None
         self._preview_placeholder = None
+        self._preview_frame = None
+        self._preview_game_box = None
+        self._preview_game_data = None
         self._preview_timer_id = None
         self._preview_fade_id = None
         self._preview_in_flight = False
@@ -483,11 +488,13 @@ class MainWindow(Adw.ApplicationWindow):
 
         frame = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         frame.add_css_class("recording-preview-frame")
+        frame.set_overflow(Gtk.Overflow.HIDDEN)
 
         overlay = Gtk.Overlay()
         picture = Gtk.Picture()
         picture.add_css_class("recording-preview-picture")
         picture.set_size_request(self._PREVIEW_MAX_WIDTH, self._PREVIEW_MAX_HEIGHT)
+        picture.set_can_shrink(True)
         if hasattr(Gtk, "ContentFit"):
             picture.set_content_fit(Gtk.ContentFit.CONTAIN)
 
@@ -505,6 +512,34 @@ class MainWindow(Adw.ApplicationWindow):
         self._preview_popover = popover
         self._preview_picture = picture
         self._preview_placeholder = placeholder
+        self._preview_frame = frame
+
+    def _update_preview_game(self) -> None:
+        if self._preview_frame is None or self._recording_entry_callback is None:
+            return
+        entry = self._recording_entry_callback()
+        game_data = dict(entry) if entry else None
+        if game_data == self._preview_game_data:
+            return
+
+        # Icon discovery updates its own data; compare the source snapshot so
+        # those background results do not rebuild this row every preview tick.
+        self._preview_game_data = dict(game_data) if game_data else None
+        if self._preview_game_box is not None:
+            self._preview_frame.remove(self._preview_game_box)
+            self._preview_game_box = None
+        if game_data is None:
+            return
+
+        # Keep the row's natural width independent of the full name. The image
+        # determines the preview width, including narrow portrait captures.
+        game_box = self.clips_view.create_game_metadata_box(game_data, max_width_chars=1)
+        if game_box is not None:
+            game_box.set_halign(Gtk.Align.FILL)
+            game_box.remove_css_class("clipper-metadata-chip")
+            game_box.add_css_class("recording-preview-details")
+            self._preview_frame.append(game_box)
+            self._preview_game_box = game_box
 
     def _show_preview_popover(self) -> None:
         self._preview_active = True
@@ -552,6 +587,9 @@ class MainWindow(Adw.ApplicationWindow):
         self._preview_popover = None
         self._preview_picture = None
         self._preview_placeholder = None
+        self._preview_frame = None
+        self._preview_game_box = None
+        self._preview_game_data = None
         return False
 
     def _on_preview_timer(self) -> bool:
@@ -564,6 +602,7 @@ class MainWindow(Adw.ApplicationWindow):
     def _request_preview_frame(self) -> None:
         if not self._preview_active:
             return
+        self._update_preview_game()
         if self._preview_in_flight:
             return
         if not self._engine_client or not self._engine_client.is_connected():
@@ -723,6 +762,12 @@ class MainWindow(Adw.ApplicationWindow):
                 background: #111111;
                 border-radius: 8px;
                 box-shadow: 0 8px 24px alpha(black, 0.32);
+            }
+
+            .recording-preview-details {
+                padding: 8px 10px;
+                background-color: var(--popover-bg-color);
+                color: var(--popover-fg-color);
             }
             """
         )

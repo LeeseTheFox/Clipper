@@ -281,6 +281,9 @@ class ClipperApplication(Adw.Application):
                 edit_clip_callback=self.open_editor,
                 presentation_callback=self._schedule_presentation_mark,
                 language_changed_callback=self.request_language_change,
+                recording_entry_callback=lambda: self._running_whitelist_entry(
+                    self._engine_manager.capture_mode
+                ),
             )
             self.window.set_engine_status(self._window_engine_status)
             self.window.connect("notify::visible", self._on_window_visibility_changed)

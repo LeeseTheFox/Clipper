@@ -1702,7 +1702,7 @@ class ClipsView(Gtk.Box):
 
         info_box.append(self._create_clip_name(clip_data))
 
-        game_box = self._create_clip_game_box(clip_data.get("game"))
+        game_box = self.create_game_metadata_box(clip_data.get("game"))
         if game_box is not None:
             info_box.append(game_box)
 
@@ -1840,7 +1840,8 @@ class ClipsView(Gtk.Box):
             return
         self.on_edit_clip(button, clip_data)
 
-    def _create_clip_game_box(self, game_data):
+    def create_game_metadata_box(self, game_data, *, max_width_chars=None):
+        """Build a game identity row with cached or asynchronously loaded artwork."""
         if not isinstance(game_data, dict):
             return None
 
@@ -1858,10 +1859,12 @@ class ClipsView(Gtk.Box):
         self._load_game_icon_async(game_data, icon, 18)
 
         game_label = Gtk.Label(label=game_name)
-        game_label.set_halign(Gtk.Align.START)
+        game_label.set_halign(Gtk.Align.FILL)
         game_label.set_hexpand(True)
         game_label.set_xalign(0)
-        configure_single_line_ellipsis(game_label, mode=ELLIPSIZE_END)
+        configure_single_line_ellipsis(
+            game_label, mode=ELLIPSIZE_END, max_width_chars=max_width_chars
+        )
         game_label.add_css_class("clipper-secondary-label")
         game_label.add_css_class("caption")
         game_box.append(game_label)

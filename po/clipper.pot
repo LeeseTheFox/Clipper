@@ -30,7 +30,7 @@ msgstr ""
 msgid "Engine restart required for audio changes"
 msgstr ""
 
-#: ui/audio_tracks_view.py:65 ui/main_window.py:179 ui/settings_view.py:470
+#: ui/audio_tracks_view.py:65 ui/main_window.py:184 ui/settings_view.py:470
 msgid "Restart engine"
 msgstr ""
 
@@ -321,41 +321,41 @@ msgstr ""
 msgid "Could not wipe saved edits"
 msgstr ""
 
-#: ui/clips_view.py:2047
+#: ui/clips_view.py:2050
 msgid "Move clip to trash?"
 msgstr ""
 
-#: ui/clips_view.py:2049
+#: ui/clips_view.py:2052
 #, python-format
 msgid ""
 "'%(name)s' will be moved to the trash.\n"
 "This can be reversed."
 msgstr ""
 
-#: ui/clips_view.py:2052 ui/dialogs.py:842 ui/editor_export_dialog.py:344
+#: ui/clips_view.py:2055 ui/dialogs.py:842 ui/editor_export_dialog.py:344
 #: ui/editor_export_dialog.py:602 ui/editor_export_dialog.py:630
 #: ui/editor_export_dialog.py:738 ui/editor_window.py:3733 ui/editor_wipe.py:16
 #: ui/game_details_dialog.py:37 ui/update_controller.py:376
 msgid "Cancel"
 msgstr ""
 
-#: ui/clips_view.py:2053
+#: ui/clips_view.py:2056
 msgid "Move to trash"
 msgstr ""
 
-#: ui/clips_view.py:2108
+#: ui/clips_view.py:2111
 msgid "Clip deleted"
 msgstr ""
 
-#: ui/clips_view.py:2108
+#: ui/clips_view.py:2111
 msgid "Clip moved to trash"
 msgstr ""
 
-#: ui/clips_view.py:2115
+#: ui/clips_view.py:2118
 msgid "Could not delete clip"
 msgstr ""
 
-#: ui/clips_view.py:2117
+#: ui/clips_view.py:2120
 msgid "Could not move clip to trash"
 msgstr ""
 
@@ -1286,7 +1286,7 @@ msgstr ""
 msgid "Audio %(number)d"
 msgstr ""
 
-#: ui/editor_window.py:1850 ui/main_window.py:229
+#: ui/editor_window.py:1850 ui/main_window.py:234
 msgid "Audio"
 msgstr ""
 
@@ -1366,7 +1366,7 @@ msgstr ""
 msgid "Exported to %(name)s"
 msgstr ""
 
-#: ui/editor_window.py:3695 ui/main.py:2300 ui/settings_view.py:1423
+#: ui/editor_window.py:3695 ui/main.py:2303 ui/settings_view.py:1423
 msgid "Unknown error"
 msgstr ""
 
@@ -1668,144 +1668,144 @@ msgid ""
 "It is advised to close OBS Studio or Clipper before recording."
 msgstr ""
 
-#: ui/main.py:592
+#: ui/main.py:595
 msgid "Engine not running"
 msgstr ""
 
-#: ui/main.py:598
+#: ui/main.py:601
 msgid "Could not send save command to Clipper engine"
 msgstr ""
 
-#: ui/main.py:630
+#: ui/main.py:633
 msgid "Restart Clipper?"
 msgstr ""
 
-#: ui/main.py:631
+#: ui/main.py:634
 msgid "Clipper needs to be restarted for this change to take effect."
 msgstr ""
 
-#: ui/main.py:633 ui/update_controller.py:326
+#: ui/main.py:636 ui/update_controller.py:326
 msgid "Restart later"
 msgstr ""
 
-#: ui/main.py:634 ui/update_controller.py:330
+#: ui/main.py:637 ui/update_controller.py:330
 msgid "Restart now"
 msgstr ""
 
-#: ui/main.py:657
+#: ui/main.py:660
 msgid "Save or discard the video edit before logging out"
 msgstr ""
 
-#: ui/main.py:768
+#: ui/main.py:771
 #, python-format
 msgid "Could not register save hotkey: %(error)s"
 msgstr ""
 
-#: ui/main.py:807
+#: ui/main.py:810
 #, python-format
 msgid "Global hotkey unavailable: %(message)s"
 msgstr ""
 
-#: ui/main.py:1018
+#: ui/main.py:1021
 msgid "Acknowledge"
 msgstr ""
 
-#: ui/main.py:1032 ui/settings_view.py:1419
+#: ui/main.py:1035 ui/settings_view.py:1419
 msgid "Restarting engine…"
 msgstr ""
 
-#: ui/main.py:1047
+#: ui/main.py:1050
 msgid "Could not send restart command to Clipper engine"
 msgstr ""
 
-#: ui/main.py:1052
+#: ui/main.py:1055
 msgid "Engine will start when a whitelisted game is running"
 msgstr ""
 
-#: ui/main.py:1067
+#: ui/main.py:1070
 #, python-format
 msgid "Engine restart failed: %(error)s"
 msgstr ""
 
-#: ui/main.py:1185
+#: ui/main.py:1188
 msgid "X11 capture uses the primary X11 display without a system picker."
 msgstr ""
 
-#: ui/main.py:1194
+#: ui/main.py:1197
 msgid "The system display picker is already open."
 msgstr ""
 
-#: ui/main.py:1204
+#: ui/main.py:1207
 msgid "Stop the active game capture before changing the target display."
 msgstr ""
 
-#: ui/main.py:1270
+#: ui/main.py:1273
 msgid "Could not disable automatic startup"
 msgstr ""
 
-#: ui/main.py:1277
+#: ui/main.py:1280
 msgid "PipeWire restore token cleared"
 msgstr ""
 
-#: ui/main.py:1348
+#: ui/main.py:1351
 msgid "Clip captured"
 msgstr ""
 
-#: ui/main.py:1349
+#: ui/main.py:1352
 msgid "Your clip has been saved."
 msgstr ""
 
-#: ui/main.py:1355
+#: ui/main.py:1358
 msgid ""
 "Could not write the clip. Check the save folder and available disk space."
 msgstr ""
 
-#: ui/main.py:1357
+#: ui/main.py:1360
 #, python-format
 msgid "Failed to save clip: %(error)s"
 msgstr ""
 
-#: ui/main.py:1393
+#: ui/main.py:1396
 #, python-format
 msgid "Could not open clip editor: %(error)s"
 msgstr ""
 
-#: ui/main.py:2054
+#: ui/main.py:2057
 #, python-format
 msgid "Could not start Clipper engine: %(error)s"
 msgstr ""
 
-#: ui/main.py:2127 ui/settings_view.py:1422
+#: ui/main.py:2130 ui/settings_view.py:1422
 #, python-format
 msgid "Engine shutdown failed: %(error)s"
 msgstr ""
 
-#: ui/main.py:2168 ui/main.py:2204
+#: ui/main.py:2171 ui/main.py:2207
 msgid "Display selection was cancelled."
 msgstr ""
 
-#: ui/main.py:2173
+#: ui/main.py:2176
 msgid "Capture display selected successfully."
 msgstr ""
 
-#: ui/main.py:2211
+#: ui/main.py:2214
 msgid "No display was selected before the picker timed out."
 msgstr ""
 
-#: ui/main.py:2299
+#: ui/main.py:2302
 #, python-format
 msgid "Display capture sync failed: %(error)s"
 msgstr ""
 
-#: ui/main.py:2387
+#: ui/main.py:2390
 msgid "🦊 Leese"
 msgstr ""
 
-#: ui/main.py:2391
+#: ui/main.py:2394
 msgid "© 2026 Leese"
 msgstr ""
 
-#: ui/main.py:2397
+#: ui/main.py:2400
 msgid "GitHub"
 msgstr ""
 
@@ -1829,76 +1829,76 @@ msgstr ""
 msgid "Crashed"
 msgstr ""
 
-#: ui/main_window.py:76 ui/tray.py:375 ui/tray.py:392
+#: ui/main_window.py:77 ui/tray.py:375 ui/tray.py:392
 msgid "Clipper"
 msgstr ""
 
-#: ui/main_window.py:136 ui/main_window.py:453
+#: ui/main_window.py:141 ui/main_window.py:458
 msgid "Engine status"
 msgstr ""
 
-#: ui/main_window.py:167
+#: ui/main_window.py:172
 msgid "Main menu"
 msgstr ""
 
-#: ui/main_window.py:169 ui/preferences_dialog.py:19
+#: ui/main_window.py:174 ui/preferences_dialog.py:19
 #: ui/preferences_dialog.py:27
 msgid "Preferences"
 msgstr ""
 
-#: ui/main_window.py:170
+#: ui/main_window.py:175
 msgid "Check for updates"
 msgstr ""
 
-#: ui/main_window.py:172
+#: ui/main_window.py:177
 msgid "Show logs"
 msgstr ""
 
-#: ui/main_window.py:175
+#: ui/main_window.py:180
 msgid "Clear PipeWire restore token"
 msgstr ""
 
-#: ui/main_window.py:177
+#: ui/main_window.py:182
 msgid "Reset config"
 msgstr ""
 
-#: ui/main_window.py:178
+#: ui/main_window.py:183
 msgid "Reset to factory settings"
 msgstr ""
 
-#: ui/main_window.py:180
+#: ui/main_window.py:185
 msgid "Debug menu"
 msgstr ""
 
-#: ui/main_window.py:181
+#: ui/main_window.py:186
 msgid "About Clipper"
 msgstr ""
 
-#: ui/main_window.py:182 ui/tray.py:528 ui/tray.py:633
+#: ui/main_window.py:187 ui/tray.py:528 ui/tray.py:633
 msgid "Quit"
 msgstr ""
 
-#: ui/main_window.py:191 ui/update_controller.py:219
+#: ui/main_window.py:196 ui/update_controller.py:219
 msgid "A Clipper update is available"
 msgstr ""
 
-#: ui/main_window.py:192
+#: ui/main_window.py:197
 msgid "View update"
 msgstr ""
 
-#: ui/main_window.py:209
+#: ui/main_window.py:214
 msgid "Clips"
 msgstr ""
 
-#: ui/main_window.py:224
+#: ui/main_window.py:229
 msgid "Games"
 msgstr ""
 
-#: ui/main_window.py:494
+#: ui/main_window.py:501
 msgid "Waiting for frame"
 msgstr ""
 
-#: ui/main_window.py:587
+#: ui/main_window.py:626
 msgid "Preview unavailable"
 msgstr ""
 

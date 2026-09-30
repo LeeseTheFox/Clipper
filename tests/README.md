@@ -93,6 +93,7 @@ process matching intentionally cover separate production implementations.
 | native_capture | Reject unsupported direct-capture scenes and preserve idle-render consumers. |
 | pipewire_import_cache | Retain/release imported buffers and synchronization handles correctly, with and without explicit sync. |
 | process_watcher | Match and deduplicate game identities across native, Steam, Wine and sandbox environments. |
+| recording_preview | Keep recording identity current and long names ellipsized within real GTK preview allocations for landscape, portrait and ultrawide frames. |
 | release_notes | Generate accurate categorized history from actual Git repositories and semantic tags. |
 | release_version | Reject malformed tags and mismatched application release versions. |
 | settings_view | Apply settings correctly, respect platform approval, join background discovery, detach retired windows, reuse cached options and clamp encoder controls. |
