@@ -29,7 +29,7 @@ Display capture works with more games, but records the selected display rather t
 
 ## Audio
 
-The Audio page supports one mixed track or up to six separate tracks. It asks the engine which sources are available, stores the chosen routing in the configuration, applies volume changes live, and asks for an engine restart when a source or route changes.
+The Audio page supports one mixed track or up to six separate tracks. It discovers available sources when opened and refreshes them on audio events, querying a connected engine or using `pactl` directly without starting one. It stores the chosen routing in the configuration, applies volume changes live, and asks for an engine restart when a source or route changes.
 
 ## Run it locally
 

@@ -31,8 +31,6 @@ class AudioTracksView(Gtk.Box):
         self,
         config=None,
         engine_client=None,
-        capabilities_requested_callback=None,
-        capabilities_finished_callback=None,
         engine_restart_required_callback=None,
         engine_restart_requested_callback=None,
     ):
@@ -40,14 +38,9 @@ class AudioTracksView(Gtk.Box):
 
         self._config = config
         self._engine_client = engine_client
-        self._capabilities_requested_callback = capabilities_requested_callback
-        self._capabilities_finished_callback = capabilities_finished_callback
         self._engine_restart_required_callback = engine_restart_required_callback
         self._engine_restart_requested_callback = engine_restart_requested_callback
         self._suppress_signals = False
-        self._source_probe_requested = False
-        self._source_retry_id = None
-        self._source_retry_count = 0
         self._source_refresh_timeout_id = None
         self._source_request_in_flight = False
         self._source_refresh_pending = False
@@ -386,10 +379,6 @@ class AudioTracksView(Gtk.Box):
         if new_state != STATE_CONNECTED:
             self._source_request_in_flight = False
             return
-
-        if self._source_retry_id is not None:
-            GLib.source_remove(self._source_retry_id)
-            self._source_retry_id = None
 
         self._request_audio_sources()
 
@@ -1081,12 +1070,9 @@ class AudioTracksView(Gtk.Box):
         """Stop the pactl watcher and outstanding refresh timers."""
         self._active = False
         self._source_watcher.stop()
-        for attribute in ("_source_retry_id", "_source_refresh_timeout_id"):
-            source_id = getattr(self, attribute, None)
-            if source_id is not None:
-                GLib.source_remove(source_id)
-                setattr(self, attribute, None)
-        self._finish_source_probe()
+        if self._source_refresh_timeout_id is not None:
+            GLib.source_remove(self._source_refresh_timeout_id)
+            self._source_refresh_timeout_id = None
 
     def set_active(self, active: bool) -> None:
         """Run source discovery only while the Audio page is visible."""
@@ -1097,18 +1083,14 @@ class AudioTracksView(Gtk.Box):
         self._active = active
         if active:
             self._source_watcher.start()
-            self._request_audio_capabilities()
+            self._request_audio_sources()
             return
 
         self._source_watcher.stop()
         if self._source_refresh_timeout_id is not None:
             GLib.source_remove(self._source_refresh_timeout_id)
             self._source_refresh_timeout_id = None
-        if self._source_retry_id is not None:
-            GLib.source_remove(self._source_retry_id)
-            self._source_retry_id = None
         self._source_refresh_pending = False
-        self._finish_source_probe()
 
     def _source_options_signature(self):
         return tuple(
@@ -1132,19 +1114,10 @@ class AudioTracksView(Gtk.Box):
         self._request_audio_sources()
         return False
 
-    def _request_audio_capabilities(self):
-        if self._engine_client and self._engine_client.is_connected():
-            self._engine_client.get_audio_capabilities(lambda _response: None)
-            self._request_audio_sources()
-            return
-
-        self._ensure_engine_for_audio_sources()
-
     def _request_audio_sources(self):
         if not self._engine_client or not self._engine_client.is_connected():
             self._on_audio_sources(
                 {"ok": True, "sources": list_runtime_audio_sources()},
-                finish_probe=False,
             )
             return
 
@@ -1156,48 +1129,8 @@ class AudioTracksView(Gtk.Box):
         if not self._engine_client.list_audio_sources(self._on_audio_sources):
             self._source_request_in_flight = False
 
-    def _ensure_engine_for_audio_sources(self):
-        if self._source_probe_requested:
-            return
-
-        if self._capabilities_requested_callback is None:
-            return
-
-        self._source_probe_requested = True
-        self._source_retry_count = 0
-        if not self._capabilities_requested_callback():
-            self._source_probe_requested = False
-            return
-
-        if self._source_retry_id is None:
-            self._source_retry_id = GLib.timeout_add(250, self._retry_audio_sources)
-
-    def _retry_audio_sources(self):
-        self._source_retry_count += 1
-        if self._engine_client and self._engine_client.is_connected():
-            self._source_retry_id = None
-            self._request_audio_sources()
-            return False
-
-        if self._source_retry_count >= 40:
-            self._source_retry_id = None
-            self._finish_source_probe()
-            return False
-
-        return True
-
-    def _finish_source_probe(self):
-        if not getattr(self, "_source_probe_requested", False):
-            return
-
-        self._source_probe_requested = False
-        if self._capabilities_finished_callback is not None:
-            self._capabilities_finished_callback()
-
-    def _on_audio_sources(self, response, finish_probe=True):
+    def _on_audio_sources(self, response):
         self._source_request_in_flight = False
-        if finish_probe:
-            self._finish_source_probe()
 
         if self._source_refresh_pending:
             self._source_refresh_pending = False

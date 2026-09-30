@@ -272,8 +272,6 @@ class ClipperApplication(Adw.Application):
                 engine_client=self._engine_client,
                 hotkey_changed_callback=self._on_save_hotkey_changed,
                 hotkey_capture_state_callback=self._set_hotkey_capture_active,
-                capabilities_requested_callback=self.ensure_engine_for_capabilities,
-                capabilities_finished_callback=self.on_capabilities_finished,
                 engine_restart_required_callback=self.engine_restart_required_for_settings,
                 engine_restart_requested_callback=lambda: self.on_restart_engine(None, None),
                 start_on_boot_changed_callback=self.set_start_on_boot,

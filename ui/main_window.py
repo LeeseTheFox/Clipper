@@ -62,8 +62,6 @@ class MainWindow(Adw.ApplicationWindow):
         engine_client=None,
         hotkey_changed_callback=None,
         hotkey_capture_state_callback=None,
-        capabilities_requested_callback=None,
-        capabilities_finished_callback=None,
         engine_restart_required_callback=None,
         engine_restart_requested_callback=None,
         start_on_boot_changed_callback=None,
@@ -81,8 +79,6 @@ class MainWindow(Adw.ApplicationWindow):
         self._engine_client = engine_client
         self._hotkey_changed_callback = hotkey_changed_callback
         self._hotkey_capture_state_callback = hotkey_capture_state_callback
-        self._capabilities_requested_callback = capabilities_requested_callback
-        self._capabilities_finished_callback = capabilities_finished_callback
         self._engine_restart_required_callback = engine_restart_required_callback
         self._engine_restart_requested_callback = engine_restart_requested_callback
         self._start_on_boot_changed_callback = start_on_boot_changed_callback
@@ -379,8 +375,6 @@ class MainWindow(Adw.ApplicationWindow):
             self.audio_view = AudioTracksView(
                 config=self._config,
                 engine_client=self._engine_client,
-                capabilities_requested_callback=self._capabilities_requested_callback,
-                capabilities_finished_callback=self._capabilities_finished_callback,
                 engine_restart_required_callback=self._engine_restart_required_callback,
                 engine_restart_requested_callback=self._engine_restart_requested_callback,
             )

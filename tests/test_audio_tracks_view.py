@@ -233,7 +233,6 @@ def _make_view(
     engine_response=None,
     *,
     engine_connected=True,
-    capabilities_requested=None,
     config=None,
     restart_required=None,
     restart_requested=None,
@@ -249,16 +248,11 @@ def _make_view(
         volume_update_response=volume_update_response,
         volume_update_succeeds=volume_update_succeeds,
     )
-    view._capabilities_requested_callback = capabilities_requested
-    view._capabilities_finished_callback = None
     view._engine_restart_required_callback = restart_required
     view._engine_restart_requested_callback = restart_requested
     view._restart_banner = BannerStub()
     view._mic_row = ComboRowStub()
     view._suppress_signals = False
-    view._source_probe_requested = False
-    view._source_retry_id = None
-    view._source_retry_count = 0
     view._source_refresh_timeout_id = None
     view._source_request_in_flight = False
     view._source_refresh_pending = False
@@ -983,7 +977,7 @@ def test_missing_live_audio_source_does_not_revert_learned_whitelisted_match():
     assert view._restart_banner.revealed is False
 
 
-def test_engine_connect_during_probe_fetches_applications_immediately():
+def test_engine_connect_fetches_applications_immediately():
     view, dropdown = _make_view(
         {
             "ok": True,
@@ -999,7 +993,6 @@ def test_engine_connect_during_probe_fetches_applications_immediately():
         }
     )
 
-    view._source_probe_requested = True
     view._on_engine_state_change(STATE_CONNECTED)
 
     assert view._engine_client.sent == 1
@@ -1030,9 +1023,17 @@ def test_reconnect_after_dropped_audio_source_request_fetches_applications():
     assert "App: Discord" in dropdown.model
 
 
-def test_passive_audio_refresh_updates_locally_without_starting_temporary_engine():
-    requested = []
-    audio_tracks_module.list_runtime_audio_sources = lambda: [
+@pytest.mark.parametrize("engine_connected", [False, True])
+def test_audio_page_open_and_live_refresh_discover_sources_without_engine_startup(
+    monkeypatch, engine_connected
+):
+    sources = [
+        {
+            "kind": "input_device",
+            "display_name": "USB microphone",
+            "backend": "pulse",
+            "device_id": "usb_mic",
+        },
         {
             "kind": "application",
             "display_name": "Zen",
@@ -1041,16 +1042,43 @@ def test_passive_audio_refresh_updates_locally_without_starting_temporary_engine
             "media_name": "Video",
         }
     ]
-    view, _dropdown = _make_view(
-        engine_connected=False,
-        capabilities_requested=lambda: requested.append(True) or True,
+    monkeypatch.setattr(
+        audio_tracks_module, "list_runtime_audio_sources", lambda: list(sources)
+    )
+    view, dropdown = _make_view(
+        {"ok": True, "sources": sources}, engine_connected=engine_connected
+    )
+    view._active = False
+    view._source_watcher = audio_tracks_module.AudioSourceWatcher(
+        view._schedule_audio_source_refresh
     )
 
-    view._run_scheduled_audio_source_refresh()
+    # Opening the picker must use discovery without acquiring a capture engine.
+    view.set_active(True)
 
-    assert requested == []
-    assert view._engine_client.sent == 0
-    assert "App: Zen - Video" in _dropdown.model
+    assert "App: Zen - Video" in dropdown.model
+    assert "USB microphone" in view._mic_row.model
+
+    sources.clear()
+    view._source_watcher.refresh_callback()
+    audio_tracks_module._test_timeouts[-1]()
+
+    assert "App: Zen - Video" not in dropdown.model
+    assert "USB microphone" not in view._mic_row.model
+
+    view.set_active(False)
+    sources.append(
+        {
+            "kind": "application",
+            "display_name": "Discord",
+            "app_name": "Discord",
+            "binary": "Discord",
+        }
+    )
+    view.set_active(True)
+
+    assert "App: Discord" in dropdown.model
+    assert view._engine_client.sent == (3 if engine_connected else 0)
 
 
 def test_cleanup_stops_pactl_watcher_and_removes_refresh_sources(monkeypatch):
@@ -1059,15 +1087,13 @@ def test_cleanup_stops_pactl_watcher_and_removes_refresh_sources(monkeypatch):
     watcher.stop = lambda: setattr(watcher, "stopped", True)
     view = object.__new__(AudioTracksView)
     view._source_watcher = watcher
-    view._source_retry_id = 11
     view._source_refresh_timeout_id = 12
     monkeypatch.setattr(audio_tracks_module.GLib, "source_remove", removed.append)
 
     view.cleanup()
 
     assert watcher.stopped is True
-    assert removed == [11, 12]
-    assert view._source_retry_id is None
+    assert removed == [12]
     assert view._source_refresh_timeout_id is None
 
 
@@ -1080,17 +1106,15 @@ def test_audio_source_work_runs_only_while_page_is_active(monkeypatch):
     view = object.__new__(AudioTracksView)
     view._active = False
     view._source_watcher = watcher
-    view._source_retry_id = None
     view._source_refresh_timeout_id = None
     view._source_refresh_pending = False
-    view._source_probe_requested = False
-    view._request_audio_capabilities = lambda: events.append("probe")
+    view._request_audio_sources = lambda: events.append("refresh")
 
     view.set_active(True)
     view.set_active(True)
     view.set_active(False)
 
-    assert events == ["start", "probe", "stop"]
+    assert events == ["start", "refresh", "stop"]
 
 
 def test_hidden_audio_page_ignores_source_events(monkeypatch):
