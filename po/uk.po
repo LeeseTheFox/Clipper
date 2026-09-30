@@ -1042,7 +1042,7 @@ msgstr "Замінити"
 msgid "The GStreamer element %(element)s is unavailable"
 msgstr "Елемент GStreamer %(element)s недоступний"
 
-#: ui/editor_preview.py:202 ui/editor_preview.py:1082 ui/editor_preview.py:1094
+#: ui/editor_preview.py:202 ui/editor_preview.py:1087 ui/editor_preview.py:1099
 msgid "The GStreamer video preview is unavailable"
 msgstr "Попередній перегляд відео GStreamer недоступний"
 
@@ -1094,11 +1094,11 @@ msgstr "Не вдалося запустити попередньо підгот
 msgid "Loading video"
 msgstr "Завантаження відео"
 
-#: ui/editor_preview.py:1102
+#: ui/editor_preview.py:1107
 msgid "The GStreamer video preview could not be linked"
 msgstr "Не вдалося під’єднати попередній перегляд відео GStreamer"
 
-#: ui/editor_preview.py:1236
+#: ui/editor_preview.py:1241
 msgid "The GStreamer audio preview could not be linked"
 msgstr "Не вдалося під’єднати попередній перегляд аудіо GStreamer"
 

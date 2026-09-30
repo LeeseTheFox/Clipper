@@ -1,0 +1,510 @@
+{
+  "version": 1,
+  "clock": "2026-09-30T12:00:00+00:00",
+  "whitelist": [
+    {
+      "name": "ARC Raiders",
+      "appid": "1808500",
+      "install_path": "/run/media/system/Games/SteamLibrary/steamapps/common/Arc Raiders",
+      "executable_path": "/run/media/system/Games/SteamLibrary/steamapps/common/Arc Raiders/PioneerGame.exe",
+      "capture_mode": "game_capture",
+      "icon_path": "game-1808500.png",
+      "artwork": "artwork-1808500.jpg"
+    },
+    {
+      "name": "THE FINALS",
+      "appid": "2073850",
+      "install_path": "/run/media/system/Games/SteamLibrary/steamapps/common/The Finals",
+      "executable_path": "/run/media/system/Games/SteamLibrary/steamapps/common/The Finals/Discovery.exe",
+      "capture_mode": "game_capture",
+      "audio_process": "THE FINALS",
+      "icon_path": "game-2073850.png",
+      "artwork": "artwork-2073850.jpg"
+    },
+    {
+      "name": "Portal with RTX",
+      "appid": "2012840",
+      "install_path": "/run/media/system/Games/SteamLibrary/steamapps/common/PortalRTX",
+      "capture_mode": "display_capture",
+      "audio_process": "wine-preloader",
+      "icon_path": "game-2012840.png",
+      "artwork": "artwork-2012840.jpg"
+    },
+    {
+      "name": "STRAFTAT",
+      "appid": "2386720",
+      "install_path": "/run/media/system/Games/SteamLibrary/steamapps/common/STRAFTAT",
+      "capture_mode": "game_capture",
+      "audio_process": "STRAFTAT.exe",
+      "icon_path": "game-2386720.png",
+      "artwork": "artwork-2386720.jpg"
+    }
+  ],
+  "audio": {
+    "version": 1,
+    "mode": "split_tracks",
+    "microphone": {
+      "enabled": true,
+      "backend": "pipewire",
+      "device_id": "easyeffects_source",
+      "display_name": "USB Audio Microphone",
+      "volume": 1.0
+    },
+    "tracks": [
+      {
+        "track": 1,
+        "label": "Whitelisted games",
+        "enabled": true,
+        "volume": 1.0,
+        "sources": [
+          {
+            "kind": "game_app",
+            "display_name": "ARC Raiders",
+            "match": {
+              "type": "process_name",
+              "value": "PioneerGame.exe",
+              "priority": "binary_first"
+            },
+            "learned_from": {
+              "steam_appid": "1808500",
+              "install_path": "/run/media/system/Games/SteamLibrary/steamapps/common/Arc Raiders"
+            }
+          },
+          {
+            "kind": "game_app",
+            "display_name": "THE FINALS",
+            "match": {
+              "type": "process_name",
+              "value": "THE FINALS",
+              "priority": "binary_first"
+            },
+            "learned_from": {
+              "steam_appid": "2073850",
+              "install_path": "/run/media/system/Games/SteamLibrary/steamapps/common/The Finals"
+            }
+          },
+          {
+            "kind": "game_app",
+            "display_name": "Portal with RTX",
+            "match": {
+              "type": "process_name",
+              "value": "wine-preloader",
+              "priority": "binary_first"
+            },
+            "learned_from": {
+              "steam_appid": "2012840",
+              "install_path": "/run/media/system/Games/SteamLibrary/steamapps/common/PortalRTX"
+            }
+          },
+          {
+            "kind": "game_app",
+            "display_name": "STRAFTAT",
+            "match": {
+              "type": "process_name",
+              "value": "STRAFTAT.exe",
+              "priority": "binary_first"
+            },
+            "learned_from": {
+              "steam_appid": "2386720",
+              "install_path": "/run/media/system/Games/SteamLibrary/steamapps/common/STRAFTAT"
+            }
+          }
+        ],
+        "source_role": "whitelisted_games"
+      },
+      {
+        "track": 2,
+        "label": "Microphone",
+        "enabled": true,
+        "volume": 1.1,
+        "sources": [
+          {
+            "kind": "selected_input_device",
+            "display_name": "Microphone"
+          }
+        ],
+        "source_role": "custom"
+      },
+      {
+        "track": 3,
+        "label": "App: Discord",
+        "enabled": true,
+        "volume": 0.69,
+        "sources": [
+          {
+            "kind": "application",
+            "display_name": "Discord",
+            "match": {
+              "type": "pipewire_app",
+              "value": "Discord",
+              "priority": "binary_first"
+            }
+          }
+        ],
+        "source_role": "custom"
+      },
+      {
+        "track": 4,
+        "label": "App: Zen",
+        "enabled": true,
+        "volume": 1.0,
+        "sources": [
+          {
+            "kind": "application",
+            "display_name": "Zen",
+            "match": {
+              "type": "pipewire_app",
+              "value": "zen",
+              "priority": "binary_first"
+            }
+          }
+        ],
+        "source_role": "custom"
+      },
+      {
+        "track": 5,
+        "label": "Track 5",
+        "enabled": false,
+        "volume": 1.0,
+        "sources": []
+      },
+      {
+        "track": 6,
+        "label": "Track 6",
+        "enabled": false,
+        "volume": 1.0,
+        "sources": []
+      }
+    ]
+  },
+  "audio_sources": [
+    {
+      "kind": "input_device",
+      "backend": "pipewire",
+      "device_id": "easyeffects_source",
+      "display_name": "USB Audio Microphone"
+    },
+    {
+      "kind": "application",
+      "display_name": "Discord",
+      "app_name": "Discord",
+      "binary": "Discord"
+    },
+    {
+      "kind": "application",
+      "display_name": "Zen",
+      "app_name": "Zen",
+      "binary": "zen"
+    }
+  ],
+  "clips": [
+    {
+      "name": "STRAFTAT_2026-09-23_20-08-19.mkv",
+      "size": 101057934,
+      "mtime_ns": 1790183299102769948,
+      "duration_us": 59717000,
+      "appid": "2386720",
+      "thumbnail": "clip-1.jpg"
+    },
+    {
+      "name": "THE_FINALS_2026-09-01_19-51-40.mkv",
+      "size": 216813205,
+      "mtime_ns": 1788282700717239747,
+      "duration_us": 88367000,
+      "appid": "2073850",
+      "thumbnail": "clip-2.jpg"
+    },
+    {
+      "name": "THE_FINALS_2026-08-24_21-30-10.mkv",
+      "size": 275765969,
+      "mtime_ns": 1787596210950202753,
+      "duration_us": 88500000,
+      "appid": "2073850",
+      "thumbnail": "clip-3.jpg"
+    },
+    {
+      "name": "THE_FINALS_2026-08-15_19-15-15.mkv",
+      "size": 410415310,
+      "mtime_ns": 1786810516262873492,
+      "duration_us": 89634000,
+      "appid": "2073850",
+      "thumbnail": "clip-4.jpg"
+    },
+    {
+      "name": "THE_FINALS_2026-07-26_16-20-32.mkv",
+      "size": 507418256,
+      "mtime_ns": 1785072033426452422,
+      "duration_us": 66517000,
+      "appid": "2073850",
+      "thumbnail": "clip-5.jpg"
+    }
+  ],
+  "editor": {
+    "project": {
+      "project_id": "1d367cc7-44df-4967-9104-a9bfa0fe9e9e",
+      "segments": [
+        {
+          "audio": {
+            "a0": {
+              "gain": 1.0,
+              "muted": false
+            },
+            "a1": {
+              "gain": 0.0,
+              "muted": true
+            },
+            "a2": {
+              "gain": 1.0,
+              "muted": false
+            },
+            "a3": {
+              "gain": 0.0,
+              "muted": true
+            }
+          },
+          "id": "aa840a7c-0df5-4ecb-837a-1f71a902f6a8",
+          "source_end_us": 1750035,
+          "source_start_us": 0
+        },
+        {
+          "audio": {
+            "a0": {
+              "gain": 0.0,
+              "muted": true
+            },
+            "a1": {
+              "gain": 1.0,
+              "muted": false
+            },
+            "a2": {
+              "gain": 1.0,
+              "muted": false
+            },
+            "a3": {
+              "gain": 0.0,
+              "muted": true
+            }
+          },
+          "id": "b5dbd410-5c5f-4707-b8d0-9ef48007e83c",
+          "source_end_us": 4983433,
+          "source_start_us": 4233418
+        },
+        {
+          "audio": {
+            "a0": {
+              "gain": 0.62,
+              "muted": false
+            },
+            "a1": {
+              "gain": 10.839269140212034,
+              "muted": false
+            },
+            "a2": {
+              "gain": 1.0,
+              "muted": false
+            },
+            "a3": {
+              "gain": 0.0,
+              "muted": true
+            }
+          },
+          "id": "a4911da8-d408-4e1d-acc9-f25e6c27c126",
+          "source_end_us": 7683487,
+          "source_start_us": 7016807
+        },
+        {
+          "audio": {
+            "a0": {
+              "gain": 1.0,
+              "muted": false
+            },
+            "a1": {
+              "gain": 0.66,
+              "muted": false
+            },
+            "a2": {
+              "gain": 1.0,
+              "muted": false
+            },
+            "a3": {
+              "gain": 0.0,
+              "muted": true
+            }
+          },
+          "id": "9795ff3f-256b-4336-96e6-f21ea5d67965",
+          "source_end_us": 8900178,
+          "source_start_us": 7683487
+        },
+        {
+          "audio": {
+            "a0": {
+              "gain": 1.8836490894898006,
+              "muted": false
+            },
+            "a1": {
+              "gain": 0.0,
+              "muted": true
+            },
+            "a2": {
+              "gain": 1.0,
+              "muted": false
+            },
+            "a3": {
+              "gain": 0.0,
+              "muted": true
+            }
+          },
+          "id": "27cada9d-763b-4047-90ec-797433bd7b68",
+          "source_end_us": 10933552,
+          "source_start_us": 10033534
+        },
+        {
+          "audio": {
+            "a0": {
+              "gain": 0.5128613839913648,
+              "muted": false
+            },
+            "a1": {
+              "gain": 0.84,
+              "muted": false
+            },
+            "a2": {
+              "gain": 1.0,
+              "muted": false
+            },
+            "a3": {
+              "gain": 0.0,
+              "muted": true
+            }
+          },
+          "id": "fbb18a6a-348c-4cee-904f-5c8d038404d9",
+          "source_end_us": 16867004,
+          "source_start_us": 15616979
+        },
+        {
+          "audio": {
+            "a0": {
+              "gain": 1.26,
+              "muted": false
+            },
+            "a1": {
+              "gain": 1.0,
+              "muted": false
+            },
+            "a2": {
+              "gain": 0.0,
+              "muted": true
+            },
+            "a3": {
+              "gain": 0.0,
+              "muted": true
+            }
+          },
+          "id": "f0fad57c-4449-4b7e-aecf-94e9ee44dfda",
+          "source_end_us": 34100682,
+          "source_start_us": 29950599
+        },
+        {
+          "audio": {
+            "a0": {
+              "gain": 1.26,
+              "muted": false
+            },
+            "a1": {
+              "gain": 0.0,
+              "muted": true
+            },
+            "a2": {
+              "gain": 0.0,
+              "muted": true
+            },
+            "a3": {
+              "gain": 0.0,
+              "muted": true
+            }
+          },
+          "id": "37bcd90c-b395-4c28-b609-dac318cd6e65",
+          "source_end_us": 66517000,
+          "source_start_us": 37250745
+        }
+      ],
+      "source": {
+        "audio_tracks": [
+          {
+            "channel_layout": "",
+            "channels": 2,
+            "codec": "pcm_s16le",
+            "disposition": {},
+            "id": "a0",
+            "label": "clipper_aenc_1",
+            "language": "und",
+            "ordinal": 0,
+            "stream_index": 1,
+            "title": "clipper_aenc_1"
+          },
+          {
+            "channel_layout": "",
+            "channels": 2,
+            "codec": "pcm_s16le",
+            "disposition": {},
+            "id": "a1",
+            "label": "clipper_aenc_2",
+            "language": "und",
+            "ordinal": 1,
+            "stream_index": 2,
+            "title": "clipper_aenc_2"
+          },
+          {
+            "channel_layout": "",
+            "channels": 2,
+            "codec": "pcm_s16le",
+            "disposition": {},
+            "id": "a2",
+            "label": "clipper_aenc_3",
+            "language": "und",
+            "ordinal": 2,
+            "stream_index": 3,
+            "title": "clipper_aenc_3"
+          },
+          {
+            "channel_layout": "",
+            "channels": 2,
+            "codec": "pcm_s16le",
+            "disposition": {},
+            "id": "a3",
+            "label": "clipper_aenc_4",
+            "language": "und",
+            "ordinal": 3,
+            "stream_index": 4,
+            "title": "clipper_aenc_4"
+          }
+        ],
+        "duration_us": 66517000,
+        "frame_rate_den": 1,
+        "frame_rate_num": 60,
+        "height": 1440,
+        "mtime_ns": 1785072033426452422,
+        "path": "THE_FINALS_2026-07-26_16-20-32.mkv",
+        "rotation": 0,
+        "sample_aspect_ratio_den": 1,
+        "sample_aspect_ratio_num": 1,
+        "size": 507418256,
+        "variable_frame_rate": false,
+        "video_codec": "av1",
+        "video_stream_index": 0,
+        "width": 2560
+      },
+      "version": 1
+    },
+    "playhead_us": 2000000,
+    "source_frame_us": 4483383,
+    "zoom_percent": 225,
+    "selected_segment": 2,
+    "waveform_buckets": [
+      3326,
+      3326,
+      3326,
+      3326
+    ]
+  }
+}

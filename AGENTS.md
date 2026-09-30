@@ -105,6 +105,8 @@ This file gives coding agents the minimum repo-specific instructions needed to w
 - Reuse before you build. Analyze existing code and its extension points first.
   When an existing element fits, extend it with a builder method instead of
   creating a sibling implementation.
+- When a change visibly changes the UI, regenerate every localized light and
+  dark README screenshot with `./tools/generate_screenshots.sh`.
 - Do not create documentation unless it is necessary for the requested change
   or the user explicitly asks for it.
 - If you change Python behavior under `ui/` or `tests/`, run the Python test suite before finishing.

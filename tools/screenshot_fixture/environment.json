@@ -1,0 +1,40 @@
+{
+  "runtime": "org.gnome.Sdk/x86_64/51",
+  "commit": "cc6f0e8521f0c4432f1498905ac50baf427b2f02448b19c9be617d09bdb16860",
+  "assets": {
+    "artwork-1808500.jpg": "c2ae81a806f6a049922d448f251d7bf5a2886b70ca51c9a4f88e85cef1b11db0",
+    "artwork-2012840.jpg": "3374f6bc46dc24f3a0c4cd75956b857c36fe2c8600d41ca9a1f58ab3d8e1f0d2",
+    "artwork-2073850.jpg": "564f2ba79ef05dec69f954d7f2bc415c527ced3da29253154e63e697bcbfda10",
+    "artwork-2386720.jpg": "113459921b1e7f9a529f11d2574da748e27c9957d932da39be2a4bd840dfe158",
+    "clip-1.jpg": "296682c64899a01eb59033744aeff66f0dee9b482788e976eb9726e68ad61e0f",
+    "clip-2.jpg": "82b086f51fcd8ccf93c23f452e0f75d44676fb5040a6149018ceef112687ef4d",
+    "clip-3.jpg": "338c1c5d02b5e645b967fbcc83f90c735490bbdd2b8b1213eea7e36e6cb89ce4",
+    "clip-4.jpg": "b455bda242a80a5bb79eb97ba7b63f4961fd6bce6ad8b3bf8e09c85271ff0df3",
+    "clip-5.jpg": "d6d93c31eef9f8e41d5c66de6f7d9c27bb47ec0ab6c1da16919503307afc455d",
+    "editor-frame.jpg": "15fcc12106b9140a4c6d595d112de0f281fb07116efc39230299e91c78e3b04a",
+    "game-1808500.png": "85b07baa139ca3102cee7056d12c122e2b0152a8697b94030cc815d5bc23d898",
+    "game-2012840.png": "816ee17a18dd406117ec7cc937b2d99fd601e591b18c56197b7acdbb1b4da401",
+    "game-2073850.png": "98a9b0d29a570e9b67271668952ff22c07db3a2cd9d6ce9e4e5a97892c1dc692",
+    "game-2386720.png": "470ec7ecc024b0d226662eb24dab2b1de06e3096f9b2239e625d1dd680139e06",
+    "scene.json": "4d1355d46a8ecfd009d75fc33517bc9d96b207ef1afd81dfd23c93dca7bbed3d",
+    "waveforms.bin.z": "436e0ebde9b94467eb40a0086def23c2a136e6b0a12bb75815be16545e5f1ffa"
+  },
+  "appearance": {
+    "font_name": "Noto Sans 10",
+    "decoration_layout": "icon:minimize,maximize,close",
+    "fonts": {
+      "NotoSans-Regular.ttf": {
+        "url": "https://raw.githubusercontent.com/notofonts/noto-fonts/ffebf8c1ee449e544955a7e813c54f9b73848eac/hinted/ttf/NotoSans/NotoSans-Regular.ttf",
+        "sha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5"
+      },
+      "NotoSans-Bold.ttf": {
+        "url": "https://raw.githubusercontent.com/notofonts/noto-fonts/ffebf8c1ee449e544955a7e813c54f9b73848eac/hinted/ttf/NotoSans/NotoSans-Bold.ttf",
+        "sha256": "c976e4b1b99edc88775377fcc21692ca4bfa46b6d6ca6522bfda505b28ff9d6a"
+      },
+      "NotoSans-SemiBold.ttf": {
+        "url": "https://raw.githubusercontent.com/notofonts/noto-fonts/ffebf8c1ee449e544955a7e813c54f9b73848eac/hinted/ttf/NotoSans/NotoSans-SemiBold.ttf",
+        "sha256": "87a8b90ece1e89746b544e4e086f85a3710e41485a8078f9be874837dfad45d5"
+      }
+    }
+  }
+}

@@ -1009,7 +1009,7 @@ msgstr ""
 msgid "The GStreamer element %(element)s is unavailable"
 msgstr ""
 
-#: ui/editor_preview.py:202 ui/editor_preview.py:1082 ui/editor_preview.py:1094
+#: ui/editor_preview.py:202 ui/editor_preview.py:1087 ui/editor_preview.py:1099
 msgid "The GStreamer video preview is unavailable"
 msgstr ""
 
@@ -1061,11 +1061,11 @@ msgstr ""
 msgid "Loading video"
 msgstr ""
 
-#: ui/editor_preview.py:1102
+#: ui/editor_preview.py:1107
 msgid "The GStreamer video preview could not be linked"
 msgstr ""
 
-#: ui/editor_preview.py:1236
+#: ui/editor_preview.py:1241
 msgid "The GStreamer audio preview could not be linked"
 msgstr ""
 

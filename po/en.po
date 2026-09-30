@@ -1033,7 +1033,7 @@ msgstr "Replace"
 msgid "The GStreamer element %(element)s is unavailable"
 msgstr "The GStreamer element %(element)s is unavailable"
 
-#: ui/editor_preview.py:202 ui/editor_preview.py:1082 ui/editor_preview.py:1094
+#: ui/editor_preview.py:202 ui/editor_preview.py:1087 ui/editor_preview.py:1099
 msgid "The GStreamer video preview is unavailable"
 msgstr "The GStreamer video preview is unavailable"
 
@@ -1085,11 +1085,11 @@ msgstr "The pre-rolled timeline could not start"
 msgid "Loading video"
 msgstr "Loading video"
 
-#: ui/editor_preview.py:1102
+#: ui/editor_preview.py:1107
 msgid "The GStreamer video preview could not be linked"
 msgstr "The GStreamer video preview could not be linked"
 
-#: ui/editor_preview.py:1236
+#: ui/editor_preview.py:1241
 msgid "The GStreamer audio preview could not be linked"
 msgstr "The GStreamer audio preview could not be linked"
 

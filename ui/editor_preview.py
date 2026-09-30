@@ -1070,6 +1070,11 @@ class EditorPreview:
         self.loading_spinner.set_tooltip_text(_("Loading video"))
         self.loading_spinner.add_css_class("editor-loading-spinner")
         self.loading_spinner.set_visible(False)
+        self._build_pipeline()
+
+    def _build_pipeline(self):
+        """Attach the media backend to the preview's production widgets."""
+        project = self.project
         self.pipeline = Gst.Pipeline.new("clipper-editor-preview")
         self.source = Gst.ElementFactory.make("uridecodebin", "clipper-editor-source")
         self.video_queue = Gst.ElementFactory.make("queue", "clipper-editor-video-queue")
