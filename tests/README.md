@@ -46,7 +46,7 @@ process matching intentionally cover separate production implementations.
 | --- | --- |
 | audio_source_discovery | Identify real playback applications and microphones without system-client noise. |
 | audio_source_watcher | Refresh discovery for relevant audio events only. |
-| audio_tracks_view | Preserve routing and offline selections, filter non-descriptive media names, synchronize whitelist routes when games change, bound synchronous executable inference, tolerate unavailable game libraries, update gain live, discover sources on page activation and live events without starting capture, release inactive discovery work. |
+| audio_tracks_view | Preserve routing and offline selections, filter non-descriptive media names, synchronize whitelist routes when games change, bound synchronous executable inference, tolerate unavailable game libraries, update gain and mute live, restore track gain after unmuting, keep slider travel fixed across percentage digit changes, discover sources on page activation and live events without starting capture, release inactive discovery work. |
 | autostart | Honor portal approval and native desktop-file ownership; report registration failures. |
 | capability_response | Share startup and window discovery, bound connection/response retries, release engine ownership, and reject late replies after reconnect, timeout or shutdown. |
 | capture_modes | Migrate legacy capture labels and persist stable mode IDs. |

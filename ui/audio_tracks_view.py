@@ -18,7 +18,7 @@ from engine_client import STATE_CONNECTED
 from focus_helpers import new_dropdown_label_factory
 from game_icons import EXECUTABLE_SUFFIXES, executable_path_for_game
 from gi.repository import Adw, GLib, Gtk, Pango
-from icon_names import ADD, AUDIO, MICROPHONE, TRASH, VOLUME
+from icon_names import ADD, AUDIO, MICROPHONE, TRASH, VOLUME, VOLUME_CROSS
 
 _SPLIT_TRACKS_SUBTITLE = _("Each audio track includes only its selected source")
 _SINGLE_TRACK_SUBTITLE = _("All audio sources are combined into a single track")
@@ -52,6 +52,7 @@ class AudioTracksView(Gtk.Box):
         self._microphone_device_options = []
         self._source_options = []
         self._track_widgets = []
+        self._track_volumes_before_mute = {}
 
         if self._engine_client:
             self._engine_client.on_state_change(self._on_engine_state_change)
@@ -122,9 +123,6 @@ class AudioTracksView(Gtk.Box):
         )
         self._configure_volume_scale(self._mic_volume_scale)
         self._mic_volume_scale.set_size_request(220, -1)
-        self._mic_volume_scale.set_draw_value(True)
-        self._mic_volume_scale.set_format_value_func(lambda _scale, value: f"{value:.0f}%")
-        self._mic_volume_scale.set_value_pos(Gtk.PositionType.RIGHT)
         self._mic_volume_scale.connect("value-changed", self._on_mic_volume_changed)
         self._mic_volume_row.add_suffix(self._mic_volume_scale)
         group.add(self._mic_volume_row)
@@ -202,16 +200,18 @@ class AudioTracksView(Gtk.Box):
         volume_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
         volume_box.set_valign(Gtk.Align.CENTER)
         volume_box.add_css_class("clipper-audio-volume")
-        volume_icon = Gtk.Image.new_from_icon_name(VOLUME)
-        volume_icon.add_css_class("dim-label")
-        volume_box.append(volume_icon)
+        mute_button = Gtk.Button.new_from_icon_name(VOLUME)
+        mute_button.add_css_class("flat")
+        mute_button.set_valign(Gtk.Align.CENTER)
+        mute_button.connect(
+            "clicked",
+            lambda _button, idx=track["track"] - 1: self._on_track_mute(idx),
+        )
+        volume_box.append(mute_button)
 
         volume_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 200, 5)
         self._configure_volume_scale(volume_scale)
         volume_scale.set_size_request(180, -1)
-        volume_scale.set_draw_value(True)
-        volume_scale.set_format_value_func(lambda _scale, value: f"{value:.0f}%")
-        volume_scale.set_value_pos(Gtk.PositionType.RIGHT)
         volume_scale.set_valign(Gtk.Align.CENTER)
         volume_scale.set_tooltip_text(
             _("Track %(number)d volume") % {"number": track["track"]}
@@ -241,6 +241,7 @@ class AudioTracksView(Gtk.Box):
 
         widgets = {
             "volume": volume_scale,
+            "mute": mute_button,
             "source": source_dropdown,
             "remove": remove_button,
         }
@@ -270,6 +271,7 @@ class AudioTracksView(Gtk.Box):
         return None
 
     def _reset_track(self, track_index):
+        self._track_volumes_before_mute.pop(track_index, None)
         self._audio["tracks"][track_index] = {
             "track": track_index + 1,
             "label": f"Track {track_index + 1}",
@@ -305,6 +307,7 @@ class AudioTracksView(Gtk.Box):
                 if "enabled" in widgets:
                     widgets["enabled"].set_active(bool(track.get("enabled")))
                 widgets["volume"].set_value(float(track.get("volume", 1.0)) * 100.0)
+                self._update_track_mute_button(track, widgets)
                 widgets["source"].set_selected(self._source_index_for_track(track))
         finally:
             self._suppress_signals = False
@@ -317,6 +320,7 @@ class AudioTracksView(Gtk.Box):
         self._audio = normalize_audio_config(
             self._config.get("audio") if self._config is not None else None
         )
+        self._track_volumes_before_mute.clear()
         self._build_source_options()
         self._rebuild_track_groups()
         self._load_from_config()
@@ -399,6 +403,11 @@ class AudioTracksView(Gtk.Box):
         self._mode_row.set_subtitle(subtitle)
 
     def _configure_volume_scale(self, scale):
+        scale.add_css_class("clipper-volume-scale")
+        scale.set_draw_value(True)
+        scale.set_format_value_func(lambda _scale, value: f"{value:.0f}%")
+        scale.set_value_pos(Gtk.PositionType.RIGHT)
+        scale.add_mark(100, Gtk.PositionType.BOTTOM, None)
         adjustment = scale.get_adjustment()
         adjustment.set_step_increment(5)
         adjustment.set_page_increment(10)
@@ -424,11 +433,45 @@ class AudioTracksView(Gtk.Box):
         self._audio["tracks"][index]["enabled"] = bool(enabled)
         self._save_audio()
 
+    def _update_track_mute_button(self, track, widgets):
+        button = widgets.get("mute")
+        if button is not None:
+            muted = track["volume"] == 0
+            button.set_icon_name(VOLUME_CROSS if muted else VOLUME)
+            button.set_tooltip_text(_("Unmute") if muted else _("Mute"))
+
     def _on_track_volume(self, index, volume):
-        if index < 0 or index >= len(self._audio["tracks"]):
+        if self._suppress_signals or index < 0 or index >= len(self._audio["tracks"]):
             return
-        self._audio["tracks"][index]["volume"] = volume
+        # Moving the slider manually supersedes any volume saved by mute.
+        self._track_volumes_before_mute.pop(index, None)
+        track = self._audio["tracks"][index]
+        track["volume"] = volume
+        widgets = self._widgets_for_track_index(index)
+        if widgets is not None:
+            self._update_track_mute_button(track, widgets)
         self._save_audio(live_volume_update=True)
+
+    def _on_track_mute(self, index):
+        if self._suppress_signals or index < 0 or index >= len(self._audio["tracks"]):
+            return
+        widgets = self._widgets_for_track_index(index)
+        if widgets is None:
+            return
+        previous_volume = self._audio["tracks"][index]["volume"]
+        volume = (
+            self._track_volumes_before_mute.get(index, 1.0)
+            if previous_volume == 0
+            else 0.0
+        )
+        self._suppress_signals = True
+        try:
+            widgets["volume"].set_value(volume * 100.0)
+        finally:
+            self._suppress_signals = False
+        self._on_track_volume(index, volume)
+        if previous_volume > 0:
+            self._track_volumes_before_mute[index] = previous_volume
 
     def _on_track_source(self, index, selected):
         if self._suppress_signals:
@@ -493,6 +536,13 @@ class AudioTracksView(Gtk.Box):
             for track_index in visible_indexes
             if track_index != index
         ]
+        self._track_volumes_before_mute = {
+            new_index: self._track_volumes_before_mute[old_index]
+            for new_index, old_index in enumerate(
+                track_index for track_index in visible_indexes if track_index != index
+            )
+            if old_index in self._track_volumes_before_mute
+        }
         self._compact_visible_tracks(remaining_tracks)
         self._save_audio()
         self._rebuild_track_groups()
@@ -643,7 +693,7 @@ class AudioTracksView(Gtk.Box):
 
         self._source_options.append(
             {
-                "label": _("Whitelisted games"),
+                "label": _("All whitelisted games"),
                 "role": "whitelisted_games",
                 "sources": self._whitelist_game_sources(),
             }
@@ -908,7 +958,7 @@ class AudioTracksView(Gtk.Box):
 
     def _label_for_sources(self, sources):
         if len(sources) > 1 and all(source.get("kind") == "game_app" for source in sources):
-            return _("Whitelisted games")
+            return _("All whitelisted games")
 
         source = sources[0]
         label = source.get("display_name")
@@ -1032,7 +1082,7 @@ class AudioTracksView(Gtk.Box):
             if whitelist_sources == sources:
                 continue
 
-            track["label"] = _("Whitelisted games")
+            track["label"] = _("All whitelisted games")
             track["source_role"] = "whitelisted_games"
             track["sources"] = [copy.deepcopy(source) for source in whitelist_sources]
             if sources or whitelist_sources:

@@ -276,6 +276,7 @@ def _make_view(
             for idx in range(1, audio_tracks_module.AUDIO_MAX_TRACKS + 1)
         ],
     }
+    view._track_volumes_before_mute = {}
     view._track_widgets = [{"source": dropdown, "enabled": SwitchStub()}]
     view._source_options = []
     view._build_source_options()
@@ -369,18 +370,18 @@ def test_whitelisted_games_option_is_available_with_empty_whitelist():
     config = ConfigStub({"whitelist": []})
     _view, dropdown = _make_view(config=config)
 
-    assert "Whitelisted games" in dropdown.model
+    assert "All whitelisted games" in dropdown.model
 
 
 def test_empty_whitelisted_games_selection_survives_track_model_rebuild():
     config = ConfigStub({"whitelist": []})
     view, dropdown = _make_view(config=config)
 
-    game_index = dropdown.model.index("Whitelisted games")
+    game_index = dropdown.model.index("All whitelisted games")
     view._on_track_source(0, game_index)
     view._rebuild_source_models()
 
-    assert view._audio["tracks"][0]["label"] == "Whitelisted games"
+    assert view._audio["tracks"][0]["label"] == "All whitelisted games"
     assert view._audio["tracks"][0]["sources"] == []
     assert dropdown.selected == game_index
 
@@ -389,7 +390,7 @@ def test_empty_whitelisted_games_track_populates_when_first_game_is_added():
     config = ConfigStub({"whitelist": []})
     view, dropdown = _make_view(config=config)
 
-    game_index = dropdown.model.index("Whitelisted games")
+    game_index = dropdown.model.index("All whitelisted games")
     view._on_track_source(0, game_index)
     config.saved.clear()
 
@@ -481,15 +482,15 @@ def test_whitelisted_games_selection_survives_removing_all_games():
         }
     )
     view, dropdown = _make_view(config=config)
-    game_index = dropdown.model.index("Whitelisted games")
+    game_index = dropdown.model.index("All whitelisted games")
     view._on_track_source(0, game_index)
 
     config.data["whitelist"] = []
     view.on_whitelist_changed()
 
-    assert view._audio["tracks"][0]["label"] == "Whitelisted games"
+    assert view._audio["tracks"][0]["label"] == "All whitelisted games"
     assert view._audio["tracks"][0]["sources"] == []
-    assert dropdown.selected == dropdown.model.index("Whitelisted games")
+    assert dropdown.selected == dropdown.model.index("All whitelisted games")
 
 
 def test_removing_game_with_shared_selector_updates_remaining_source_owner():
@@ -502,7 +503,7 @@ def test_removing_game_with_shared_selector_updates_remaining_source_owner():
         }
     )
     view, dropdown = _make_view(config=config)
-    view._on_track_source(0, dropdown.model.index("Whitelisted games"))
+    view._on_track_source(0, dropdown.model.index("All whitelisted games"))
     assert len(view._audio["tracks"][0]["sources"]) == 1
 
     config.data["whitelist"] = config.data["whitelist"][1:]
@@ -567,7 +568,14 @@ def test_removing_first_track_moves_existing_tracks_up():
     view._rebuild_track_groups = lambda: None
     view._load_from_config = lambda: None
 
+    view._track_widgets.append({
+        "track_index": 1,
+        "volume": types.SimpleNamespace(set_value=lambda _value: None),
+    })
+    view._on_track_mute(1)
     view._on_remove_track(0)
+    view._track_widgets = [{"volume": types.SimpleNamespace(set_value=lambda _value: None)}]
+    view._on_track_mute(0)
 
     assert view._visible_track_indexes() == [0, 1]
     assert view._audio["tracks"][0]["track"] == 1
@@ -706,6 +714,35 @@ def test_offline_application_uses_stable_match_when_saved_display_name_conflicts
     assert dropdown.selected == dropdown.model.index("App: ExampleApp")
 
 
+
+def test_percentage_digit_changes_keep_volume_slider_travel_fixed():
+    # Exercise real GTK allocation: a shrinking trough changes the pointer-to-
+    # volume mapping mid-drag and makes 100% almost impossible to select.
+    from audio_tracks_view import AudioTracksView as GtkAudioTracksView
+    from gi.repository import Adw, Gtk
+    from main_window import MainWindow
+
+    style_owner = MainWindow.__new__(MainWindow)
+    Adw.ApplicationWindow.__init__(style_owner)
+    style_owner._load_css()
+    view = GtkAudioTracksView.__new__(GtkAudioTracksView)
+    Gtk.Box.__init__(view)
+    try:
+        for width in (180, 220):
+            scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 200, 5)
+            view._configure_volume_scale(scale)
+            rectangles = []
+            for value in (98, 100, 106, 101, 93, 0, 200):
+                scale.set_value(value)
+                scale.allocate(width, 60, -1, None)
+                rect = scale.get_range_rect()
+                rectangles.append((rect.x, rect.width))
+            assert rectangles[0][1] > 0
+            assert all(rect == rectangles[0] for rect in rectangles)
+    finally:
+        style_owner.destroy()
+
+
 def test_track_volume_change_updates_live_without_restart_banner():
     view, _dropdown = _make_view(restart_required=lambda: True)
 
@@ -713,6 +750,52 @@ def test_track_volume_change_updates_live_without_restart_banner():
 
     assert view._engine_client.volume_updates[-1]["tracks"][0]["volume"] == 0.35
     assert view._restart_banner.revealed is False
+
+
+def test_track_mute_updates_capture_live_and_restores_gain_after_rows_rebuild():
+    config = ConfigStub({})
+    view, _dropdown = _make_view(config=config, restart_required=lambda: True)
+    view._on_track_volume(0, 1.35)
+    view._audio["tracks"][0]["enabled"] = True
+    routing = [{
+        "kind": "output_device",
+        "backend": "pulse",
+        "device_id": "default",
+        "display_name": "Default",
+    }]
+    view._audio["tracks"][0]["sources"] = routing
+    values = []
+
+    def set_value(value):
+        values.append(value)
+        view._on_track_volume(0, value / 100.0)
+
+    view._track_widgets[0]["volume"] = types.SimpleNamespace(set_value=set_value)
+
+    view._on_track_mute(0)
+    assert config.data["audio"]["tracks"][0]["volume"] == 0
+    assert view._engine_client.volume_updates[-1]["tracks"][0]["volume"] == 0
+    assert view._audio["tracks"][0]["sources"] == routing
+
+    # Adding a track rebuilds the widgets; the saved gain belongs to the track.
+    view._track_widgets = [{"volume": types.SimpleNamespace(set_value=set_value)}]
+    view._on_track_mute(0)
+    assert values == [0, 135]
+    assert config.data["audio"]["tracks"][0]["volume"] == 1.35
+    assert view._engine_client.volume_updates[-1]["tracks"][0]["volume"] == 1.35
+    assert view._audio["tracks"][1]["volume"] == 1.0
+    assert view._restart_banner.revealed is False
+
+
+def test_manual_track_volume_supersedes_saved_mute_gain():
+    view, _dropdown = _make_view()
+    view._track_widgets[0]["volume"] = types.SimpleNamespace(set_value=lambda _value: None)
+    view._on_track_volume(0, 0.35)
+    view._on_track_mute(0)
+    view._on_track_volume(0, 0.5)
+    view._on_track_volume(0, 0)
+    view._on_track_mute(0)
+    assert view._audio["tracks"][0]["volume"] == 1.0
 
 
 def test_mic_volume_change_updates_live_without_restart_banner():
@@ -751,11 +834,11 @@ def test_whitelisted_games_prefer_steam_install_dir_over_title():
     )
     view, dropdown = _make_view(config=config)
 
-    assert "Whitelisted games" in dropdown.model
+    assert "All whitelisted games" in dropdown.model
     option = next(
         option
         for option in view._source_options
-        if option["label"] == "Whitelisted games"
+        if option["label"] == "All whitelisted games"
     )
     assert option["sources"][0]["match"]["value"] == "BloonsTD6"
 
@@ -790,7 +873,7 @@ def test_whitelisted_games_infer_executable_without_recursive_ui_scan(tmp_path, 
     option = next(
         option
         for option in view._source_options
-        if option["label"] == "Whitelisted games"
+        if option["label"] == "All whitelisted games"
     )
     assert option["sources"][0]["match"]["value"] == "BloonsTD6.exe"
 
@@ -923,7 +1006,7 @@ def test_live_audio_source_refresh_does_not_rewrite_whitelisted_game_track():
 
     sources = view._audio["tracks"][0]["sources"]
     assert sources[0]["match"]["value"] == "Crab Game.x86_64"
-    assert dropdown.selected == dropdown.model.index("Whitelisted games")
+    assert dropdown.selected == dropdown.model.index("All whitelisted games")
     assert config.saved == []
     assert restart_requests == []
     assert view._restart_banner.revealed is False

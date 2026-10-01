@@ -27,39 +27,39 @@ msgstr "Each audio track includes only its selected source"
 msgid "All audio sources are combined into a single track"
 msgstr "All audio sources are combined into a single track"
 
-#: ui/audio_tracks_view.py:64
+#: ui/audio_tracks_view.py:65
 msgid "Engine restart required for audio changes"
 msgstr "Engine restart required for audio changes"
 
-#: ui/audio_tracks_view.py:65 ui/main_window.py:184 ui/settings_view.py:470
+#: ui/audio_tracks_view.py:66 ui/main_window.py:184 ui/settings_view.py:470
 msgid "Restart engine"
 msgstr "Restart engine"
 
-#: ui/audio_tracks_view.py:99
+#: ui/audio_tracks_view.py:100
 msgid "Capture"
 msgstr "Capture"
 
-#: ui/audio_tracks_view.py:100
+#: ui/audio_tracks_view.py:101
 msgid "Choose the default audio behavior"
 msgstr "Choose the default audio behavior"
 
-#: ui/audio_tracks_view.py:103 ui/audio_tracks_view.py:140
+#: ui/audio_tracks_view.py:104 ui/audio_tracks_view.py:138
 msgid "Separate tracks"
 msgstr "Separate tracks"
 
-#: ui/audio_tracks_view.py:109
+#: ui/audio_tracks_view.py:110
 msgid "Microphone device"
 msgstr "Microphone device"
 
-#: ui/audio_tracks_view.py:118
+#: ui/audio_tracks_view.py:119
 msgid "Microphone volume"
 msgstr "Microphone volume"
 
-#: ui/audio_tracks_view.py:156
+#: ui/audio_tracks_view.py:154
 msgid "Add track"
 msgstr "Add track"
 
-#: ui/audio_tracks_view.py:174 ui/audio_tracks_view.py:443
+#: ui/audio_tracks_view.py:172 ui/audio_tracks_view.py:486
 #, python-format
 msgid "Track %(number)d"
 msgstr "Track %(number)d"
@@ -74,37 +74,47 @@ msgstr "Track %(number)d volume"
 msgid "Remove track %(number)d"
 msgstr "Remove track %(number)d"
 
-#: ui/audio_tracks_view.py:504
+#: ui/audio_tracks_view.py:441 ui/editor_window.py:1795
+#: ui/playback_controls.py:230 ui/playback_controls.py:327
+msgid "Mute"
+msgstr "Mute"
+
+#: ui/audio_tracks_view.py:441 ui/editor_window.py:1795
+#: ui/playback_controls.py:327
+msgid "Unmute"
+msgstr "Unmute"
+
+#: ui/audio_tracks_view.py:554
 msgid "Off"
 msgstr "Off"
 
-#: ui/audio_tracks_view.py:513
+#: ui/audio_tracks_view.py:563
 msgid "System default"
 msgstr "System default"
 
-#: ui/audio_tracks_view.py:631
+#: ui/audio_tracks_view.py:681
 msgid "None"
 msgstr "None"
 
-#: ui/audio_tracks_view.py:633
+#: ui/audio_tracks_view.py:683
 msgid "System audio"
 msgstr "System audio"
 
-#: ui/audio_tracks_view.py:638
+#: ui/audio_tracks_view.py:688
 msgid "Microphone"
 msgstr "Microphone"
 
-#: ui/audio_tracks_view.py:646 ui/audio_tracks_view.py:911
-#: ui/audio_tracks_view.py:1035
-msgid "Whitelisted games"
-msgstr "Whitelisted games"
+#: ui/audio_tracks_view.py:696 ui/audio_tracks_view.py:961
+#: ui/audio_tracks_view.py:1085
+msgid "All whitelisted games"
+msgstr "All whitelisted games"
 
-#: ui/audio_tracks_view.py:659 ui/audio_tracks_view.py:927
+#: ui/audio_tracks_view.py:709 ui/audio_tracks_view.py:977
 #, python-format
 msgid "App: %(name)s"
 msgstr "App: %(name)s"
 
-#: ui/audio_tracks_view.py:925
+#: ui/audio_tracks_view.py:975
 #, python-format
 msgid "Game: %(name)s"
 msgstr "Game: %(name)s"
@@ -1285,15 +1295,6 @@ msgid "%(count)d selected segment"
 msgid_plural "%(count)d selected segments"
 msgstr[0] "%(count)d selected segment"
 msgstr[1] "%(count)d selected segments"
-
-#: ui/editor_window.py:1795 ui/playback_controls.py:230
-#: ui/playback_controls.py:327
-msgid "Mute"
-msgstr "Mute"
-
-#: ui/editor_window.py:1795 ui/playback_controls.py:327
-msgid "Unmute"
-msgstr "Unmute"
 
 #: ui/editor_window.py:1796
 #, python-format

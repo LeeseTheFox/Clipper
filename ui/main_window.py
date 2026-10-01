@@ -741,7 +741,9 @@ class MainWindow(Adw.ApplicationWindow):
                 padding: 0 8px;
             }
 
-            .clipper-audio-volume scale value {
+            .clipper-volume-scale value {
+                /* Keep the trough fixed as percentages cross 100%. */
+                min-width: 3em;
                 font-variant-numeric: tabular-nums;
             }
 
