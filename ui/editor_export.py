@@ -956,6 +956,7 @@ def build_ffmpeg_command(
     else:
         command.extend(["-c:v", video_codec.encoder, *video_codec.encoder_args])
     command.extend(_rate_control_arguments(options, video_codec))
+    bitstream_filters = []
     if hevc_surface_padding is not None:
         _surface_width, _surface_height, crop_right, crop_bottom = (
             hevc_surface_padding
@@ -965,7 +966,18 @@ def build_ffmpeg_command(
             crop_options.append(f"crop_right={crop_right}")
         if crop_bottom:
             crop_options.append(f"crop_bottom={crop_bottom}")
-        command.extend(["-bsf:v", "hevc_metadata=" + ":".join(crop_options)])
+        bitstream_filters.append("hevc_metadata=" + ":".join(crop_options))
+    if (
+        options.video_encoder == "vaapi"
+        and options.video_codec == "hevc"
+        and options.format in {"mp4", "mov"}
+    ):
+        # AMD drivers can emit SPS/PPS values that differ from FFmpeg's initial
+        # extradata. hvc1 strips those in-band headers, so first copy the actual
+        # encoded headers (including any crop above) into the container metadata.
+        bitstream_filters.append("extract_extradata")
+    if bitstream_filters:
+        command.extend(["-bsf:v", ",".join(bitstream_filters)])
     if options.video_encoder != "vaapi":
         command.extend(["-pix_fmt", "yuv420p"])
     if options.video_codec == "hevc" and options.format in {"mp4", "mov"}:

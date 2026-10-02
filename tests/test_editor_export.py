@@ -192,14 +192,14 @@ def test_scaled_vaapi_export_scales_before_uploading_frames(tmp_path):
 
 
 @pytest.mark.parametrize(
-    ("width", "height", "surface_width", "surface_height", "crop_filter"),
+    ("container", "width", "height", "surface_width", "surface_height", "crop_filter"),
     (
-        (1920, 1080, 1920, 1088, "hevc_metadata=crop_bottom=8"),
-        (854, 480, 896, 480, "hevc_metadata=crop_right=42"),
+        ("mp4", 1920, 1080, 1920, 1088, "hevc_metadata=crop_bottom=8"),
+        ("mov", 854, 480, 896, 480, "hevc_metadata=crop_right=42"),
     ),
 )
-def test_hevc_vaapi_hides_aligned_surface_padding_in_the_bitstream(
-    tmp_path, width, height, surface_width, surface_height, crop_filter
+def test_hevc_vaapi_hvc1_uses_encoder_headers_after_cropping_surface_padding(
+    tmp_path, container, width, height, surface_width, surface_height, crop_filter
 ):
     item = project()
     item.source.width = 2560
@@ -207,6 +207,7 @@ def test_hevc_vaapi_hides_aligned_surface_padding_in_the_bitstream(
     options = ExportOptions(
         tmp_path,
         "scaled-hevc",
+        format=container,
         video_codec="hevc",
         video_encoder="vaapi",
         hardware_device="/dev/dri/renderD128",
@@ -220,16 +221,20 @@ def test_hevc_vaapi_hides_aligned_surface_padding_in_the_bitstream(
     assert f"scale={width}:{height}:flags=lanczos,setsar=1" in graph
     assert f"pad={surface_width}:{surface_height}:0:0[vout_padded]" in graph
     assert "[vout_padded]format=nv12,hwupload[vout_hw]" in graph
-    assert _option_value(command, "-bsf:v") == crop_filter
+    # hvc1 discards in-band headers. Extract the driver's SPS/PPS only after
+    # cropping, or players get stale coding parameters or visible padding.
+    assert _option_value(command, "-tag:v") == "hvc1"
+    assert _option_value(command, "-bsf:v") == f"{crop_filter},extract_extradata"
 
 
-def test_aligned_hevc_vaapi_resolution_needs_no_padding_or_crop(tmp_path):
+def test_aligned_hevc_vaapi_hvc1_still_uses_encoder_headers(tmp_path):
     item = project()
     item.source.width = 2560
     item.source.height = 1440
     options = ExportOptions(
         tmp_path,
         "scaled-hevc",
+        format="mp4",
         video_codec="hevc",
         video_encoder="vaapi",
         hardware_device="/dev/dri/renderD128",
@@ -241,7 +246,7 @@ def test_aligned_hevc_vaapi_resolution_needs_no_padding_or_crop(tmp_path):
     graph = _option_value(command, "-filter_complex")
 
     assert "]pad=" not in graph
-    assert "-bsf:v" not in command
+    assert _option_value(command, "-bsf:v") == "extract_extradata"
 
 
 def test_ultrawide_hevc_vaapi_crops_both_aligned_surface_edges(tmp_path):
