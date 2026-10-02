@@ -2069,17 +2069,28 @@ class ClipsView(Gtk.Box):
 
     def _remove_clip_from_view(self, clip_path, row):
         """Remove a clip row from the visible list without blocking on disk I/O."""
-        try:
-            self.clips_list.remove(row)
-        except Exception:
-            pass
-
         self.clips_data = [c for c in self.clips_data if c["path"] != clip_path]
         path = str(clip_path)
         self._clips_by_path.pop(path, None)
         self._clip_identities.pop(path, None)
         self._media_metadata.pop(path, None)
-        self._render_clips()
+        self._media_pending_jobs.pop(path, None)
+
+        # Keep the existing model so Gtk.ListView retains its scroll anchor.
+        # The row widget may have been recycled while confirmation was open.
+        for position, clip in enumerate(self._visible_clip_data):
+            if str(clip["path"]) == path:
+                assert self._clip_string_model is not None
+                self._visible_clip_data.pop(position)
+                self._clip_string_model.remove(position)
+                break
+
+        if not self._visible_clip_data:
+            self._clips_rendered_pending = False
+            self.scrolled.set_child(
+                self.empty_state if not self.clips_data else self.no_results_state
+            )
+            self._notify_clips_rendered()
         self._schedule_media_cache_save()
 
     def _delete_clip_file_worker(self, clip_path, permanently=False):

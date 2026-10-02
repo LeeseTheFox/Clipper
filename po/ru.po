@@ -362,19 +362,19 @@ msgstr "Отмена"
 msgid "Move to trash"
 msgstr "В корзину"
 
-#: ui/clips_view.py:2112
+#: ui/clips_view.py:2123
 msgid "Clip deleted"
 msgstr "Клип удалён"
 
-#: ui/clips_view.py:2112
+#: ui/clips_view.py:2123
 msgid "Clip moved to trash"
 msgstr "Клип перемещён в корзину"
 
-#: ui/clips_view.py:2119
+#: ui/clips_view.py:2130
 msgid "Could not delete clip"
 msgstr "Не удалось удалить клип"
 
-#: ui/clips_view.py:2121
+#: ui/clips_view.py:2132
 msgid "Could not move clip to trash"
 msgstr "Не удалось переместить клип в корзину"
 

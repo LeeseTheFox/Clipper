@@ -57,6 +57,9 @@ def _load_clips_module():
         def get_item(self, index):
             return StringObjectStub(self.values[index])
 
+        def remove(self, index):
+            self.values.pop(index)
+
     class NoSelectionStub:
         def __init__(self, model):
             self.model = model
@@ -1197,19 +1200,31 @@ def test_cancelling_wipe_keeps_saved_edits_and_does_not_open_editor(monkeypatch)
     assert button._shift_edit_armed is False
 
 
-def test_trash_confirmation_removes_row_and_starts_worker(monkeypatch, tmp_path):
+def test_trash_confirmation_preserves_list_model_and_starts_worker(monkeypatch, tmp_path):
     ThreadStub.created = []
     monkeypatch.setattr(clips_module.threading, "Thread", ThreadStub)
 
     clip_path = tmp_path / "clip.mkv"
     row = object()
     view = _make_view()
-    view.clips_data = [{"path": clip_path}, {"path": tmp_path / "other.mkv"}]
+    before = {"path": tmp_path / "before.mkv", "name": "before"}
+    deleted = {"path": clip_path, "name": "clip"}
+    after = {"path": tmp_path / "other.mkv", "name": "other"}
+    view.clips_data = [after, deleted, before]
+    view.sort_mode = ClipsView.SORT_NAME
+    view._render_clips()
+    model = view._clip_string_model
+    selection = view.clips_list.model
 
     view.on_delete_confirmed(None, "trash", {"path": clip_path}, row)
 
-    assert view.clips_list.removed == [row]
-    assert view.clips_data == [{"path": tmp_path / "other.mkv"}]
+    # Replacing the model loses GTK's viewport anchor even if paths are equal.
+    assert view._clip_string_model is model
+    assert view.clips_list.model is selection
+    assert model.values == [str(before["path"]), str(after["path"])]
+    assert view._visible_clip_data == [before, after]
+    assert view.scrolled.child is view.clips_list
+    assert view.clips_data == [after, before]
     assert clip_path in view._locally_deleted_paths
     assert len(ThreadStub.created) == 1
     assert ThreadStub.created[0].args == (clip_path, False)
@@ -1307,6 +1322,7 @@ def test_shift_delete_bypasses_confirmation(monkeypatch, tmp_path):
     button = types.SimpleNamespace(_shift_delete_armed=False)
     view = _make_view()
     view.clips_data = [{"path": clip_path}]
+    view._render_clips()
 
     confirmations = []
     view.on_delete_clip = lambda clip_data, row_obj: confirmations.append((clip_data, row_obj))
@@ -1318,13 +1334,32 @@ def test_shift_delete_bypasses_confirmation(monkeypatch, tmp_path):
     view.on_delete_clip_clicked(button, {"path": clip_path}, row)
 
     assert confirmations == []
-    assert view.clips_list.removed == [row]
+    assert view._clip_string_model.get_n_items() == 0
+    assert view.scrolled.child is view.empty_state
     assert view.clips_data == []
     assert clip_path in view._locally_deleted_paths
     assert len(ThreadStub.created) == 1
     assert ThreadStub.created[0].args == (clip_path, True)
     assert ThreadStub.created[0].started is True
     assert button._shift_delete_armed is False
+
+
+def test_deleting_last_search_match_shows_no_results(tmp_path):
+    view = _make_view()
+    clip_path = tmp_path / "match.mkv"
+    view.clips_data = [
+        {"path": clip_path, "name": "match"},
+        {"path": tmp_path / "other.mkv", "name": "other"},
+    ]
+    view.search_query = "match"
+    view._render_clips()
+
+    view._remove_clip_from_view(clip_path, object())
+
+    assert view._clip_string_model.get_n_items() == 0
+    assert view._visible_clip_data == []
+    assert len(view.clips_data) == 1
+    assert view.scrolled.child is view.no_results_state
 
 
 def test_local_delete_monitor_event_is_ignored(tmp_path):
