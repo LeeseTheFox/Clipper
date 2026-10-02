@@ -742,11 +742,11 @@ msgstr "The selected folder is not writable"
 msgid "[amixed]"
 msgstr "[amixed]"
 
-#: ui/editor_export.py:1015
+#: ui/editor_export.py:1017
 msgid "FFmpeg could not create the output file"
 msgstr "FFmpeg could not create the output file"
 
-#: ui/editor_export.py:1021
+#: ui/editor_export.py:1024
 #, python-format
 msgid ""
 "%(detail)s. The hardware encoder may not support this clip; choose Software "
@@ -755,29 +755,29 @@ msgstr ""
 "%(detail)s. The hardware encoder may not support this clip; choose Software "
 "as the video encoder and try again"
 
-#: ui/editor_export.py:1050
+#: ui/editor_export.py:1053
 msgid "Export was already started"
 msgstr "Export was already started"
 
-#: ui/editor_export.py:1053 ui/editor_export.py:1137 ui/editor_export.py:1151
+#: ui/editor_export.py:1056 ui/editor_export.py:1140 ui/editor_export.py:1154
 #: ui/editor_export_dialog.py:717 ui/editor_window.py:3693
 msgid "Export cancelled"
 msgstr "Export cancelled"
 
-#: ui/editor_export.py:1085
+#: ui/editor_export.py:1088
 #, python-format
 msgid "Could not start FFmpeg: %(error)s"
 msgstr "Could not start FFmpeg: %(error)s"
 
-#: ui/editor_export.py:1109
+#: ui/editor_export.py:1112
 msgid "Export was not started"
 msgstr "Export was not started"
 
-#: ui/editor_export.py:1224
+#: ui/editor_export.py:1227
 msgid "The exported file could not be validated"
 msgstr "The exported file could not be validated"
 
-#: ui/editor_export.py:1261
+#: ui/editor_export.py:1264
 msgid "The exported file did not match the selected options"
 msgstr "The exported file did not match the selected options"
 

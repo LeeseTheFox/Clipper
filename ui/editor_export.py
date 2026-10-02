@@ -373,7 +373,7 @@ def _vaapi_cqp_arguments(encoder: str, quality: int) -> list[str]:
         return [
             "-rc_mode",
             "CQP",
-            "-global_quality",
+            "-global_quality:v",
             str(quality * _OBS_AV1_VAAPI_QP_SCALE),
         ]
     return ["-rc_mode", "CQP", "-qp", str(quality)]
@@ -1013,18 +1013,9 @@ def parse_progress_line(line: str, duration_us: int) -> float | None:
 
 
 def _export_error(stderr: str) -> str:
-    ignored = (
-        "Nothing was written into output file",
-        "Task finished with error code",
-        "Terminating thread with return code",
-        "Error sending frames to consumers",
-        "Conversion failed",
-    )
-    lines = [line.strip() for line in stderr.splitlines() if line.strip()]
-    for line in reversed(lines):
-        if not any(fragment in line for fragment in ignored):
-            return line[:500]
-    return _("FFmpeg could not create the output file")
+    return probe_failure_reason(
+        stderr, fallback=_("FFmpeg could not create the output file")
+    )[:500]
 
 
 def _hardware_export_error(stderr: str) -> str:

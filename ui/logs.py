@@ -15,7 +15,9 @@ from typing import IO
 MAX_LOG_LINES = 2_000
 
 
-def probe_failure_reason(stderr: str) -> str:
+def probe_failure_reason(
+    stderr: str, *, fallback: str = "no specific driver reason reported"
+) -> str:
     """Prefer the cause over FFmpeg's cascading shutdown messages."""
     cleanup = (
         "Task finished with error code", "Terminating thread with return code",
@@ -29,7 +31,7 @@ def probe_failure_reason(stderr: str) -> str:
         line = re.sub(r"\s*@\s*0x[0-9a-fA-F]+", "", line.strip())
         if line not in reasons:
             reasons.append(line[:400])
-    return "; ".join(reasons[:2]) or "no specific driver reason reported"
+    return "; ".join(reasons[:2]) or fallback
 
 
 class ApplicationLogHandler(logging.Handler):

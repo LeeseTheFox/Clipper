@@ -470,7 +470,8 @@ def test_vaapi_detection_uses_codec_specific_quality_controls(monkeypatch):
     assert "-qp" in hevc_command
     assert "-global_quality" not in hevc_command
     assert _option_value(hevc_command, "-qp") == "23"
-    assert _option_value(av1_command, "-global_quality") == "115"
+    assert _option_value(av1_command, "-global_quality:v") == "115"
+    assert "-global_quality" not in av1_command
     assert "-qp" not in av1_command
 
 
@@ -616,11 +617,13 @@ def test_vaapi_command_uploads_filtered_frames_and_uses_exact_cqp(tmp_path):
     assert "-pix_fmt" not in command
 
 
-def test_av1_vaapi_matches_obs_quality_scale_for_the_selected_cqp(tmp_path):
+def test_av1_vaapi_scopes_obs_quality_to_video_so_opus_can_encode(tmp_path):
     options = ExportOptions(
         tmp_path,
         "hardware-av1",
+        format="mp4",
         video_codec="av1",
+        audio_codec="opus",
         video_encoder="vaapi",
         hardware_device="/dev/dri/renderD128",
         quality_cqp=24,
@@ -630,7 +633,10 @@ def test_av1_vaapi_matches_obs_quality_scale_for_the_selected_cqp(tmp_path):
 
     assert _option_value(command, "-c:v") == "av1_vaapi"
     assert _option_value(command, "-rc_mode") == "CQP"
-    assert _option_value(command, "-global_quality") == "120"
+    assert _option_value(command, "-c:a") == "libopus"
+    assert _option_value(command, "-global_quality:v") == "120"
+    # Unqualified global_quality enables unsupported quality encoding in Opus.
+    assert "-global_quality" not in command
     assert "-qp" not in command
 
 
@@ -797,11 +803,43 @@ def test_hardware_export_failure_recommends_the_safe_software_path(tmp_path):
         ),
     )
     exporter.process = _FinishedProcess("", return_code=1)
-    exporter._stderr.write("Failed to create VAAPI encode context\n")
+    exporter._stderr.write(
+        "Failed to create VAAPI encode context\n"
+        "[vost#0:0/av1_vaapi @ 0x123] Could not open encoder before EOF\n"
+        "Task finished with error code: -22 (Invalid argument)\n"
+    )
 
-    with pytest.raises(RuntimeError, match="choose Software"):
+    with pytest.raises(
+        RuntimeError, match="Failed to create VAAPI encode context.*choose Software"
+    ):
         exporter.finish()
 
+    assert not exporter.partial.exists()
+
+
+def test_audio_encoder_failure_is_not_hidden_by_video_encoder_eof(tmp_path):
+    exporter = ExportProcess(
+        project(),
+        ExportOptions(
+            tmp_path, "failed-opus", video_codec="av1", audio_codec="opus",
+            video_encoder="vaapi", hardware_device="/dev/dri/renderD128",
+        ),
+    )
+    exporter.process = _FinishedProcess("", return_code=234)
+    exporter._stderr.write(
+        "[libopus @ 0x123] Quality-based encoding not supported, "
+        "please specify a bitrate and VBR setting.\n"
+        "[aost#0:1/libopus @ 0x456] Error while opening encoder\n"
+        "[fc#0 @ 0x789] Error sending frames to consumers: Invalid argument\n"
+        "[vost#0:0/av1_vaapi @ 0xabc] Could not open encoder before EOF\n"
+        "Nothing was written into output file\n"
+    )
+
+    with pytest.raises(RuntimeError, match="Quality-based encoding not supported") as error:
+        exporter.finish()
+
+    assert "before EOF" not in str(error.value)
+    assert "0x123" not in str(error.value)
     assert not exporter.partial.exists()
 
 
