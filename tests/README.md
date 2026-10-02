@@ -57,7 +57,7 @@ process matching intentionally cover separate production implementations.
 | dialogs | Expose the appropriate capture instructions and copy the actual launch option. |
 | display_auth | Recover valid X11 authorization after session credentials change. |
 | editor_drafts | Save, restore, rename and reject stale or malformed edits without losing usable history. |
-| editor_export | Preserve aspect ratio, timing, audio and codec contracts, including VAAPI HEVC encoder headers and cropping in hvc1 containers and AV1 quality options scoped away from audio; validate output despite AAC priming packet order, report original encoding failures before shutdown noise and clean failed exports. GPU output correctness requires a real hardware export and decoded-frame inspection. |
+| editor_export | Preserve aspect ratio, timing, audio and codec contracts, including native encoder quality scales in exports and capability probes, VAAPI HEVC encoder headers and cropping in hvc1 containers and AV1/VP9 quality options scoped away from audio; validate output despite AAC priming packet order, report original encoding failures before shutdown noise and clean failed exports. GPU output correctness requires a real hardware export and decoded-frame inspection. |
 | editor_export_dialog | Keep selected options, require overwrite confirmation, handle progress/cancel and block unsafe close. |
 | editor_history | Maintain undo/redo branches, saved state and bounded/coalesced history. |
 | editor_media | Preserve valid sample aspect ratio and reject invalid probe metadata. |

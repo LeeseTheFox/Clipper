@@ -559,201 +559,201 @@ msgstr ""
 msgid "Restart Steam"
 msgstr "Перезапустить Steam"
 
-#: ui/editor_export.py:32 ui/settings_view.py:56 ui/settings_view.py:745
+#: ui/editor_export.py:33 ui/settings_view.py:56 ui/settings_view.py:745
 msgid "Matroska video (.mkv)"
 msgstr "Видео Matroska (.mkv)"
 
-#: ui/editor_export.py:33 ui/settings_view.py:57 ui/settings_view.py:746
+#: ui/editor_export.py:34 ui/settings_view.py:57 ui/settings_view.py:746
 msgid "MPEG-4 (.mp4)"
 msgstr "MPEG-4 (.mp4)"
 
-#: ui/editor_export.py:34 ui/settings_view.py:58 ui/settings_view.py:747
+#: ui/editor_export.py:35 ui/settings_view.py:58 ui/settings_view.py:747
 msgid "QuickTime (.mov)"
 msgstr "QuickTime (.mov)"
 
-#: ui/editor_export.py:35 ui/settings_view.py:59 ui/settings_view.py:748
+#: ui/editor_export.py:36 ui/settings_view.py:59 ui/settings_view.py:748
 msgid "MPEG-TS (.ts)"
 msgstr "MPEG-TS (.ts)"
 
-#: ui/editor_export.py:103
+#: ui/editor_export.py:115
 msgid "H.264"
 msgstr "H.264"
 
-#: ui/editor_export.py:104 ui/editor_export.py:143
+#: ui/editor_export.py:116 ui/editor_export.py:155
 msgid "Best playback compatibility"
 msgstr "Наилучшая совместимость при воспроизведении"
 
-#: ui/editor_export.py:112
+#: ui/editor_export.py:124
 msgid "H265"
 msgstr "H265"
 
-#: ui/editor_export.py:113
+#: ui/editor_export.py:125
 msgid "Smaller files with slower encoding"
 msgstr "Меньший размер файлов при более медленном кодировании"
 
-#: ui/editor_export.py:121
+#: ui/editor_export.py:133
 msgid "VP9"
 msgstr "VP9"
 
-#: ui/editor_export.py:122
+#: ui/editor_export.py:134
 msgid "Open codec suited to web playback"
 msgstr "Открытый кодек, подходящий для воспроизведения в интернете"
 
-#: ui/editor_export.py:130
+#: ui/editor_export.py:142
 msgid "AV1"
 msgstr "AV1"
 
-#: ui/editor_export.py:131
+#: ui/editor_export.py:143
 msgid "Best compression with the slowest encoding"
 msgstr "Лучшее сжатие при самом медленном кодировании"
 
-#: ui/editor_export.py:142
+#: ui/editor_export.py:154
 msgid "AAC"
 msgstr "AAC"
 
-#: ui/editor_export.py:151
+#: ui/editor_export.py:163
 msgid "Opus"
 msgstr "Opus"
 
-#: ui/editor_export.py:152
+#: ui/editor_export.py:164
 msgid "Efficient high-quality audio"
 msgstr "Высококачественный звук при эффективном сжатии"
 
-#: ui/editor_export.py:160
+#: ui/editor_export.py:172
 msgid "FLAC"
 msgstr "FLAC"
 
-#: ui/editor_export.py:161
+#: ui/editor_export.py:173
 msgid "Lossless audio with larger files"
 msgstr "Звук без потерь, но с файлами большего размера"
 
-#: ui/editor_export.py:169
+#: ui/editor_export.py:181
 msgid "PCM 16-bit"
 msgstr "PCM, 16 бит"
 
-#: ui/editor_export.py:170
+#: ui/editor_export.py:182
 msgid "Uncompressed audio"
 msgstr "Несжатое аудио"
 
-#: ui/editor_export.py:223 ui/editor_export.py:658
+#: ui/editor_export.py:235 ui/editor_export.py:679
 msgid "Unsupported export format"
 msgstr "Неподдерживаемый формат экспорта"
 
-#: ui/editor_export.py:660
+#: ui/editor_export.py:681
 msgid "Unsupported audio layout"
 msgstr "Неподдерживаемая конфигурация аудио"
 
-#: ui/editor_export.py:662
+#: ui/editor_export.py:683
 msgid "Unsupported video codec"
 msgstr "Неподдерживаемый видеокодек"
 
-#: ui/editor_export.py:664
+#: ui/editor_export.py:685
 msgid "Unsupported audio codec"
 msgstr "Неподдерживаемый аудиокодек"
 
-#: ui/editor_export.py:666
+#: ui/editor_export.py:687
 msgid "The video codec is not supported by this format"
 msgstr "Этот формат не поддерживает выбранный видеокодек"
 
-#: ui/editor_export.py:668
+#: ui/editor_export.py:689
 msgid "The audio codec is not supported by this format"
 msgstr "Этот формат не поддерживает выбранный аудиокодек"
 
-#: ui/editor_export.py:670
+#: ui/editor_export.py:691
 msgid "Unsupported rate control method"
 msgstr "Неподдерживаемый метод управления битрейтом"
 
-#: ui/editor_export.py:672
+#: ui/editor_export.py:693
 msgid "Unsupported video encoder"
 msgstr "Неподдерживаемый видеокодировщик"
 
-#: ui/editor_export.py:675
+#: ui/editor_export.py:696
 msgid "Software encoding cannot use a hardware device"
 msgstr "Программное кодирование не может использовать аппаратное устройство"
 
-#: ui/editor_export.py:679
+#: ui/editor_export.py:700
 msgid "The video codec cannot use VAAPI"
 msgstr "Этот видеокодек не может использовать VAAPI"
 
-#: ui/editor_export.py:683
+#: ui/editor_export.py:704
 msgid "Choose a valid VAAPI device"
 msgstr "Выбери допустимое устройство VAAPI"
 
-#: ui/editor_export.py:686
+#: ui/editor_export.py:707
 msgid "The video codec cannot use NVENC"
 msgstr "Этот видеокодек не может использовать NVENC"
 
-#: ui/editor_export.py:688
+#: ui/editor_export.py:709
 msgid "Choose a valid NVENC device"
 msgstr "Выбери допустимое устройство NVENC"
 
-#: ui/editor_export.py:691
+#: ui/editor_export.py:712
 #, python-format
 msgid "Quality must be between %(minimum)d and %(maximum)d"
 msgstr "Качество должно быть от %(minimum)d до %(maximum)d"
 
-#: ui/editor_export.py:695
+#: ui/editor_export.py:716
 msgid "Video bitrate is outside the supported range"
 msgstr "Битрейт видео вне поддерживаемого диапазона"
 
-#: ui/editor_export.py:698
+#: ui/editor_export.py:719
 msgid "Maximum video bitrate is outside the supported range"
 msgstr "Максимальный битрейт видео вне поддерживаемого диапазона"
 
-#: ui/editor_export.py:702
+#: ui/editor_export.py:723
 msgid "Maximum bitrate cannot be lower than target bitrate"
 msgstr "Максимальный битрейт не может быть ниже целевого"
 
-#: ui/editor_export.py:706
+#: ui/editor_export.py:727
 msgid "Choose both output dimensions"
 msgstr "Укажи оба размера выходного видео"
 
-#: ui/editor_export.py:712
+#: ui/editor_export.py:733
 msgid "Output dimensions must be positive even numbers"
 msgstr "Размеры выходного видео должны быть положительными чётными числами"
 
-#: ui/editor_export.py:723
+#: ui/editor_export.py:744
 msgid "The source resolution could not be determined"
 msgstr "Не удалось определить разрешение исходного видео"
 
-#: ui/editor_export.py:729
+#: ui/editor_export.py:750
 msgid "The output resolution must preserve the source aspect ratio"
 msgstr ""
 "Выходное разрешение должно сохранять соотношение сторон исходного видео"
 
-#: ui/editor_export.py:736
+#: ui/editor_export.py:757
 msgid "The output resolution must be lower than native"
 msgstr "Выходное разрешение должно быть ниже исходного"
 
-#: ui/editor_export.py:742
+#: ui/editor_export.py:763
 msgid "Enter a valid filename without folders"
 msgstr "Введи допустимое имя файла без папок"
 
-#: ui/editor_export.py:747
+#: ui/editor_export.py:768
 msgid "Enter a valid filename"
 msgstr "Введи допустимое имя файла"
 
-#: ui/editor_export.py:752
+#: ui/editor_export.py:773
 msgid "The destination is outside the selected folder"
 msgstr "Путь назначения находится за пределами выбранной папки"
 
-#: ui/editor_export.py:754
+#: ui/editor_export.py:775
 msgid "Export cannot overwrite the source clip"
 msgstr "Экспорт не может перезаписать исходный клип"
 
-#: ui/editor_export.py:756
+#: ui/editor_export.py:777
 msgid "The selected folder is not writable"
 msgstr "Нет прав на запись в выбранную папку"
 
-#: ui/editor_export.py:847
+#: ui/editor_export.py:868
 msgid "[amixed]"
 msgstr "[amixed]"
 
-#: ui/editor_export.py:1017
+#: ui/editor_export.py:1035
 msgid "FFmpeg could not create the output file"
 msgstr "FFmpeg не удалось создать выходной файл"
 
-#: ui/editor_export.py:1024
+#: ui/editor_export.py:1042
 #, python-format
 msgid ""
 "%(detail)s. The hardware encoder may not support this clip; choose Software "
@@ -762,29 +762,29 @@ msgstr ""
 "%(detail)s. Возможно, аппаратный кодировщик не поддерживает этот клип; "
 "выбери программное кодирование видео и повтори попытку"
 
-#: ui/editor_export.py:1053
+#: ui/editor_export.py:1071
 msgid "Export was already started"
 msgstr "Экспорт уже запущен"
 
-#: ui/editor_export.py:1056 ui/editor_export.py:1140 ui/editor_export.py:1154
+#: ui/editor_export.py:1074 ui/editor_export.py:1161 ui/editor_export.py:1175
 #: ui/editor_export_dialog.py:717 ui/editor_window.py:3693
 msgid "Export cancelled"
 msgstr "Экспорт отменён"
 
-#: ui/editor_export.py:1088
+#: ui/editor_export.py:1109
 #, python-format
 msgid "Could not start FFmpeg: %(error)s"
 msgstr "Не удалось запустить FFmpeg: %(error)s"
 
-#: ui/editor_export.py:1112
+#: ui/editor_export.py:1133
 msgid "Export was not started"
 msgstr "Экспорт не был запущен"
 
-#: ui/editor_export.py:1227
+#: ui/editor_export.py:1248
 msgid "The exported file could not be validated"
 msgstr "Не удалось проверить экспортированный файл"
 
-#: ui/editor_export.py:1264
+#: ui/editor_export.py:1285
 msgid "The exported file did not match the selected options"
 msgstr "Экспортированный файл не соответствует выбранным параметрам"
 
@@ -1958,6 +1958,10 @@ msgstr "Позиция воспроизведения"
 msgid "Volume"
 msgstr "Громкость"
 
+#: ui/quality_controls.py:11
+msgid "Constant quality"
+msgstr "Постоянное качество"
+
 #: ui/quality_controls.py:12 ui/quality_controls.py:19
 msgid "Constant bitrate"
 msgstr "Постоянный битрейт"
@@ -1971,8 +1975,9 @@ msgid "Encoder bitrate and quality mode"
 msgstr "Режим битрейта и качества кодировщика"
 
 #: ui/quality_controls.py:18
-msgid "Lower number = better quality, larger file size"
-msgstr "Меньшее число = выше качество"
+msgid "Lower number = better quality; results vary by codec and encoder"
+msgstr ""
+"Меньшее число = выше качество; результат зависит от кодека и кодировщика"
 
 #: ui/quality_controls.py:20
 msgid "Fixed video bitrate used for the entire recording"

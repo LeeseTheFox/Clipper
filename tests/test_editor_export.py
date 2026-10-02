@@ -454,25 +454,26 @@ def test_vaapi_detection_uses_codec_specific_quality_controls(monkeypatch):
     monkeypatch.setattr("editor_export.run_media_tool", run)
     detect_hardware_export_encoders.cache_clear()
     capabilities = detect_hardware_export_encoders(
-        frozenset({"hevc_vaapi", "av1_vaapi"}),
+        frozenset({"hevc_vaapi", "vp9_vaapi", "av1_vaapi"}),
         ("/dev/dri/renderD128",),
     )
     detect_hardware_export_encoders.cache_clear()
 
-    assert [capability.codec for capability in capabilities] == ["hevc", "av1"]
+    assert [capability.codec for capability in capabilities] == ["hevc", "vp9", "av1"]
     assert all(
         capability.rate_controls == frozenset({"cqp", "cbr", "vbr"})
         for capability in capabilities
     )
     cqp_commands = [command for command in commands if "CQP" in command]
     hevc_command = next(command for command in cqp_commands if "hevc_vaapi" in command)
-    av1_command = next(command for command in cqp_commands if "av1_vaapi" in command)
     assert "-qp" in hevc_command
     assert "-global_quality" not in hevc_command
     assert _option_value(hevc_command, "-qp") == "23"
-    assert _option_value(av1_command, "-global_quality:v") == "115"
-    assert "-global_quality" not in av1_command
-    assert "-qp" not in av1_command
+    for encoder in ("vp9_vaapi", "av1_vaapi"):
+        command = next(command for command in cqp_commands if encoder in command)
+        assert _option_value(command, "-global_quality:v") == "115"
+        assert "-global_quality" not in command
+        assert "-qp" not in command
 
 
 def test_nvenc_detection_hides_advertised_encoders_when_initialization_fails(
@@ -483,25 +484,32 @@ def test_nvenc_detection_hides_advertised_encoders_when_initialization_fails(
     def run(command, **_kwargs):
         commands.append(command)
         encoder = command[command.index("-c:v") + 1]
-        supported = encoder == "h264_nvenc"
+        supported = encoder in {"h264_nvenc", "av1_nvenc"}
         if "-rc" in command:
             rate_control = command[command.index("-rc") + 1]
             supported = supported and rate_control in {"constqp", "cbr"}
+            if rate_control == "constqp":
+                # A probe at raw AV1 QP 23 would test near-lossless encoding,
+                # not the quality range used by an actual export.
+                expected_qp = "115" if encoder == "av1_nvenc" else "23"
+                assert _option_value(command, "-qp") == expected_qp
         return SimpleNamespace(returncode=0 if supported else 1, stderr="NVENC unavailable")
 
     monkeypatch.setattr("editor_export.run_media_tool", run)
     detect_hardware_export_encoders.cache_clear()
     capabilities = detect_hardware_export_encoders(
-        frozenset({"h264_nvenc", "hevc_nvenc"}), ()
+        frozenset({"h264_nvenc", "hevc_nvenc", "av1_nvenc"}), ()
     )
     detect_hardware_export_encoders.cache_clear()
 
-    assert len(capabilities) == 1
+    assert len(capabilities) == 2
     assert capabilities[0].backend == "nvenc"
     assert capabilities[0].device == "any"
     assert capabilities[0].label == "NVIDIA NVENC"
     assert capabilities[0].codec == "h264"
     assert capabilities[0].rate_controls == frozenset({"cqp", "cbr"})
+    assert capabilities[1].encoder == "av1_nvenc"
+    assert capabilities[1].rate_controls == frozenset({"cqp", "cbr"})
     assert all("hwupload" not in " ".join(command) for command in commands)
 
 
@@ -533,26 +541,30 @@ def test_process_wide_capability_probe_runs_only_once(monkeypatch):
 
 
 @pytest.mark.parametrize(
-    ("video_codec", "encoder"),
+    ("video_codec", "encoder", "quality", "crf"),
     (
-        ("h264", "libx264"),
-        ("hevc", "libx265"),
-        ("vp9", "libvpx-vp9"),
-        ("av1", "libaom-av1"),
+        ("h264", "libx264", 23, "23"),
+        ("hevc", "libx265", 23, "23"),
+        ("vp9", "libvpx-vp9", 23, "29"),
+        ("av1", "libaom-av1", 20, "25"),
+        ("av1", "libaom-av1", 23, "29"),
+        ("av1", "libaom-av1", 25, "31"),
+        ("av1", "libaom-av1", 30, "38"),
     ),
 )
-def test_cqp_value_matches_recording_backend_for_every_video_codec(
-    tmp_path, video_codec, encoder
+def test_export_quality_uses_native_crf_scale_without_a_bitrate_target(
+    tmp_path, video_codec, encoder, quality, crf
 ):
     options = ExportOptions(
         tmp_path,
         "edited",
         video_codec=video_codec,
         audio_codec="opus",
+        quality_cqp=quality,
     )
     command = build_ffmpeg_command(project(), options, tmp_path / ".partial")
     assert _option_value(command, "-c:v") == encoder
-    assert _option_value(command, "-crf") == "23"
+    assert _option_value(command, "-crf") == crf
     assert _option_value(command, "-c:a") == "libopus"
     assert _option_value(command, "-pix_fmt") == "yuv420p"
     if video_codec in {"vp9", "av1"}:
@@ -617,12 +629,15 @@ def test_vaapi_command_uploads_filtered_frames_and_uses_exact_cqp(tmp_path):
     assert "-pix_fmt" not in command
 
 
-def test_av1_vaapi_scopes_obs_quality_to_video_so_opus_can_encode(tmp_path):
+@pytest.mark.parametrize("video_codec", ("av1", "vp9"))
+def test_vaapi_qindex_is_scaled_and_scoped_to_video_so_opus_can_encode(
+    tmp_path, video_codec
+):
     options = ExportOptions(
         tmp_path,
         "hardware-av1",
         format="mp4",
-        video_codec="av1",
+        video_codec=video_codec,
         audio_codec="opus",
         video_encoder="vaapi",
         hardware_device="/dev/dri/renderD128",
@@ -631,7 +646,7 @@ def test_av1_vaapi_scopes_obs_quality_to_video_so_opus_can_encode(tmp_path):
 
     command = build_ffmpeg_command(project(), options, tmp_path / ".partial-av1")
 
-    assert _option_value(command, "-c:v") == "av1_vaapi"
+    assert _option_value(command, "-c:v") == f"{video_codec}_vaapi"
     assert _option_value(command, "-rc_mode") == "CQP"
     assert _option_value(command, "-c:a") == "libopus"
     assert _option_value(command, "-global_quality:v") == "120"
@@ -643,11 +658,13 @@ def test_av1_vaapi_scopes_obs_quality_to_video_so_opus_can_encode(tmp_path):
 @pytest.mark.parametrize(
     ("rate_control", "rc_mode"), (("cbr", "CBR"), ("vbr", "VBR"))
 )
-def test_vaapi_bitrate_modes_are_explicit(tmp_path, rate_control, rc_mode):
+@pytest.mark.parametrize("video_codec", ("h264", "av1", "vp9"))
+def test_vaapi_bitrate_modes_are_explicit(tmp_path, rate_control, rc_mode, video_codec):
     options = ExportOptions(
         tmp_path,
         "hardware-bitrate",
         rate_control=rate_control,
+        video_codec=video_codec,
         video_encoder="vaapi",
         hardware_device="/dev/dri/renderD128",
     )
@@ -655,24 +672,31 @@ def test_vaapi_bitrate_modes_are_explicit(tmp_path, rate_control, rc_mode):
 
     assert _option_value(command, "-rc_mode") == rc_mode
     assert _option_value(command, "-b:v") == "12000k"
+    assert "-global_quality:v" not in command
+    assert "-qp" not in command
 
 
-def test_nvenc_command_uses_software_frames_and_exact_cqp(tmp_path):
+@pytest.mark.parametrize(
+    ("video_codec", "quality", "qp"), (("hevc", 25, "25"), ("av1", 30, "150"))
+)
+def test_nvenc_command_uses_software_frames_and_native_qp(
+    tmp_path, video_codec, quality, qp
+):
     options = ExportOptions(
         tmp_path,
         "nvenc",
-        video_codec="hevc",
+        video_codec=video_codec,
         video_encoder="nvenc",
         hardware_device="any",
-        quality_cqp=25,
+        quality_cqp=quality,
     )
     command = build_ffmpeg_command(project(), options, tmp_path / ".partial-nvenc")
     graph = _option_value(command, "-filter_complex")
 
-    assert _option_value(command, "-c:v") == "hevc_nvenc"
+    assert _option_value(command, "-c:v") == f"{video_codec}_nvenc"
     assert _option_value(command, "-preset") == "p4"
     assert _option_value(command, "-rc") == "constqp"
-    assert _option_value(command, "-qp") == "25"
+    assert _option_value(command, "-qp") == qp
     assert _option_value(command, "-pix_fmt") == "yuv420p"
     assert "hwupload" not in graph
     assert "-vaapi_device" not in command

@@ -111,10 +111,7 @@ def test_export_uses_native_adwaita_dialog_and_forward_quality_scale(export_dial
         "860 × 360",
         "574 × 240",
     ]
-    assert [
-        dialog.rate_control_row.get_model().get_string(index)
-        for index in range(dialog.rate_control_row.get_model().get_n_items())
-    ] == ["CQP", "Constant bitrate", "Variable bitrate"]
+    assert dialog._rate_control_ids == ("cqp", "cbr", "vbr")
 
     dialog.resolution_row.set_selected(2)
     assert dialog._options().output_width == 1720
@@ -146,10 +143,7 @@ def test_hardware_encoder_defaults_on_and_filters_unsupported_modes(export_dialo
     )
     assert dialog._options().video_encoder == "vaapi"
     assert dialog._options().hardware_device == "/dev/dri/renderD128"
-    assert [
-        dialog.rate_control_row.get_model().get_string(index)
-        for index in range(dialog.rate_control_row.get_model().get_n_items())
-    ] == ["CQP", "Variable bitrate"]
+    assert dialog._rate_control_ids == ("cqp", "vbr")
 
     dialog.video_codec_row.set_selected(1)
     assert dialog._options().video_codec == "hevc"

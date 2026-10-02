@@ -22,6 +22,7 @@ from i18n import _
 from logs import diagnostic_tail, probe_failure_reason
 from media_tools import MediaToolError, clean_external_tool_env, run_media_tool
 from quality_controls import (
+    CQP_DEFAULT,
     CQP_HIGH_QUALITY,
     CQP_LOW_QUALITY,
     RATE_CONTROL_LABELS,
@@ -39,7 +40,18 @@ _VAAPI_DEVICE = re.compile(r"^/dev/dri/renderD\d+$")
 _HARDWARE_PROBE_SOURCE = "color=c=black:s=640x360:r=30"
 _BITRATE_MIN = 1
 _BITRATE_MAX = 1_000_000
-_OBS_AV1_VAAPI_QP_SCALE = 5
+# Export's 20-30 slider uses the existing OBS VAAPI 0-51 convention.
+# AV1/VP9 hardware takes a 0-255 qindex; libaom/libvpx expose that index
+# divided by four throughout our slider's range. These are scale conversions,
+# not a claim of equal perceptual quality between codecs or rate controllers.
+# See OBS obs-ffmpeg-vaapi.c and libaom av1/encoder/av1_quantize.c.
+_ENCODER_QUALITY_SCALES = {
+    "libaom-av1": (5, 4),
+    "libvpx-vp9": (5, 4),
+    "av1_vaapi": (5, 1),
+    "vp9_vaapi": (5, 1),
+    "av1_nvenc": (5, 1),
+}
 _EXPORT_SHORT_EDGES = (2160, 1440, 1080, 720, 480, 360, 240)
 _VAAPI_HEVC_WIDTH_ALIGNMENT = 64
 _VAAPI_HEVC_HEIGHT_ALIGNMENT = 16
@@ -366,22 +378,31 @@ def _vaapi_device_name(device: str) -> str:
     return f"VAAPI — {vendor}" if vendor else f"VAAPI — {Path(device).name}"
 
 
-def _vaapi_cqp_arguments(encoder: str, quality: int) -> list[str]:
-    if encoder == "av1_vaapi":
-        # OBS exposes AV1 VAAPI quality on the familiar 0-51 QP scale, while
-        # FFmpeg's global_quality is the AV1 base quantizer index (0-255).
-        return [
-            "-rc_mode",
-            "CQP",
-            "-global_quality:v",
-            str(quality * _OBS_AV1_VAAPI_QP_SCALE),
-        ]
-    return ["-rc_mode", "CQP", "-qp", str(quality)]
+def _constant_quality_arguments(encoder: str, quality: int) -> list[str]:
+    """Translate the export slider to the selected encoder's native units.
+
+    Share this with capability probes so they exercise the same options as
+    exports. Round to the nearest native integer, with ties toward smaller
+    files. CRF still distributes quality differently from hardware CQP.
+    """
+    numerator, denominator = _ENCODER_QUALITY_SCALES.get(encoder, (1, 1))
+    native_quality = str((quality * numerator + denominator // 2) // denominator)
+    if encoder.endswith("_vaapi"):
+        # AV1 and VP9 have no private -qp option. Scope global_quality to
+        # video: an unqualified option enables Opus's unsupported quality mode.
+        option = "-global_quality:v" if encoder in {"av1_vaapi", "vp9_vaapi"} else "-qp"
+        return ["-rc_mode", "CQP", option, native_quality]
+    if encoder.endswith("_nvenc"):
+        return ["-rc", "constqp", "-qp", native_quality]
+    arguments = ["-crf", native_quality]
+    if encoder in {"libvpx-vp9", "libaom-av1"}:
+        arguments.extend(["-b:v", "0"])
+    return arguments
 
 
 def _vaapi_rate_control_arguments(rate_control: str, encoder: str) -> list[str]:
     if rate_control == "cqp":
-        return _vaapi_cqp_arguments(encoder, 23)
+        return _constant_quality_arguments(encoder, CQP_DEFAULT)
     if rate_control == "cbr":
         return [
             "-rc_mode",
@@ -444,9 +465,9 @@ def _probe_vaapi_encoder(
     return result.returncode == 0
 
 
-def _nvenc_rate_control_arguments(rate_control: str) -> list[str]:
+def _nvenc_rate_control_arguments(rate_control: str, encoder: str) -> list[str]:
     if rate_control == "cqp":
-        return ["-rc", "constqp", "-qp", "23"]
+        return _constant_quality_arguments(encoder, CQP_DEFAULT)
     if rate_control == "cbr":
         return [
             "-rc",
@@ -491,7 +512,7 @@ def _probe_nvenc_encoder(encoder: str, rate_control: str | None = None) -> bool:
         "p4",
     ]
     if rate_control is not None:
-        command.extend(_nvenc_rate_control_arguments(rate_control))
+        command.extend(_nvenc_rate_control_arguments(rate_control, encoder))
     command.extend(["-f", "null", "-"])
     try:
         result = run_media_tool(command, timeout=4, check=False)
@@ -851,10 +872,15 @@ def build_filter_graph(
 
 
 def _rate_control_arguments(options: ExportOptions, codec: VideoCodec) -> list[str]:
+    if options.rate_control == "cqp":
+        encoder = (
+            codec.encoder
+            if options.video_encoder == "software"
+            else HARDWARE_VIDEO_ENCODERS[options.video_encoder][codec.id]
+        )
+        return _constant_quality_arguments(encoder, options.quality_cqp)
+
     if options.video_encoder == "vaapi":
-        if options.rate_control == "cqp":
-            encoder = VAAPI_VIDEO_ENCODERS[codec.id]
-            return _vaapi_cqp_arguments(encoder, options.quality_cqp)
         arguments = [
             "-rc_mode",
             "CBR" if options.rate_control == "cbr" else "VBR",
@@ -863,16 +889,8 @@ def _rate_control_arguments(options: ExportOptions, codec: VideoCodec) -> list[s
         return arguments
 
     if options.video_encoder == "nvenc":
-        if options.rate_control == "cqp":
-            return ["-rc", "constqp", "-qp", str(options.quality_cqp)]
         arguments = ["-rc", options.rate_control]
         arguments.extend(_software_bitrate_arguments(options))
-        return arguments
-
-    if options.rate_control == "cqp":
-        arguments = ["-crf", str(options.quality_cqp)]
-        if codec.id in {"vp9", "av1"}:
-            arguments.extend(["-b:v", "0"])
         return arguments
 
     return _software_bitrate_arguments(options)
@@ -1058,6 +1076,7 @@ class ExportProcess:
             self._started_at = time.monotonic()
             self._stage = "encoding"
             options = self.options
+            rate_arguments = _rate_control_arguments(options, VIDEO_CODECS[options.video_codec])
             _LOG.info("Starting export: source=%s; destination=%s; duration=%.2fs; segments=%s",
                       self.project.source.path, self.destination,
                       self.project.output_duration_us / 1_000_000, len(self.project.segments))
@@ -1066,7 +1085,9 @@ class ExportProcess:
                       options.hardware_device or "automatic",
                       f"{options.output_width}x{options.output_height}"
                       if options.output_width else "source",
-                      f"cqp={options.quality_cqp}" if options.rate_control == "cqp" else
+                      f"quality={options.quality_cqp}; options="
+                      f"{' '.join(rate_arguments)}"
+                      if options.rate_control == "cqp" else
                       f"{options.rate_control}={options.video_bitrate} kbps; "
                       f"max={options.video_max_bitrate} kbps")
             _LOG.info("Audio: codec=%s; layout=%s; source_tracks=%s; container=%s",

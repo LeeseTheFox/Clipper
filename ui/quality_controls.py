@@ -8,14 +8,14 @@ CQP_LOW_QUALITY = 30
 CQP_DEFAULT = 23
 
 RATE_CONTROL_OPTIONS = (
-    ("CQP", "cqp"),
+    (_("Constant quality"), "cqp"),
     (_("Constant bitrate"), "cbr"),
     (_("Variable bitrate"), "vbr"),
 )
 RATE_CONTROL_LABELS = {value: label for label, value in RATE_CONTROL_OPTIONS}
 
 RATE_CONTROL_SUBTITLE = _("Encoder bitrate and quality mode")
-QUALITY_SUBTITLE = _("Lower number = better quality, larger file size")
+QUALITY_SUBTITLE = _("Lower number = better quality; results vary by codec and encoder")
 CBR_BITRATE_TITLE = _("Constant bitrate")
 CBR_BITRATE_SUBTITLE = _("Fixed video bitrate used for the entire recording")
 VBR_BITRATE_TITLE = _("Target bitrate")
