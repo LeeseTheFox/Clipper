@@ -42,11 +42,7 @@ flatpak install --user --bundle шлях/до/Clipper.flatpak
 контекстним меню трея, щоб зберегти його.
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: light)" srcset="assets/screenshots/uk/games-light.png">
-    <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/uk/games-dark.png">
-    <img src="assets/screenshots/uk/games-dark.png" alt="Ігри з різними способами захоплення, налаштовані в Clipper" width="850">
-  </picture>
+  <img src="assets/screenshots/uk/games-dark.png" alt="Ігри з різними способами захоплення, налаштовані в Clipper" width="850">
 </p>
 
 ### Відеоредактор для швидкого редагування
@@ -58,11 +54,7 @@ flatpak install --user --bundle шлях/до/Clipper.flatpak
 щоб знайти баланс між якістю відео та розміром файла.
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: light)" srcset="assets/screenshots/uk/editor-light.png">
-    <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/uk/editor-dark.png">
-    <img src="assets/screenshots/uk/editor-dark.png" alt="Відеоредактор Clipper із попереднім переглядом гри та багатодоріжковою часовою шкалою" width="850">
-  </picture>
+  <img src="assets/screenshots/uk/editor-dark.png" alt="Відеоредактор Clipper із попереднім переглядом гри та багатодоріжковою часовою шкалою" width="850">
 </p>
 
 ### Кожен голос і застосунок на окремій доріжці
@@ -73,11 +65,7 @@ flatpak install --user --bundle шлях/до/Clipper.flatpak
 змініть баланс або вимкніть окремі джерела.
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: light)" srcset="assets/screenshots/uk/audio-light.png">
-    <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/uk/audio-dark.png">
-    <img src="assets/screenshots/uk/audio-dark.png" alt="Окремі аудіодоріжки для ігор, мікрофона та застосунків у Clipper" width="850">
-  </picture>
+  <img src="assets/screenshots/uk/audio-dark.png" alt="Окремі аудіодоріжки для ігор, мікрофона та застосунків у Clipper" width="850">
 </p>
 
 ### Кліпи легко знайти
@@ -87,11 +75,7 @@ flatpak install --user --bundle шлях/до/Clipper.flatpak
 менеджері файлів, редагуйте або видаляйте — без зайвих пошуків у папках.
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: light)" srcset="assets/screenshots/uk/clips-light.png">
-    <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/uk/clips-dark.png">
-    <img src="assets/screenshots/uk/clips-dark.png" alt="Бібліотека кліпів Clipper із пошуком" width="850">
-  </picture>
+  <img src="assets/screenshots/uk/clips-dark.png" alt="Бібліотека кліпів Clipper із пошуком" width="850">
 </p>
 
 ## ⚙️ Працює на OBS

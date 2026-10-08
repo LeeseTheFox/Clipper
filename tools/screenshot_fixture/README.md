@@ -20,7 +20,7 @@ or app configuration is required.
 The generator captures the current checkout's actual GTK views in every
 `po/*.po` language, using both light and dark themes. The four scenes are Games,
 Audio, Clips, and the video editor. It replaces `assets/screenshots` images and
-makes each localized README gallery follow the reader's color scheme, retaining
+makes each localized README gallery use dark screenshots, retaining
 its translated alt text. All captures finish successfully before files are
 replaced. An alternate output directory leaves READMEs unchanged:
 

@@ -14,23 +14,28 @@ SPEC.loader.exec_module(screenshots)
 
 def test_refresh_preserves_translated_readme_text_and_is_repeatable():
     # A refresh must preserve contributor-written text and translated alt labels,
-    # including on the second run when the screenshots already use <picture>.
+    # including migration from theme-aware galleries and subsequent refreshes.
     original = "Перед галереєю\n" + "\n".join(
-        f'<p>\n  <img src="assets/screenshots/uk/{scene}-dark.png" '
-        f'alt="Знімок {scene}" width="850">\n</p>'
+        f'<p>\n  <picture>\n'
+        f'    <source media="(prefers-color-scheme: light)" '
+        f'srcset="assets/screenshots/uk/{scene}-light.png">\n'
+        f'    <img src="assets/screenshots/uk/{scene}-dark.png" '
+        f'alt="Знімок {scene}" width="850">\n  </picture>\n</p>'
         for scene in screenshots.SCENES
     ) + "\nПісля галереї\n"
-    updated = screenshots.readme_with_themes(original, "uk")
-    assert screenshots.readme_with_themes(updated, "uk") == updated
+    updated = screenshots.readme_with_dark_screenshots(original, "uk")
+    assert screenshots.readme_with_dark_screenshots(updated, "uk") == updated
     assert updated.startswith("Перед галереєю\n")
     assert updated.endswith("\nПісля галереї\n")
     for scene in screenshots.SCENES:
         assert f'alt="Знімок {scene}" width="850"' in updated
-        assert f'srcset="assets/screenshots/uk/{scene}-light.png"' in updated
-        assert f'srcset="assets/screenshots/uk/{scene}-dark.png"' in updated
-    assert updated.count("<picture>") == len(screenshots.SCENES)
+        assert f'src="assets/screenshots/uk/{scene}-dark.png"' in updated
+    assert "-light.png" not in updated
+    assert "<picture>" not in updated
 
 
 def test_missing_screenshot_reference_aborts_readme_refresh():
     with pytest.raises(RuntimeError, match="Expected one games screenshot"):
-        screenshots.readme_with_themes("Contributor documentation without a gallery", "en")
+        screenshots.readme_with_dark_screenshots(
+            "Contributor documentation without a gallery", "en"
+        )

@@ -121,8 +121,8 @@ def prepare_sources(destination: Path) -> None:
         shutil.copyfile(cached, fonts / name)
 
 
-def readme_with_themes(content: str, language: str) -> str:
-    """Keep each README's translated alt text and make its gallery theme-aware."""
+def readme_with_dark_screenshots(content: str, language: str) -> str:
+    """Keep translated alt text and use dark screenshots in every README."""
     for scene in SCENES:
         image = re.compile(
             rf'(?P<indent> *)<img src="assets/screenshots/{re.escape(language)}/'
@@ -132,7 +132,7 @@ def readme_with_themes(content: str, language: str) -> str:
         if len(matches) != 1:
             raise RuntimeError(f"Expected one {scene} screenshot in README for {language}")
         match = matches[0]
-        # Replacing the whole existing picture makes repeated runs idempotent.
+        # Remove theme-aware sources when migrating an existing picture.
         start, end = match.span()
         picture_start = content.rfind("  <picture>\n", 0, start)
         if picture_start >= 0 and "</picture>" not in content[picture_start:start]:
@@ -141,15 +141,11 @@ def readme_with_themes(content: str, language: str) -> str:
             if closing < 0:
                 raise RuntimeError(f"Unclosed screenshot picture for {language}/{scene}")
             end = closing + len("</picture>")
-        prefix = f"assets/screenshots/{language}/{scene}"
-        picture = (
-            '  <picture>\n'
-            f'    <source media="(prefers-color-scheme: light)" srcset="{prefix}-light.png">\n'
-            f'    <source media="(prefers-color-scheme: dark)" srcset="{prefix}-dark.png">\n'
-            f'    <img src="{prefix}-dark.png"{match["attrs"]}>\n'
-            '  </picture>'
+        image_tag = (
+            f'  <img src="assets/screenshots/{language}/{scene}-dark.png"'
+            f'{match["attrs"]}>'
         )
-        content = content[:start] + picture + content[end:]
+        content = content[:start] + image_tag + content[end:]
     return content
 
 
@@ -173,7 +169,7 @@ def main() -> int:
     if output == DEFAULT_OUTPUT:
         for language in languages:
             path = REPO / ("README.md" if language == "en" else f"README.{language}.md")
-            readmes[path] = readme_with_themes(path.read_text(), language)
+            readmes[path] = readme_with_dark_screenshots(path.read_text(), language)
     with tempfile.TemporaryDirectory(prefix="clipper-screenshots-") as temporary:
         work = Path(temporary)
         prepare_sources(work)
@@ -223,7 +219,7 @@ def main() -> int:
         for path, content in readmes.items():
             if path.read_text() != content:
                 path.write_text(content)
-        print(f"Updated {len(paths)} screenshots; {len(readmes)} READMEs use both themes")
+        print(f"Updated {len(paths)} screenshots; {len(readmes)} READMEs use dark screenshots")
     return 0
 
 

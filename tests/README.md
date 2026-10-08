@@ -98,7 +98,7 @@ process matching intentionally cover separate production implementations.
 | release_notes | Generate accurate categorized history from actual Git repositories and semantic tags. |
 | release_version | Reject malformed tags and mismatched application release versions. |
 | settings_view | Apply settings correctly, respect platform approval, join background discovery, detach retired windows, reuse cached options and clamp encoder controls. |
-| screenshots | Refresh theme-aware README references repeatedly without losing translated labels or prose; reject missing gallery references before writing. Actual GTK rendering and byte-for-byte reproducibility are checked with `./tools/generate_screenshots.sh --check`. |
+| screenshots | Migrate theme-aware galleries to dark screenshots and refresh references repeatedly without losing translated labels or prose; reject missing gallery references before writing. Actual GTK rendering and byte-for-byte reproducibility are checked with `./tools/generate_screenshots.sh --check`. |
 | setup_window | Persist setup choices within engine-supported clip limits, respect existing settings, share encoder discovery, reject responses after close, and complete or skip setup consistently. |
 | shortcut_dialog | Validate accelerator syntax and open the correct shortcut collection from menus and physical keys under non-Latin layouts. |
 | sound_feedback | Play the bundled asset with bounded gain and tolerate missing/unavailable media. |
