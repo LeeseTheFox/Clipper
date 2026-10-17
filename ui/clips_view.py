@@ -3,6 +3,7 @@ Clips view - shows recent recorded clips
 """
 
 import json
+import logging
 import os
 import re
 import stat as stat_module
@@ -37,6 +38,8 @@ from icon_names import (
 )
 from media_tools import clean_external_tool_env
 from text_helpers import ELLIPSIZE_END, configure_single_line_ellipsis
+
+_LOG = logging.getLogger("clipper.clips")
 
 VIDEO_EXTENSIONS = {".mkv", ".mp4", ".mov", ".flv", ".ts"}
 
@@ -2095,6 +2098,8 @@ class ClipsView(Gtk.Box):
 
     def _delete_clip_file_worker(self, clip_path, permanently=False):
         """Trash or permanently delete a clip on a worker thread."""
+        _LOG.info("Clip disposal requested: path=%s mode=%s",
+                  clip_path, "permanent" if permanently else "trash")
         error = None
         try:
             if permanently:
@@ -2120,11 +2125,13 @@ class ClipsView(Gtk.Box):
             from editor_drafts import delete_editor_data
 
             delete_editor_data(clip_path)
+            _LOG.info("Clip disposal completed: path=%s mode=%s",
+                      clip_path, "permanent" if permanently else "trash")
             self._show_toast(_("Clip deleted") if permanently else _("Clip moved to trash"))
             self._schedule_forget_locally_deleted_path(clip_path)
         else:
             action = "deleting" if permanently else "moving clip to trash"
-            print(f"Error {action}: {error}")
+            _LOG.error("Error %s: path=%s reason=%s", action, clip_path, error)
             self._locally_deleted_paths.discard(clip_path)
             self._show_toast(
                 _("Could not delete clip")

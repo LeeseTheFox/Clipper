@@ -1299,18 +1299,47 @@ def test_successful_clip_disposal_removes_its_saved_editor_data(monkeypatch, tmp
     assert removed == [clip_path]
 
 
-def test_failed_clip_disposal_keeps_its_saved_editor_data(monkeypatch, tmp_path):
+def test_failed_trash_preserves_clip_and_edits_restores_row_and_logs_reason(monkeypatch, tmp_path):
     import editor_drafts
+    from logs import ApplicationLogHandler, LogBuffer
 
     clip_path = tmp_path / "clip.mkv"
+    clip_path.write_bytes(b"clip")
+    error = OSError("Trash portal rejected the file")
+
+    class TrashFileStub:
+        def trash(self, _cancellable):
+            raise error
+
+    monkeypatch.setattr(
+        clips_module.Gio,
+        "File",
+        types.SimpleNamespace(new_for_path=lambda _path: TrashFileStub()),
+        raising=False,
+    )
     removed = []
     monkeypatch.setattr(editor_drafts, "delete_editor_data", removed.append)
     view = _make_view()
     view._show_toast = lambda _message: None
+    view._locally_deleted_paths.add(clip_path)
 
-    view._on_delete_clip_finished(clip_path, OSError("busy"))
+    # Copy logs uses this buffer; terminal-only diagnostics cannot explain
+    # desktop portal failures reported by a user.
+    logs = LogBuffer()
+    handler = ApplicationLogHandler(logs.add)
+    clips_module._LOG.addHandler(handler)
+    try:
+        view._delete_clip_file_worker(clip_path)
+    finally:
+        clips_module._LOG.removeHandler(handler)
+        handler.close()
 
+    assert clip_path.read_bytes() == b"clip"
     assert removed == []
+    assert clip_path not in view._locally_deleted_paths
+    assert view.refresh_called is True
+    assert str(clip_path) in logs.text()
+    assert str(error) in logs.text()
 
 
 def test_shift_delete_bypasses_confirmation(monkeypatch, tmp_path):

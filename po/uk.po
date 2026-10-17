@@ -180,75 +180,75 @@ msgstr "Захоплення екрана"
 msgid "Game capture"
 msgstr "Захоплення гри"
 
-#: ui/clips_view.py:261
+#: ui/clips_view.py:264
 msgid "Search clips by name"
 msgstr "Пошук кліпів за назвою"
 
-#: ui/clips_view.py:278
+#: ui/clips_view.py:281
 msgid "Newest"
 msgstr "Спочатку нові"
 
-#: ui/clips_view.py:279
+#: ui/clips_view.py:282
 msgid "Oldest"
 msgstr "Спочатку старі"
 
-#: ui/clips_view.py:280
+#: ui/clips_view.py:283
 msgid "A-Z"
 msgstr "А–Я"
 
-#: ui/clips_view.py:283
+#: ui/clips_view.py:286
 msgid "Sort clips"
 msgstr "Сортувати кліпи"
 
-#: ui/clips_view.py:289
+#: ui/clips_view.py:292
 msgid "Open clips folder"
 msgstr "Відкрити теку з кліпами"
 
-#: ui/clips_view.py:556
+#: ui/clips_view.py:559
 msgid "Edit clip from scratch"
 msgstr "Редагувати кліп з нуля"
 
-#: ui/clips_view.py:559
+#: ui/clips_view.py:562
 msgid "Edit clip"
 msgstr "Редагувати кліп"
 
-#: ui/clips_view.py:565
+#: ui/clips_view.py:568
 msgid "Permanently delete the clip"
 msgstr "Видалити кліп назавжди"
 
-#: ui/clips_view.py:569
+#: ui/clips_view.py:572
 msgid "Move clip to trash"
 msgstr "Перемістити кліп до смітника"
 
-#: ui/clips_view.py:616
+#: ui/clips_view.py:619
 msgid "Enter a valid clip name"
 msgstr "Введи дійсну назву кліпу"
 
-#: ui/clips_view.py:622
+#: ui/clips_view.py:625
 msgid "A clip with that name already exists"
 msgstr "Кліп із такою назвою вже існує"
 
-#: ui/clips_view.py:627 ui/clips_view.py:645
+#: ui/clips_view.py:630 ui/clips_view.py:648
 msgid "Could not rename clip"
 msgstr "Не вдалося перейменувати кліп"
 
-#: ui/clips_view.py:642
+#: ui/clips_view.py:645
 msgid "Clip renamed, but saved edits could not be moved"
 msgstr "Кліп перейменовано, але не вдалося перенести збережені правки"
 
-#: ui/clips_view.py:675
+#: ui/clips_view.py:678
 msgid "Could not update clip metadata"
 msgstr "Не вдалося оновити метадані кліпу"
 
-#: ui/clips_view.py:686
+#: ui/clips_view.py:689
 msgid "Could not save clip name"
 msgstr "Не вдалося зберегти назву кліпу"
 
-#: ui/clips_view.py:1373
+#: ui/clips_view.py:1376
 msgid "No clips yet"
 msgstr "Кліпів ще немає"
 
-#: ui/clips_view.py:1375
+#: ui/clips_view.py:1378
 msgid ""
 "Recorded clips will appear here.\n"
 "Press your save hotkey to capture a clip."
@@ -256,23 +256,23 @@ msgstr ""
 "Тут з’являтимуться записані кліпи.\n"
 "Натисни гарячу клавішу збереження, щоб захопити кліп."
 
-#: ui/clips_view.py:1383
+#: ui/clips_view.py:1386
 msgid "No matching clips"
 msgstr "Немає відповідних кліпів"
 
-#: ui/clips_view.py:1384
+#: ui/clips_view.py:1387
 msgid "No clip names match the current search."
 msgstr "Немає назв кліпів, що відповідають поточному пошуку."
 
-#: ui/clips_view.py:1390
+#: ui/clips_view.py:1393
 msgid "Loading clips…"
 msgstr "Завантаження кліпів…"
 
-#: ui/clips_view.py:1541
+#: ui/clips_view.py:1544
 msgid "Just now"
 msgstr "Щойно"
 
-#: ui/clips_view.py:1545
+#: ui/clips_view.py:1548
 #, python-format
 msgid "%(count)d minute ago"
 msgid_plural "%(count)d minutes ago"
@@ -280,7 +280,7 @@ msgstr[0] "%(count)d хвилину тому"
 msgstr[1] "%(count)d хвилини тому"
 msgstr[2] "%(count)d хвилин тому"
 
-#: ui/clips_view.py:1549
+#: ui/clips_view.py:1552
 #, python-format
 msgid "%(count)d hour ago"
 msgid_plural "%(count)d hours ago"
@@ -288,11 +288,11 @@ msgstr[0] "%(count)d годину тому"
 msgstr[1] "%(count)d години тому"
 msgstr[2] "%(count)d годин тому"
 
-#: ui/clips_view.py:1553
+#: ui/clips_view.py:1556
 msgid "Yesterday"
 msgstr "Учора"
 
-#: ui/clips_view.py:1556
+#: ui/clips_view.py:1559
 #, python-format
 msgid "%(count)d day ago"
 msgid_plural "%(count)d days ago"
@@ -300,49 +300,49 @@ msgstr[0] "%(count)d день тому"
 msgstr[1] "%(count)d дні тому"
 msgstr[2] "%(count)d днів тому"
 
-#: ui/clips_view.py:1562
+#: ui/clips_view.py:1565
 msgid "B"
 msgstr "Б"
 
-#: ui/clips_view.py:1562
+#: ui/clips_view.py:1565
 msgid "GB"
 msgstr "ГБ"
 
-#: ui/clips_view.py:1562
+#: ui/clips_view.py:1565
 msgid "KB"
 msgstr "КБ"
 
-#: ui/clips_view.py:1562
+#: ui/clips_view.py:1565
 msgid "MB"
 msgstr "МБ"
 
-#: ui/clips_view.py:1564
+#: ui/clips_view.py:1567
 #, python-format
 msgid "%(size).1f %(unit)s"
 msgstr "%(size).1f %(unit)s"
 
-#: ui/clips_view.py:1566
+#: ui/clips_view.py:1569
 #, python-format
 msgid "%(size).1f TB"
 msgstr "%(size).1f ТБ"
 
-#: ui/clips_view.py:1679
+#: ui/clips_view.py:1682
 msgid "Play clip"
 msgstr "Відтворити кліп"
 
-#: ui/clips_view.py:1764
+#: ui/clips_view.py:1767
 msgid "Reveal in file manager"
 msgstr "Показати у файловому менеджері"
 
-#: ui/clips_view.py:1840 ui/editor_window.py:3559
+#: ui/clips_view.py:1843 ui/editor_window.py:3559
 msgid "Could not wipe saved edits"
 msgstr "Не вдалося видалити збережені правки"
 
-#: ui/clips_view.py:2051
+#: ui/clips_view.py:2054
 msgid "Move clip to trash?"
 msgstr "Перемістити кліп до смітника?"
 
-#: ui/clips_view.py:2053
+#: ui/clips_view.py:2056
 #, python-format
 msgid ""
 "'%(name)s' will be moved to the trash.\n"
@@ -351,30 +351,30 @@ msgstr ""
 "«%(name)s» буде переміщено до смітника.\n"
 "Цю дію можна скасувати."
 
-#: ui/clips_view.py:2056 ui/dialogs.py:842 ui/editor_export_dialog.py:344
+#: ui/clips_view.py:2059 ui/dialogs.py:842 ui/editor_export_dialog.py:344
 #: ui/editor_export_dialog.py:602 ui/editor_export_dialog.py:630
 #: ui/editor_export_dialog.py:738 ui/editor_window.py:3733 ui/editor_wipe.py:16
 #: ui/game_details_dialog.py:37 ui/update_controller.py:376
 msgid "Cancel"
 msgstr "Скасувати"
 
-#: ui/clips_view.py:2057
+#: ui/clips_view.py:2060
 msgid "Move to trash"
 msgstr "Перемістити до смітника"
 
-#: ui/clips_view.py:2123
+#: ui/clips_view.py:2130
 msgid "Clip deleted"
 msgstr "Кліп видалено"
 
-#: ui/clips_view.py:2123
+#: ui/clips_view.py:2130
 msgid "Clip moved to trash"
 msgstr "Кліп переміщено до смітника"
 
-#: ui/clips_view.py:2130
+#: ui/clips_view.py:2137
 msgid "Could not delete clip"
 msgstr "Не вдалося видалити кліп"
 
-#: ui/clips_view.py:2132
+#: ui/clips_view.py:2139
 msgid "Could not move clip to trash"
 msgstr "Не вдалося перемістити кліп до смітника"
 

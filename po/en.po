@@ -179,75 +179,75 @@ msgstr "Display capture"
 msgid "Game capture"
 msgstr "Game capture"
 
-#: ui/clips_view.py:261
+#: ui/clips_view.py:264
 msgid "Search clips by name"
 msgstr "Search clips by name"
 
-#: ui/clips_view.py:278
+#: ui/clips_view.py:281
 msgid "Newest"
 msgstr "Newest"
 
-#: ui/clips_view.py:279
+#: ui/clips_view.py:282
 msgid "Oldest"
 msgstr "Oldest"
 
-#: ui/clips_view.py:280
+#: ui/clips_view.py:283
 msgid "A-Z"
 msgstr "A-Z"
 
-#: ui/clips_view.py:283
+#: ui/clips_view.py:286
 msgid "Sort clips"
 msgstr "Sort clips"
 
-#: ui/clips_view.py:289
+#: ui/clips_view.py:292
 msgid "Open clips folder"
 msgstr "Open clips folder"
 
-#: ui/clips_view.py:556
+#: ui/clips_view.py:559
 msgid "Edit clip from scratch"
 msgstr "Edit clip from scratch"
 
-#: ui/clips_view.py:559
+#: ui/clips_view.py:562
 msgid "Edit clip"
 msgstr "Edit clip"
 
-#: ui/clips_view.py:565
+#: ui/clips_view.py:568
 msgid "Permanently delete the clip"
 msgstr "Permanently delete the clip"
 
-#: ui/clips_view.py:569
+#: ui/clips_view.py:572
 msgid "Move clip to trash"
 msgstr "Move clip to trash"
 
-#: ui/clips_view.py:616
+#: ui/clips_view.py:619
 msgid "Enter a valid clip name"
 msgstr "Enter a valid clip name"
 
-#: ui/clips_view.py:622
+#: ui/clips_view.py:625
 msgid "A clip with that name already exists"
 msgstr "A clip with that name already exists"
 
-#: ui/clips_view.py:627 ui/clips_view.py:645
+#: ui/clips_view.py:630 ui/clips_view.py:648
 msgid "Could not rename clip"
 msgstr "Could not rename clip"
 
-#: ui/clips_view.py:642
+#: ui/clips_view.py:645
 msgid "Clip renamed, but saved edits could not be moved"
 msgstr "Clip renamed, but saved edits could not be moved"
 
-#: ui/clips_view.py:675
+#: ui/clips_view.py:678
 msgid "Could not update clip metadata"
 msgstr "Could not update clip metadata"
 
-#: ui/clips_view.py:686
+#: ui/clips_view.py:689
 msgid "Could not save clip name"
 msgstr "Could not save clip name"
 
-#: ui/clips_view.py:1373
+#: ui/clips_view.py:1376
 msgid "No clips yet"
 msgstr "No clips yet"
 
-#: ui/clips_view.py:1375
+#: ui/clips_view.py:1378
 msgid ""
 "Recorded clips will appear here.\n"
 "Press your save hotkey to capture a clip."
@@ -255,90 +255,90 @@ msgstr ""
 "Recorded clips will appear here.\n"
 "Press your save hotkey to capture a clip."
 
-#: ui/clips_view.py:1383
+#: ui/clips_view.py:1386
 msgid "No matching clips"
 msgstr "No matching clips"
 
-#: ui/clips_view.py:1384
+#: ui/clips_view.py:1387
 msgid "No clip names match the current search."
 msgstr "No clip names match the current search."
 
-#: ui/clips_view.py:1390
+#: ui/clips_view.py:1393
 msgid "Loading clips…"
 msgstr "Loading clips…"
 
-#: ui/clips_view.py:1541
+#: ui/clips_view.py:1544
 msgid "Just now"
 msgstr "Just now"
 
-#: ui/clips_view.py:1545
+#: ui/clips_view.py:1548
 #, python-format
 msgid "%(count)d minute ago"
 msgid_plural "%(count)d minutes ago"
 msgstr[0] "%(count)d minute ago"
 msgstr[1] "%(count)d minutes ago"
 
-#: ui/clips_view.py:1549
+#: ui/clips_view.py:1552
 #, python-format
 msgid "%(count)d hour ago"
 msgid_plural "%(count)d hours ago"
 msgstr[0] "%(count)d hour ago"
 msgstr[1] "%(count)d hours ago"
 
-#: ui/clips_view.py:1553
+#: ui/clips_view.py:1556
 msgid "Yesterday"
 msgstr "Yesterday"
 
-#: ui/clips_view.py:1556
+#: ui/clips_view.py:1559
 #, python-format
 msgid "%(count)d day ago"
 msgid_plural "%(count)d days ago"
 msgstr[0] "%(count)d day ago"
 msgstr[1] "%(count)d days ago"
 
-#: ui/clips_view.py:1562
+#: ui/clips_view.py:1565
 msgid "B"
 msgstr "B"
 
-#: ui/clips_view.py:1562
+#: ui/clips_view.py:1565
 msgid "GB"
 msgstr "GB"
 
-#: ui/clips_view.py:1562
+#: ui/clips_view.py:1565
 msgid "KB"
 msgstr "KB"
 
-#: ui/clips_view.py:1562
+#: ui/clips_view.py:1565
 msgid "MB"
 msgstr "MB"
 
-#: ui/clips_view.py:1564
+#: ui/clips_view.py:1567
 #, python-format
 msgid "%(size).1f %(unit)s"
 msgstr "%(size).1f %(unit)s"
 
-#: ui/clips_view.py:1566
+#: ui/clips_view.py:1569
 #, python-format
 msgid "%(size).1f TB"
 msgstr "%(size).1f TB"
 
-#: ui/clips_view.py:1679
+#: ui/clips_view.py:1682
 msgid "Play clip"
 msgstr "Play clip"
 
-#: ui/clips_view.py:1764
+#: ui/clips_view.py:1767
 msgid "Reveal in file manager"
 msgstr "Reveal in file manager"
 
-#: ui/clips_view.py:1840 ui/editor_window.py:3559
+#: ui/clips_view.py:1843 ui/editor_window.py:3559
 msgid "Could not wipe saved edits"
 msgstr "Could not wipe saved edits"
 
-#: ui/clips_view.py:2051
+#: ui/clips_view.py:2054
 msgid "Move clip to trash?"
 msgstr "Move clip to trash?"
 
-#: ui/clips_view.py:2053
+#: ui/clips_view.py:2056
 #, python-format
 msgid ""
 "'%(name)s' will be moved to the trash.\n"
@@ -347,30 +347,30 @@ msgstr ""
 "'%(name)s' will be moved to the trash.\n"
 "This can be reversed."
 
-#: ui/clips_view.py:2056 ui/dialogs.py:842 ui/editor_export_dialog.py:344
+#: ui/clips_view.py:2059 ui/dialogs.py:842 ui/editor_export_dialog.py:344
 #: ui/editor_export_dialog.py:602 ui/editor_export_dialog.py:630
 #: ui/editor_export_dialog.py:738 ui/editor_window.py:3733 ui/editor_wipe.py:16
 #: ui/game_details_dialog.py:37 ui/update_controller.py:376
 msgid "Cancel"
 msgstr "Cancel"
 
-#: ui/clips_view.py:2057
+#: ui/clips_view.py:2060
 msgid "Move to trash"
 msgstr "Move to trash"
 
-#: ui/clips_view.py:2123
+#: ui/clips_view.py:2130
 msgid "Clip deleted"
 msgstr "Clip deleted"
 
-#: ui/clips_view.py:2123
+#: ui/clips_view.py:2130
 msgid "Clip moved to trash"
 msgstr "Clip moved to trash"
 
-#: ui/clips_view.py:2130
+#: ui/clips_view.py:2137
 msgid "Could not delete clip"
 msgstr "Could not delete clip"
 
-#: ui/clips_view.py:2132
+#: ui/clips_view.py:2139
 msgid "Could not move clip to trash"
 msgstr "Could not move clip to trash"
 
