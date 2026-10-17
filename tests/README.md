@@ -81,7 +81,7 @@ process matching intentionally cover separate production implementations.
 | game_icons | Find appropriate game artwork, avoid blocking discovery and bound extracted-icon caches. |
 | hotkeys | Normalize valid chords, use physical keys and handle portal approval/cancellation races. |
 | i18n | Discover catalogs, resolve locales, load the saved language early and validate translated UI coverage. |
-| launchers | Reject shell syntax errors using the shell parser; exercise Makefile build/install rules so OBS muxing and NVENC probe helpers remain executable beside the engine. Actual GPU encoding requires a hardware smoke check. |
+| launchers | Reject shell syntax errors using the shell parser; exercise Makefile build/install rules so OBS muxing and NVENC probe helpers remain executable beside the engine; restore clangd headers from cached Flatpak modules when unpacked sources are absent. Actual GPU encoding requires a hardware smoke check. |
 | lazy_video_buffers | Execute allocation/reuse/failure cleanup against the shipped C patch helpers. |
 | local_flatpak_install | Install bundles without competing repository origins, preserve data across migration and retries, and leave running apps untouched when bundle preparation fails. Real Flatpak origin behavior requires an isolated integration check. |
 | log_window | Stop subscriptions and scheduled refreshes after the window closes. |

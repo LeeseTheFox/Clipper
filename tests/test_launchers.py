@@ -1,5 +1,10 @@
+import os
+import shutil
 import subprocess
+import sys
 from pathlib import Path
+
+import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -10,6 +15,7 @@ def test_shell_launchers_have_valid_syntax():
         REPO_ROOT / "engine" / "src" / "run_engine.sh",
         REPO_ROOT / "tools" / "run_flatpak_build_quiet.sh",
         REPO_ROOT / "tools" / "run_pytest_quiet.sh",
+        REPO_ROOT / "tools" / "configure_engine_clangd.sh",
     ):
         subprocess.run(["bash", "-n", str(script)], check=True)
 
@@ -53,3 +59,38 @@ def test_obs_helpers_are_executable_beside_built_and_installed_engine(tmp_path):
 
     subprocess.run([*command, "clean"], cwd=build_dir, check=True, capture_output=True)
     assert all(not (build_dir / name).is_symlink() for name in helpers)
+
+
+@pytest.mark.skipif(shutil.which("ostree") is None, reason="OSTree CLI is unavailable")
+def test_clangd_headers_survive_cached_build_without_unpacked_sources(tmp_path):
+    root = tmp_path / "checkout"
+    tools = root / "tools"
+    tools.mkdir(parents=True)
+    for name in ("configure_engine_clangd.sh", "generate_native_test_headers.py"):
+        shutil.copy2(REPO_ROOT / "tools" / name, tools / name)
+    shutil.copytree(REPO_ROOT / "packaging/flatpak/patches", root / "packaging/flatpak/patches")
+    (root / "venv").symlink_to(sys.prefix, target_is_directory=True)
+    cache = root / ".flatpak-builder/cache"
+    cache.parent.mkdir()
+    module = tmp_path / "module"
+    headers = module / "files/include/obs"
+    (headers / "graphics").mkdir(parents=True)
+    for name in ("obs.h", "obsconfig.h", "graphics/vec2.h"):
+        (headers / name).write_text(f"/* cached {name} */\n", encoding="utf-8")
+
+    subprocess.run(["ostree", f"--repo={cache}", "init", "--mode=bare-user-only"],
+                   check=True, capture_output=True)
+    subprocess.run([
+        "ostree", f"--repo={cache}", "commit",
+        f"--branch={os.uname().machine}-clipper/build-obs-studio-libobs",
+        "--subject=Cached OBS module", f"--tree=dir={module}",
+    ], check=True, capture_output=True)
+
+    result = subprocess.run([str(tools / "configure_engine_clangd.sh")],
+                            cwd=root, capture_output=True, text=True)
+
+    assert result.returncode == 0, result.stderr
+    exposed = root / ".flatpak-builder/clangd-include"
+    for name in ("obs.h", "obsconfig.h", "graphics/vec2.h"):
+        assert (exposed / "obs" / name).read_bytes() == (headers / name).read_bytes()
+    assert (exposed / "obsconfig.h").read_bytes() == (headers / "obsconfig.h").read_bytes()
