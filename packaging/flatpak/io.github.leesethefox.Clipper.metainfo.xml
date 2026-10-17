@@ -25,6 +25,11 @@
     <binary>clipper</binary>
   </provides>
   <releases>
+    <release version="1.0.8" date="2026-10-17">
+      <description>
+        <p>Improve NVIDIA encoding, clip deletion, Steam capture, exports, and audio controls.</p>
+      </description>
+    </release>
     <release version="1.0.7" date="2026-09-30">
       <description>
         <p>Maintenance release.</p>
