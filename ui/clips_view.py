@@ -41,6 +41,15 @@ from text_helpers import ELLIPSIZE_END, configure_single_line_ellipsis
 
 _LOG = logging.getLogger("clipper.clips")
 
+# A sandbox-private path must never trash a different file at the same host
+# pathname. Arguments stay positional, including spaces and shell characters.
+_HOST_TRASH_SCRIPT = (
+    'clip_identity=$(stat -c "%d:%i" -- "$1") || exit 1\n'
+    '[ "$clip_identity" = "$2" ] || { '
+    'echo "Clip identity differs outside the sandbox" >&2; exit 1; }\n'
+    'exec gio trash -- "$1"\n'
+)
+
 VIDEO_EXTENSIONS = {".mkv", ".mp4", ".mov", ".flv", ".ts"}
 
 
@@ -2096,6 +2105,47 @@ class ClipsView(Gtk.Box):
             self._notify_clips_rendered()
         self._schedule_media_cache_save()
 
+    def _trash_clip_file(self, clip_path):
+        """Use the portal first, with native host trashing for portal failures."""
+        try:
+            if not Gio.File.new_for_path(str(clip_path)).trash(None):
+                raise OSError("The desktop trash service rejected the clip")
+        except GLib.Error as portal_error:
+            if not os.environ.get("FLATPAK_ID") or not portal_error.matches(
+                Gio.io_error_quark(), Gio.IOErrorEnum.FAILED
+            ):
+                raise
+            info = clip_path.lstat()
+            if not stat_module.S_ISREG(info.st_mode):
+                raise
+            _LOG.warning("Trash portal failed; trying host trash: path=%s reason=%s",
+                         clip_path, portal_error)
+            try:
+                result = subprocess.run(
+                    [
+                        "flatpak-spawn", "--host", "--watch-bus", "--directory=/",
+                        "--env=GIO_USE_PORTALS=0", "--env=GTK_USE_PORTAL=0",
+                        "sh", "-c", _HOST_TRASH_SCRIPT, "clipper-trash",
+                        str(clip_path.absolute()), f"{info.st_dev}:{info.st_ino}",
+                    ],
+                    capture_output=True,
+                    text=True,
+                    timeout=15,
+                    env=_clean_external_tool_env(),
+                )
+            except (OSError, subprocess.SubprocessError) as fallback_error:
+                # A missing executable must not be mistaken for a missing clip
+                # by the worker's FileNotFoundError recovery.
+                raise RuntimeError(
+                    f"Host trash could not complete: {fallback_error}"
+                ) from portal_error
+            if result.returncode:
+                detail = (result.stderr or result.stdout).strip()[-1000:]
+                raise OSError(
+                    f"Host trash failed (exit={result.returncode}): {detail}"
+                ) from portal_error
+            _LOG.info("Host trash succeeded: path=%s", clip_path)
+
     def _delete_clip_file_worker(self, clip_path, permanently=False):
         """Trash or permanently delete a clip on a worker thread."""
         _LOG.info("Clip disposal requested: path=%s mode=%s",
@@ -2105,9 +2155,7 @@ class ClipsView(Gtk.Box):
             if permanently:
                 clip_path.unlink()
             else:
-                trashed = Gio.File.new_for_path(str(clip_path)).trash(None)
-                if not trashed:
-                    raise OSError("The desktop trash service rejected the clip")
+                self._trash_clip_file(clip_path)
         except FileNotFoundError:
             pass
         except Exception as exc:

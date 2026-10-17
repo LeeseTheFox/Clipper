@@ -1,4 +1,6 @@
 import importlib.util
+import os
+import subprocess
 import sys
 import types
 from pathlib import Path
@@ -75,8 +77,20 @@ def _load_clips_module():
         def set_size_request(self, width, height):
             self.size_request = (width, height)
 
-    repository.Gio = types.SimpleNamespace()
+    class StubGioError(Exception):
+        def __init__(self, message, code=0):
+            super().__init__(message)
+            self.code = code
+
+        def matches(self, domain, code):
+            return domain == "gio" and code == self.code
+
+    repository.Gio = types.SimpleNamespace(
+        io_error_quark=lambda: "gio",
+        IOErrorEnum=types.SimpleNamespace(FAILED=0, PERMISSION_DENIED=14),
+    )
     repository.GLib = types.SimpleNamespace(
+        Error=StubGioError,
         idle_add=lambda callback, *args: callback(*args),
         timeout_add=lambda _delay, callback, *args: callback(*args),
     )
@@ -1234,6 +1248,10 @@ def test_trash_confirmation_preserves_list_model_and_starts_worker(monkeypatch, 
 
 
 def test_delete_worker_moves_clip_to_trash(monkeypatch, tmp_path):
+    monkeypatch.setenv("FLATPAK_ID", "io.github.leesethefox.Clipper")
+    monkeypatch.setattr(clips_module.subprocess, "run", lambda *_args, **_kwargs: pytest.fail(
+        "A successful portal request must not invoke the host fallback"
+    ))
     clip_path = tmp_path / "clip.mkv"
     clip_path.write_bytes(b"clip")
     trashed = []
@@ -1259,6 +1277,140 @@ def test_delete_worker_moves_clip_to_trash(monkeypatch, tmp_path):
     assert trashed == [clip_path]
     assert clip_path.exists() is False
     assert toasts == ["Clip moved to trash"]
+
+
+@pytest.fixture
+def rejected_trash_portal(monkeypatch):
+    monkeypatch.setenv("FLATPAK_ID", "io.github.leesethefox.Clipper")
+    error = clips_module.GLib.Error("Trash portal rejected the file")
+
+    class TrashFileStub:
+        def trash(self, _cancellable):
+            raise error
+
+    monkeypatch.setattr(
+        clips_module.Gio, "File",
+        types.SimpleNamespace(new_for_path=lambda _path: TrashFileStub()), raising=False,
+    )
+    return error
+
+
+@pytest.mark.parametrize("same_host_file", [True, False], ids=["matching-file", "different-file"])
+def test_flatpak_trash_fallback_moves_only_the_same_file(
+    monkeypatch, tmp_path, rejected_trash_portal, same_host_file,
+):
+    import editor_drafts
+
+    clip_path = tmp_path / "clip 'quoted' $HOME; відео.mkv"
+    clip_path.write_bytes(b"clip")
+    unrelated = tmp_path / "other.mkv"
+    unrelated.write_bytes(b"unrelated")
+    trash = tmp_path / "trash"
+    trash.mkdir(mode=0o755)
+    trash.chmod(0o755)
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    gio = bin_dir / "gio"
+    # Mock the host utility, but execute Clipper's real identity guard and
+    # argument handling. An installed smoke check verifies actual trash data.
+    gio.write_text(
+        '#!/bin/sh\n[ "$1" = trash ] && [ "$2" = -- ] && [ "$#" -eq 3 ] || exit 2\n'
+        'exec mv -- "$3" "$CLIPPER_TEST_TRASH/clip"\n', encoding="utf-8",
+    )
+    gio.chmod(0o755)
+    run = subprocess.run
+
+    def host_run(command, **kwargs):
+        assert command[:2] == ["flatpak-spawn", "--host"]
+        assert "--watch-bus" in command
+        assert "--env=GIO_USE_PORTALS=0" in command
+        assert "--env=GTK_USE_PORTAL=0" in command
+        args = command[command.index("sh"):]
+        if not same_host_file:
+            args[-2] = str(unrelated)
+        env = dict(kwargs.pop("env"), PATH=f"{bin_dir}:{os.environ['PATH']}",
+                   CLIPPER_TEST_TRASH=str(trash))
+        return run(args, env=env, **kwargs)
+
+    monkeypatch.setattr(clips_module.subprocess, "run", host_run)
+    removed = []
+    monkeypatch.setattr(editor_drafts, "delete_editor_data", removed.append)
+    view = _make_view()
+    toasts = []
+    view._show_toast = toasts.append
+    view._locally_deleted_paths.add(clip_path)
+
+    view._delete_clip_file_worker(clip_path)
+
+    assert unrelated.read_bytes() == b"unrelated"
+    assert trash.stat().st_mode & 0o777 == 0o755
+    if same_host_file:
+        assert not clip_path.exists()
+        assert (trash / "clip").read_bytes() == b"clip"
+        assert removed == [clip_path]
+        assert toasts == ["Clip moved to trash"]
+        assert not view.refresh_called
+    else:
+        assert clip_path.read_bytes() == b"clip"
+        assert not (trash / "clip").exists()
+        assert removed == []
+        assert clip_path not in view._locally_deleted_paths
+        assert view.refresh_called
+
+
+@pytest.mark.parametrize("failure", ["exit", "missing-command", "timeout"])
+def test_failed_host_trash_preserves_clip_and_edits(
+    monkeypatch, tmp_path, rejected_trash_portal, failure,
+):
+    import editor_drafts
+
+    clip_path = tmp_path / "clip.mkv"
+    clip_path.write_bytes(b"clip")
+
+    def host_run(command, **_kwargs):
+        if failure == "missing-command":
+            raise FileNotFoundError("flatpak-spawn unavailable")
+        if failure == "timeout":
+            raise subprocess.TimeoutExpired(command, 15)
+        return subprocess.CompletedProcess(command, 127, "", "gio unavailable")
+
+    monkeypatch.setattr(clips_module.subprocess, "run", host_run)
+    removed = []
+    monkeypatch.setattr(editor_drafts, "delete_editor_data", removed.append)
+    view = _make_view()
+    view._locally_deleted_paths.add(clip_path)
+
+    view._delete_clip_file_worker(clip_path)
+
+    assert clip_path.read_bytes() == b"clip"
+    assert removed == []
+    assert clip_path not in view._locally_deleted_paths
+    assert view.refresh_called
+
+
+@pytest.mark.parametrize("restricted", ["native", "permission-denied", "symlink"])
+def test_trash_does_not_use_host_for_native_errors_denials_or_symlinks(
+    monkeypatch, tmp_path, rejected_trash_portal, restricted,
+):
+    clip_path = tmp_path / "clip.mkv"
+    clip_path.write_bytes(b"clip")
+    if restricted == "native":
+        monkeypatch.delenv("FLATPAK_ID")
+    elif restricted == "permission-denied":
+        rejected_trash_portal.code = clips_module.Gio.IOErrorEnum.PERMISSION_DENIED
+    else:
+        link = tmp_path / "link.mkv"
+        link.symlink_to(clip_path)
+        clip_path = link
+    monkeypatch.setattr(clips_module.subprocess, "run", lambda *_args, **_kwargs: pytest.fail(
+        "Host trash must be limited to regular clips after Flatpak portal failures"
+    ))
+    view = _make_view()
+
+    view._delete_clip_file_worker(clip_path)
+
+    assert clip_path.read_bytes() == b"clip"
+    assert view.refresh_called
 
 
 def test_permanent_delete_worker_unlinks_clip_without_using_trash(monkeypatch, tmp_path):

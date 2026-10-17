@@ -50,7 +50,7 @@ process matching intentionally cover separate production implementations.
 | autostart | Honor portal approval and native desktop-file ownership; report registration failures. |
 | capability_response | Share startup and window discovery, bound connection/response retries, release engine ownership, and reject late replies after reconnect, timeout or shutdown. |
 | capture_modes | Migrate legacy capture labels and persist stable mode IDs. |
-| clips_view | Rename and delete safely, preserve clips and edits and restore rows after trash failures with copyable diagnostics, preserve the list model on deletion and show empty/search states, retain drafts and game metadata, bound asynchronous gallery/cache work, activate previews for in-window playback. |
+| clips_view | Rename and delete safely, fall back from failed Flatpak trash requests to host trash only for the same regular file, preserve clips and edits after failures or missing/timed-out helpers with copyable diagnostics, preserve the list model on deletion and show empty/search states, retain drafts and game metadata, bound asynchronous gallery/cache work, activate previews for in-window playback. Actual host trash metadata and recoverability require an installed smoke check. |
 | clip_player_overlay | Render preview clipping and handoffs correctly, wait for a decoded frame before revealing or playing, cancel stale loads and animations, preserve playback across fullscreen layout changes, restore gallery focus and release media when the host is hidden. |
 | config | Persist typed settings, recover malformed files, migrate schemas and preserve engine-owned tokens. |
 | copy_pacing | Execute capture pacing, lifecycle and wire-format checks in the C implementation. |

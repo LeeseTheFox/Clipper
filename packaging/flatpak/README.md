@@ -60,6 +60,13 @@ The manifest requests `--talk-name=org.freedesktop.Flatpak` so Clipper can run i
 
 The helper only checks processes, drives its monitor service, and handles the explicit Steam restart flow. It does not run as root, accept shell snippets or arbitrary commands, launch games, modify Steam launch options, or inject into games.
 
+Clip disposal normally uses the desktop trash portal. If it returns a generic
+failure for a regular clip, Clipper uses the existing host access to try the
+host's `gio trash` utility. The fallback verifies the file's device and inode
+before trashing, preserves the host trash location and directory permissions,
+and stops with Clipper's bus connection. If the utility is unavailable or the
+fallback fails, Clipper reports the failure and retains the clip's editor data.
+
 ## Bundled game capture
 
 The package builds x86_64 and i386 Vulkan/OpenGL hooks and the OBS receiver from
