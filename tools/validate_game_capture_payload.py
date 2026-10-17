@@ -17,7 +17,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-PAYLOAD_VERSION = "obs-vkcapture-1.5.6-clipper.3"
+PAYLOAD_VERSION = "obs-vkcapture-1.5.6-clipper.4"
 SOURCE_VERSION = "1.5.6"
 SOURCE_COMMIT = "a9ea91fe1994708067e95d4159852b11b4209a16"
 SOCKET_PREFIX = "/io/github/leesethefox/Clipper/vkcapture/"
@@ -311,7 +311,7 @@ def _validate_wrapper(payload: Path) -> None:
         "CLIPPER_GAME_CAPTURE=1",
         "XDG_DATA_DIRS=${payload_root}/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}",
         "gl_hook=${payload_root}/\\$LIB/clipper-gamecapture/libclipper_glcapture.so",
-        "LD_PRELOAD=${gl_hook}${LD_PRELOAD:+:${LD_PRELOAD}}",
+        "LD_PRELOAD=${LD_PRELOAD:+${LD_PRELOAD}:}${gl_hook}",
         'exec "$@"',
     )
     if any(fragment not in wrapper for fragment in required):

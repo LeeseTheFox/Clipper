@@ -11,6 +11,8 @@ import game_capture
 import pytest
 import steam
 
+from tools.build_game_capture_payload import install_wrapper
+
 
 def _payload(root: Path) -> Path:
     wrapper = root / "bin/clipper-gamecapture"
@@ -74,6 +76,23 @@ def test_launch_option_runs_game_with_or_without_clipper(tmp_path, installed):
     )
     hook = "loaded" if installed else "unset"
     assert result.stdout == f"two words|argument with spaces|{hook}"
+
+
+@pytest.mark.parametrize("preload", [None, "/overlay32.so:/overlay64.so", "/overlay.so /other.so"])
+def test_generated_wrapper_preserves_overlay_precedence_in_preload(tmp_path, preload):
+    # An overlay after the hook can resolve RTLD_NEXT/dlopen to itself through
+    # the hook's dlsym interposer, hanging even non-graphical launch helpers.
+    install_wrapper(tmp_path)
+    env = dict(os.environ)
+    env.pop("LD_PRELOAD", None)
+    if preload is not None:
+        env["LD_PRELOAD"] = preload
+    result = subprocess.run(
+        [str(tmp_path / "bin/clipper-gamecapture"), "sh", "-c", 'printf %s "$LD_PRELOAD"'],
+        env=env, check=True, capture_output=True, text=True, timeout=5,
+    )
+    hook = f"{tmp_path}/$LIB/clipper-gamecapture/libclipper_glcapture.so"
+    assert result.stdout == (f"{preload}:{hook}" if preload else hook)
 
 
 def test_flatpak_steam_permission_is_one_read_only_path(monkeypatch, tmp_path):

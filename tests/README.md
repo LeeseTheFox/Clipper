@@ -75,7 +75,7 @@ process matching intentionally cover separate production implementations.
 | flatpak_metadata | Preserve desktop identity, icon policy, portable host helpers, pinned sources and narrow permissions. |
 | focus_helpers | Preserve stable dropdown IDs, handle invalid selection and prevent controls stealing input. |
 | game_audio_learning | Learn audio identity only from verified game processes and update the matching configuration. |
-| game_capture | Publish/repair payloads atomically, preserve working copies and quote executable launch arguments. |
+| game_capture | Publish/repair payloads atomically, preserve working copies, quote executable launch arguments and preserve overlay precedence in the generated preload wrapper to prevent launch hangs. Real overlay loading and captured frames require a hardware smoke check. |
 | game_capture_frame_smoke | Consume command replies despite interleaved state events, wait for actual save completion and fail promptly on engine errors/disconnects. |
 | game_details | Replace executable identity safely, preserve user settings and resolve the correct Steam account. |
 | game_icons | Find appropriate game artwork, avoid blocking discovery and bound extracted-icon caches. |

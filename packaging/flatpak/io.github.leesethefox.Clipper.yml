@@ -192,7 +192,7 @@ modules:
       - install -Dm755 receiver-build/linux-vkcapture.so /app/lib/obs-plugins/linux-vkcapture.so
       - install -d /app/share/obs/obs-plugins/linux-vkcapture/locale
       - install -m644 data/locale/*.ini /app/share/obs/obs-plugins/linux-vkcapture/locale/
-      - python3 build_game_capture_payload.py --source=. --rpm-dir=sysroot-rpms --build-dir=payload-build --destination=/app/share/clipper/game-capture/payloads/obs-vkcapture-1.5.6-clipper.3
+      - python3 build_game_capture_payload.py --source=. --rpm-dir=sysroot-rpms --build-dir=payload-build --destination=/app/share/clipper/game-capture/payloads/obs-vkcapture-1.5.6-clipper.4
       - install -Dm644 LICENSE /app/share/licenses/io.github.leesethefox.Clipper/obs-vkcapture-GPL-2.0.txt
     sources:
       - type: git

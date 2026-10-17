@@ -10,7 +10,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-PAYLOAD_VERSION = "obs-vkcapture-1.5.6-clipper.3"
+PAYLOAD_VERSION = "obs-vkcapture-1.5.6-clipper.4"
 SOURCE_VERSION = "1.5.6"
 SOURCE_COMMIT = "a9ea91fe1994708067e95d4159852b11b4209a16"
 SOCKET_PREFIX = "/io/github/leesethefox/Clipper/vkcapture/"
@@ -257,6 +257,8 @@ def run_load_harness(
 
 
 def install_wrapper(payload: Path) -> None:
+    # Keep Steam's overlay before our dlsym interposer. Otherwise its
+    # RTLD_NEXT lookup for dlopen resolves back to itself and spins at startup.
     wrapper = payload / "bin/clipper-gamecapture"
     wrapper.parent.mkdir(parents=True)
     wrapper.write_text(
@@ -270,7 +272,7 @@ def install_wrapper(payload: Path) -> None:
         "payload_root=${script_dir%/bin}\n"
         "gl_hook=${payload_root}/\\$LIB/clipper-gamecapture/libclipper_glcapture.so\n"
         "export XDG_DATA_DIRS=${payload_root}/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}\n"
-        "export LD_PRELOAD=${gl_hook}${LD_PRELOAD:+:${LD_PRELOAD}}\n"
+        "export LD_PRELOAD=${LD_PRELOAD:+${LD_PRELOAD}:}${gl_hook}\n"
         "export CLIPPER_GAME_CAPTURE=1\n"
         "exec \"$@\"\n",
         encoding="utf-8",
