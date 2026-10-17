@@ -321,5 +321,6 @@ modules:
           - engine/monitor/clipper-monitor-host
           - engine/src/clipper-engine
           - engine/src/obs-ffmpeg-mux
+          - engine/src/obs-nvenc-test
           - '**/__pycache__'
           - '**/*.pyc'

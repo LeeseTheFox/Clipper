@@ -21,25 +21,27 @@ LDFLAGS = -L$(OBS_LIBDIR) -Wl,-rpath,$(OBS_LIBDIR) \
 TARGET  = clipper-engine
 SRCS    = clipper_engine.c $(VENDOR_DIR)/cJSON.c
 
-# obs-ffmpeg-mux must live next to the engine binary so the replay buffer
-# plugin can spawn it via os_get_executable_path_ptr() / /proc/self/exe.
-MUX_LINK = obs-ffmpeg-mux
-MUX_SRC  = $(OBS_PREFIX)/bin/obs-ffmpeg-mux
+# OBS resolves subprocesses beside the running executable through
+# os_get_executable_path_ptr() / /proc/self/exe. Both replay muxing and
+# NVIDIA encoder detection need their helpers beside clipper-engine.
+OBS_HELPERS = obs-ffmpeg-mux obs-nvenc-test
 
 .PHONY: all clean install
 
-all: $(TARGET) $(MUX_LINK)
+all: $(TARGET) $(OBS_HELPERS)
 
 $(TARGET): $(SRCS)
 	$(CC) $(CFLAGS) -o $@ $(SRCS) $(LDFLAGS)
 
-$(MUX_LINK):
-	ln -sf $(MUX_SRC) $(MUX_LINK)
+$(OBS_HELPERS):
+	ln -sf $(OBS_PREFIX)/bin/$@ $@
 
 install: all
 	install -Dm755 $(TARGET) $(DESTDIR)$(LIBEXECDIR)/$(TARGET)
 	mkdir -p $(DESTDIR)$(LIBEXECDIR)
-	ln -sf $(OBS_PREFIX)/bin/obs-ffmpeg-mux $(DESTDIR)$(LIBEXECDIR)/obs-ffmpeg-mux
+	for helper in $(OBS_HELPERS); do \
+		ln -sf $(OBS_PREFIX)/bin/$$helper $(DESTDIR)$(LIBEXECDIR)/$$helper; \
+	done
 
 clean:
-	rm -f $(TARGET) $(MUX_LINK)
+	rm -f $(TARGET) $(OBS_HELPERS)

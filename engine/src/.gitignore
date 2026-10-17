@@ -1,5 +1,6 @@
 # Compiled binary
 clipper-engine
 
-# obs-ffmpeg-mux symlink (created by make)
+# OBS helper symlinks (created by make)
 obs-ffmpeg-mux
+obs-nvenc-test
