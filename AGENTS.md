@@ -4,6 +4,10 @@
 
 This file gives coding agents the minimum repo-specific instructions needed to work safely in Clipper.
 
+`AGENTS.override.md` contains personal instructions and must remain local and
+ignored. Never stage, commit, or publish it, including with `git add -f`; requests
+to update both instruction files do not authorize publishing the override.
+
 ## Project Layout
 
 - `clipper`: top-level launcher for the engine + UI

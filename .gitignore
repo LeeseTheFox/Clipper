@@ -37,6 +37,9 @@ repo/
 # Personal performance experiments and measurements
 /perf_testing/
 
+# Personal agent instructions (local only, including nested overrides)
+AGENTS.override.md
+
 # PyInstaller
 *.manifest
 *.spec
