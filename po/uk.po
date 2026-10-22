@@ -354,7 +354,7 @@ msgstr ""
 #: ui/clips_view.py:2068 ui/dialogs.py:842 ui/editor_export_dialog.py:344
 #: ui/editor_export_dialog.py:602 ui/editor_export_dialog.py:630
 #: ui/editor_export_dialog.py:738 ui/editor_window.py:3733 ui/editor_wipe.py:16
-#: ui/game_details_dialog.py:37 ui/update_controller.py:376
+#: ui/game_details_dialog.py:37 ui/update_controller.py:377
 msgid "Cancel"
 msgstr "Скасувати"
 
@@ -1404,7 +1404,7 @@ msgstr "Експорт…"
 msgid "Exported to %(name)s"
 msgstr "Експортовано до %(name)s"
 
-#: ui/editor_window.py:3695 ui/main.py:2303 ui/settings_view.py:1423
+#: ui/editor_window.py:3695 ui/main.py:2313 ui/settings_view.py:1423
 msgid "Unknown error"
 msgstr "Невідома помилка"
 
@@ -1695,11 +1695,11 @@ msgstr "Журнали Clipper"
 msgid "Copy logs"
 msgstr "Скопіювати журнали"
 
-#: ui/main.py:84
+#: ui/main.py:85
 msgid "OBS Studio and Clipper are both running"
 msgstr "OBS Studio і Clipper запущено одночасно"
 
-#: ui/main.py:87
+#: ui/main.py:88
 msgid ""
 "Running both apps at the same time can overload the GPU or hardware encoder. "
 "This may also cause issues for games with \"Game capture\" method selected. "
@@ -1709,147 +1709,147 @@ msgstr ""
 "кодер. Це також може спричинити проблеми в іграх із вибраним способом "
 "«Захоплення гри». Перед записом радимо закрити OBS Studio або Clipper."
 
-#: ui/main.py:595
+#: ui/main.py:596
 msgid "Engine not running"
 msgstr "Рушій не запущено"
 
-#: ui/main.py:601
+#: ui/main.py:602
 msgid "Could not send save command to Clipper engine"
 msgstr "Не вдалося надіслати команду збереження рушію Clipper"
 
-#: ui/main.py:633
+#: ui/main.py:634
 msgid "Restart Clipper?"
 msgstr "Перезапустити Clipper?"
 
-#: ui/main.py:634
+#: ui/main.py:635
 msgid "Clipper needs to be restarted for this change to take effect."
 msgstr "Щоб зміна набула чинності, потрібно перезапустити Clipper."
 
-#: ui/main.py:636 ui/update_controller.py:326
+#: ui/main.py:637 ui/update_controller.py:327
 msgid "Restart later"
 msgstr "Перезапустити пізніше"
 
-#: ui/main.py:637 ui/update_controller.py:330
+#: ui/main.py:638 ui/update_controller.py:331
 msgid "Restart now"
 msgstr "Перезапустити зараз"
 
-#: ui/main.py:660
+#: ui/main.py:661
 msgid "Save or discard the video edit before logging out"
 msgstr "Збережи або відкинь зміни відео перед виходом із системи"
 
-#: ui/main.py:771
+#: ui/main.py:772
 #, python-format
 msgid "Could not register save hotkey: %(error)s"
 msgstr "Не вдалося зареєструвати сполучення клавіш збереження: %(error)s"
 
-#: ui/main.py:810
+#: ui/main.py:811
 #, python-format
 msgid "Global hotkey unavailable: %(message)s"
 msgstr "Глобальне сполучення клавіш недоступне: %(message)s"
 
-#: ui/main.py:1021
+#: ui/main.py:1022
 msgid "Acknowledge"
 msgstr "Зрозуміло"
 
-#: ui/main.py:1035 ui/settings_view.py:1419
+#: ui/main.py:1036 ui/settings_view.py:1419
 msgid "Restarting engine…"
 msgstr "Перезапуск рушія…"
 
-#: ui/main.py:1050
+#: ui/main.py:1051
 msgid "Could not send restart command to Clipper engine"
 msgstr "Не вдалося надіслати команду перезапуску рушію Clipper"
 
-#: ui/main.py:1055
+#: ui/main.py:1056
 msgid "Engine will start when a whitelisted game is running"
 msgstr "Рушій запуститься, коли буде запущено дозволену гру"
 
-#: ui/main.py:1070
+#: ui/main.py:1071
 #, python-format
 msgid "Engine restart failed: %(error)s"
 msgstr "Не вдалося перезапустити рушій: %(error)s"
 
-#: ui/main.py:1188
+#: ui/main.py:1189
 msgid "X11 capture uses the primary X11 display without a system picker."
 msgstr ""
 "Захоплення X11 використовує основний дисплей X11 без системного засобу "
 "вибору."
 
-#: ui/main.py:1197
+#: ui/main.py:1198
 msgid "The system display picker is already open."
 msgstr "Системний засіб вибору екрана вже відкрито."
 
-#: ui/main.py:1207
+#: ui/main.py:1208
 msgid "Stop the active game capture before changing the target display."
 msgstr "Зупини активне захоплення гри перед зміною цільового екрана."
 
-#: ui/main.py:1273
+#: ui/main.py:1274
 msgid "Could not disable automatic startup"
 msgstr "Не вдалося вимкнути автоматичний запуск"
 
-#: ui/main.py:1280
+#: ui/main.py:1281
 msgid "PipeWire restore token cleared"
 msgstr "Токен відновлення PipeWire очищено"
 
-#: ui/main.py:1351
+#: ui/main.py:1352
 msgid "Clip captured"
 msgstr "Кліп захоплено"
 
-#: ui/main.py:1352
+#: ui/main.py:1353
 msgid "Your clip has been saved."
 msgstr "Твій кліп збережено."
 
-#: ui/main.py:1358
+#: ui/main.py:1359
 msgid ""
 "Could not write the clip. Check the save folder and available disk space."
 msgstr ""
 "Не вдалося записати кліп. Перевір теку збереження та вільне місце на диску."
 
-#: ui/main.py:1360
+#: ui/main.py:1361
 #, python-format
 msgid "Failed to save clip: %(error)s"
 msgstr "Не вдалося зберегти кліп: %(error)s"
 
-#: ui/main.py:1396
+#: ui/main.py:1397
 #, python-format
 msgid "Could not open clip editor: %(error)s"
 msgstr "Не вдалося відкрити редактор кліпів: %(error)s"
 
-#: ui/main.py:2057
+#: ui/main.py:2067
 #, python-format
 msgid "Could not start Clipper engine: %(error)s"
 msgstr "Не вдалося запустити рушій Clipper: %(error)s"
 
-#: ui/main.py:2130 ui/settings_view.py:1422
+#: ui/main.py:2140 ui/settings_view.py:1422
 #, python-format
 msgid "Engine shutdown failed: %(error)s"
 msgstr "Не вдалося завершити роботу рушія: %(error)s"
 
-#: ui/main.py:2171 ui/main.py:2207
+#: ui/main.py:2181 ui/main.py:2217
 msgid "Display selection was cancelled."
 msgstr "Вибір екрана скасовано."
 
-#: ui/main.py:2176
+#: ui/main.py:2186
 msgid "Capture display selected successfully."
 msgstr "Екран для захоплення успішно вибрано."
 
-#: ui/main.py:2214
+#: ui/main.py:2224
 msgid "No display was selected before the picker timed out."
 msgstr "До завершення часу очікування засобу вибору не вибрано жодного екрана."
 
-#: ui/main.py:2302
+#: ui/main.py:2312
 #, python-format
 msgid "Display capture sync failed: %(error)s"
 msgstr "Не вдалося синхронізувати захоплення екрана: %(error)s"
 
-#: ui/main.py:2390
+#: ui/main.py:2400
 msgid "🦊 Leese"
 msgstr "🦊 Leese"
 
-#: ui/main.py:2394
+#: ui/main.py:2404
 msgid "© 2026 Leese"
 msgstr "© 2026 Leese"
 
-#: ui/main.py:2400
+#: ui/main.py:2410
 msgid "GitHub"
 msgstr "GitHub"
 
@@ -1874,6 +1874,7 @@ msgid "Crashed"
 msgstr "Завершено аварійно"
 
 #: ui/main_window.py:77 ui/tray.py:375 ui/tray.py:392
+#: ui/update_controller.py:478
 msgid "Clipper"
 msgstr "Clipper"
 
@@ -1922,7 +1923,7 @@ msgstr "Про Clipper"
 msgid "Quit"
 msgstr "Вийти"
 
-#: ui/main_window.py:196 ui/update_controller.py:219
+#: ui/main_window.py:196 ui/update_controller.py:220
 msgid "A Clipper update is available"
 msgstr "Доступне оновлення Clipper"
 
@@ -2032,7 +2033,7 @@ msgstr "Обмеження розміру файла"
 msgid "Maximum size retained for each clip"
 msgstr "Максимально дозволений розмір для кожного кліпу"
 
-#: ui/recording_controls.py:49 ui/update_controller.py:339
+#: ui/recording_controls.py:49 ui/update_controller.py:340
 msgid "MiB"
 msgstr "МіБ"
 
@@ -2437,87 +2438,87 @@ msgstr "Сховати Clipper"
 msgid "Show Clipper"
 msgstr "Показати Clipper"
 
-#: ui/update_controller.py:109 ui/update_controller.py:121
+#: ui/update_controller.py:110 ui/update_controller.py:122
 msgid "Checking for updates…"
 msgstr "Перевірка оновлень…"
 
-#: ui/update_controller.py:118
+#: ui/update_controller.py:119
 msgid "Install the Flatpak version of Clipper to use in-app updates."
 msgstr ""
 "Встанови Flatpak-версію Clipper, щоб користуватися оновленнями в застосунку."
 
-#: ui/update_controller.py:157
+#: ui/update_controller.py:158
 msgid "Could not check for updates. Check your connection and try again."
 msgstr "Не вдалося перевірити оновлення. Перевір з’єднання та спробуй ще раз."
 
-#: ui/update_controller.py:182
+#: ui/update_controller.py:183
 msgid "Clipper is up to date."
 msgstr "Встановлено найновішу версію Clipper."
 
-#: ui/update_controller.py:195 ui/update_controller.py:332
+#: ui/update_controller.py:196 ui/update_controller.py:333
 msgid "Clipper update available"
 msgstr "Доступне оновлення Clipper"
 
-#: ui/update_controller.py:197
+#: ui/update_controller.py:198
 #, python-format
 msgid "Clipper %(version)s is ready to download."
 msgstr "Clipper %(version)s готовий до завантаження."
 
-#: ui/update_controller.py:217 ui/update_controller.py:328
+#: ui/update_controller.py:218 ui/update_controller.py:329
 msgid "Restart Clipper to finish updating"
 msgstr "Перезапусти Clipper, щоб завершити оновлення"
 
-#: ui/update_controller.py:233
+#: ui/update_controller.py:234
 msgid "Updates"
 msgstr "Оновлення"
 
-#: ui/update_controller.py:270
+#: ui/update_controller.py:271
 msgid "Installed"
 msgstr "Встановлено"
 
-#: ui/update_controller.py:271
+#: ui/update_controller.py:272
 msgid "Available"
 msgstr "Доступно"
 
-#: ui/update_controller.py:273
+#: ui/update_controller.py:274
 msgid "Download"
 msgstr "Завантаження"
 
-#: ui/update_controller.py:278
+#: ui/update_controller.py:279
 msgid "Release notes"
 msgstr "Примітки до випуску"
 
-#: ui/update_controller.py:290 ui/update_controller.py:326
+#: ui/update_controller.py:291 ui/update_controller.py:327
 msgid "Later"
 msgstr "Пізніше"
 
-#: ui/update_controller.py:293 ui/update_controller.py:341
+#: ui/update_controller.py:294 ui/update_controller.py:342
 msgid "Update"
 msgstr "Оновити"
 
-#: ui/update_controller.py:298
+#: ui/update_controller.py:299
 msgid "Skip this version"
 msgstr "Пропустити цю версію"
 
-#: ui/update_controller.py:329
+#: ui/update_controller.py:330
 msgid "Update installed. Restart Clipper to use the new version."
 msgstr ""
 "Оновлення встановлено. Перезапусти Clipper, щоб користуватися новою версією."
 
-#: ui/update_controller.py:338
+#: ui/update_controller.py:339
 #, python-format
 msgid "%(size)s %(unit)s"
 msgstr "%(size)s %(unit)s"
 
-#: ui/update_controller.py:373
+#: ui/update_controller.py:374
 msgid "Downloading update…"
 msgstr "Завантаження оновлення…"
 
-#: ui/update_controller.py:407
+#: ui/update_controller.py:408
 msgid "Installing update…"
 msgstr "Встановлення оновлення…"
 
-#: ui/update_controller.py:418
+#: ui/update_controller.py:419
 msgid ""
 "Could not install the update. Your current version is still available. Try "
 "again."
@@ -2525,21 +2526,19 @@ msgstr ""
 "Не вдалося встановити оновлення. Поточна версія залишається доступною. "
 "Спробуй ще раз."
 
-#: ui/update_controller.py:423
+#: ui/update_controller.py:424
 #, python-format
 msgid "Details: %(details)s"
 msgstr "Подробиці: %(details)s"
 
-#: ui/update_controller.py:444
+#: ui/update_controller.py:452
 msgid "Close the editor and wait for clip saving to finish before restarting."
 msgstr ""
 "Перед перезапуском закрий редактор і дочекайся завершення збереження кліпів."
 
-#: ui/update_controller.py:463
-msgid "Could not restart Clipper. Quit and open it again to use the update."
-msgstr ""
-"Не вдалося перезапустити Clipper. Вийди та відкрий його знову, щоб "
-"користуватися оновленням."
+#: ui/update_controller.py:475
+msgid "Could not restart Clipper. Quit and open it again."
+msgstr "Не вдалося перезапустити Clipper. Вийди та відкрий його знову."
 
 #: ui/video_player.py:56
 msgid "Raise volume"

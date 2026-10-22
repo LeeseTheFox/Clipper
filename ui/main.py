@@ -59,6 +59,7 @@ from monitor_manager import HostMonitorManager
 from process_watcher import monitor_rule_id
 from sound_feedback import ClipSoundPlayer
 from tray import ClipperTray
+from updates import graphics_runtime_removed
 
 if hasattr(Gtk, "Widget"):
     Gtk.Widget.set_default_direction(
@@ -2021,10 +2022,19 @@ class ClipperApplication(Adw.Application):
         self, capture_mode: str = DEFAULT_CAPTURE_MODE, *, force_restart: bool = False,
         capture_requested: bool = True,
     ) -> bool:
-        if self._engine_shutdown_pending:
+        if self._stopping or self._engine_shutdown_pending:
             return False
 
         try:
+            if not self._engine_manager.is_running() and graphics_runtime_removed():
+                # An engine restart inherits the retired driver mount. Reuse
+                # the host-side app restart to obtain a fresh Flatpak sandbox.
+                updater = getattr(self, "_updater", None)
+                if updater is not None:
+                    updater._restart(runtime_recovery=True)
+                return False
+            if getattr(self, "_update_restart_pending", False):
+                return False
             if force_restart and self._engine_manager.is_running():
                 self._engine_shutdown_pending = True
                 if self._engine_client:

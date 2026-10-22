@@ -296,7 +296,29 @@ def install(release: Release, installation: Installation, bundle: Path) -> None:
     bundle.unlink(missing_ok=True)
 
 
-def restart_after_exit(installation: Installation) -> None:
+def graphics_runtime_removed() -> bool:
+    """Detect a retired Flatpak runtime/GL mount inherited by new engines.
+
+    A deleted bind-mount root is reported as ``//deleted`` by Linux. Ignore
+    Flatpak's intentionally unlinked temporary bind files and unrelated mounts.
+    """
+    if os.environ.get("FLATPAK_ID") != APP_ID:
+        return False
+    try:
+        mounts = Path("/proc/self/mountinfo").read_text(encoding="utf-8")
+    except OSError:
+        return False
+    for line in mounts.splitlines():
+        fields = line.split()
+        if len(fields) < 6 or not fields[3].endswith("//deleted"):
+            continue
+        target = fields[4]
+        if target == "/usr" or re.fullmatch(r"/usr/lib/(?:[^/]+/)?GL/[^/]+", target):
+            return True
+    return False
+
+
+def restart_after_exit(installation: Installation, *, background: bool = False) -> None:
     """Launch the new deployment once this Flatpak instance has exited."""
     info = configparser.ConfigParser(interpolation=None)
     info.read("/.flatpak-info")
@@ -321,6 +343,7 @@ def restart_after_exit(installation: Installation) -> None:
             f"--arch={installation.arch}",
             f"--branch={installation.branch}",
             APP_ID,
+            *(["--background"] if background else []),
         ),
         check=True,
         timeout=15,

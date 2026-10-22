@@ -24,6 +24,7 @@ class UpdateController:
         self._checking = False
         self._manual_check_requested = False
         self._present_release_requested = False
+        self._runtime_restart_attempted = False
         cached_release = self.config.get("update_available", {})
         if cached_release:
             try:
@@ -432,38 +433,53 @@ class UpdateController:
 
         self._worker(work, downloaded)
 
-    def _restart(self):
-        if self.busy or getattr(self.app, "_update_restart_pending", False):
+    def _restart(self, *, runtime_recovery=False):
+        if (
+            self.closed
+            or self.busy
+            or getattr(self.app, "_stopping", False)
+            or getattr(self.app, "_update_restart_pending", False)
+            or (runtime_recovery and self._runtime_restart_attempted)
+        ):
             return
         if (
             getattr(self.app, "_editor_open_pending", False)
-            or self.app.editor_window is not None
-            or getattr(self.app._engine_client, "pending_saves", 0)
+            or getattr(self.app, "editor_window", None) is not None
+            or getattr(getattr(self.app, "_engine_client", None), "pending_saves", 0)
         ):
-            self.status.set_label(
-                _("Close the editor and wait for clip saving to finish before restarting.")
-            )
+            if not runtime_recovery:
+                self.status.set_label(
+                    _("Close the editor and wait for clip saving to finish before restarting.")
+                )
             return
+        background = runtime_recovery and not self.app._is_window_visible()
+        if runtime_recovery:
+            # Do not repeatedly spawn helpers if host access fails. The user
+            # can still quit and reopen Clipper, as the notification explains.
+            self._runtime_restart_attempted = True
+            self.app._log("[clipper] Graphics runtime removed; restarting in a fresh sandbox")
         # Reserve the restart before launching the host helper. No new editor
         # or save may begin after the last safety check.
         self.app._update_restart_pending = True
         if self.dialog:
             self.dialog.set_can_close(False)
-        self.button.set_sensitive(False)
+            self.button.set_sensitive(False)
 
         def ready(installation, error):
             if error:
                 self.app._update_restart_pending = False
                 if self.dialog:
                     self.dialog.set_can_close(True)
-                self.button.set_sensitive(True)
-                self.app._log(f"Update restart failed: {error}")
-                self.status.set_label(
-                    _(
-                        "Could not restart Clipper. "
-                        "Quit and open it again to use the update."
-                    )
-                )
+                    self.button.set_sensitive(True)
+                self.app._log(f"[clipper] Application restart failed: {error}")
+                message = _("Could not restart Clipper. Quit and open it again.")
+                if runtime_recovery:
+                    self.app._show_toast(message)
+                    notification = Gio.Notification.new(_("Clipper"))
+                    notification.set_body(message)
+                    self.app.send_notification("clipper-runtime-restart", notification)
+                else:
+                    self.status.set_label(message)
                 return
             self.app._restart_in_background = False
             self.app._restart_in_foreground = False
@@ -471,7 +487,7 @@ class UpdateController:
 
         def prepare():
             installation = updates.running_installation()
-            updates.restart_after_exit(installation)
+            updates.restart_after_exit(installation, background=background)
             return installation
 
         self._worker(prepare, ready)

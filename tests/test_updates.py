@@ -1,6 +1,10 @@
 import hashlib
 import io
+import json
+import os
+import sys
 import threading
+import time
 import urllib.error
 from dataclasses import replace
 from email.message import Message
@@ -336,3 +340,88 @@ def test_discovery_preserves_running_installation_after_deployment_changes(
 
     monkeypatch.setattr(updates, "host_output", output)
     assert updates.running_installation() == updates.Installation(scope, "x86_64", "master")
+
+
+@pytest.mark.parametrize("target,removed,expected", [
+    ("/usr/lib/x86_64-linux-gnu/GL/default", True, True),
+    ("/usr/lib/GL/nvidia-590-48-01", True, True),
+    ("/usr", True, True),
+    ("/usr/lib/x86_64-linux-gnu/GL/default", False, False),
+    ("/usr/share/runtime/locale", True, False),
+    ("/app", True, False),
+    ("/run/flatpak/ld.so.conf.d/runtime-001.conf", True, False),
+])
+def test_only_deleted_runtime_or_driver_mounts_require_fresh_sandbox(
+    monkeypatch, target, removed, expected
+):
+    monkeypatch.setenv("FLATPAK_ID", updates.APP_ID)
+    root = "/flatpak/.removed/deployment/files" + ("//deleted" if removed else "")
+    mounts = f"1709 1708 0:36 {root} {target} ro - btrfs /dev/nvme0n1 rw\n"
+    monkeypatch.setattr(updates.Path, "read_text", lambda *_args, **_kwargs: mounts)
+    assert updates.graphics_runtime_removed() is expected
+    monkeypatch.delenv("FLATPAK_ID")
+    assert not updates.graphics_runtime_removed()
+
+
+def test_unavailable_mountinfo_does_not_block_engine_startup(monkeypatch):
+    monkeypatch.setenv("FLATPAK_ID", updates.APP_ID)
+
+    def unavailable(*_args, **_kwargs):
+        raise OSError("proc unavailable")
+
+    monkeypatch.setattr(updates.Path, "read_text", unavailable)
+    assert not updates.graphics_runtime_removed()
+
+
+@pytest.mark.parametrize("background", [False, True])
+def test_restart_waits_for_own_sandbox_exit_and_preserves_launch_mode(
+    monkeypatch, tmp_path, background
+):
+    alive = tmp_path / "alive"
+    observed = tmp_path / "observed"
+    launched = tmp_path / "launched"
+    alive.touch()
+    flatpak = tmp_path / "flatpak"
+    flatpak.write_text(
+        f"#!{sys.executable}\n"
+        "import json, sys\nfrom pathlib import Path\n"
+        f"alive = Path({str(alive)!r})\n"
+        "if sys.argv[1] == 'ps':\n"
+        "    running = alive.exists()\n"
+        f"    Path({str(observed)!r}).touch()\n"
+        "    print('another-instance')\n"
+        "    if running: print('old-instance')\n"
+        "else:\n"
+        f"    Path({str(launched)!r}).write_text(json.dumps(sys.argv[1:]))\n",
+        encoding="utf-8",
+    )
+    flatpak.chmod(0o755)
+    monkeypatch.setenv("PATH", f"{tmp_path}:{os.environ['PATH']}")
+
+    def read(info, _path):
+        info.read_dict({"Instance": {"instance-id": "old-instance"}})
+        return ["/.flatpak-info"]
+
+    monkeypatch.setattr(updates.configparser.ConfigParser, "read", read)
+    # Execute the actual detached host script using an isolated Flatpak stand-in.
+    monkeypatch.setattr(updates, "host_command", lambda *args: list(args))
+    updates.restart_after_exit(
+        updates.Installation("--user", "x86_64", "master"), background=background
+    )
+
+    def wait_for(path):
+        deadline = time.monotonic() + 5
+        while not path.exists() and time.monotonic() < deadline:
+            time.sleep(0.01)
+        assert path.exists()
+
+    try:
+        wait_for(observed)
+        assert not launched.exists()
+    finally:
+        alive.unlink()
+    wait_for(launched)
+    assert json.loads(launched.read_text(encoding="utf-8")) == [
+        "--user", "run", "--arch=x86_64", "--branch=master", updates.APP_ID,
+        *(["--background"] if background else []),
+    ]

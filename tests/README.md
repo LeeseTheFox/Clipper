@@ -86,7 +86,7 @@ process matching intentionally cover separate production implementations.
 | local_flatpak_install | Install bundles without competing repository origins, preserve data across migration and retries, and leave running apps untouched when bundle preparation fails. Real Flatpak origin behavior requires an isolated integration check. |
 | log_window | Stop subscriptions and scheduled refreshes after the window closes. |
 | logs | Preserve useful diagnostics, bound history and carry logs through process handoff. |
-| main | Coordinate startup/setup, tray lifecycle, recording, engine restarts, portal decisions, updates, capability ownership, event-driven state recovery and session shutdown; keep idle foreground/background launches free of recording engines, reuse live engines for discovery, distinguish capture startup from temporary probes and protect active replay through unknown monitor state and IPC reconnects. |
+| main | Coordinate startup/setup, tray lifecycle, recording, engine restarts, portal decisions, updates, capability ownership, event-driven state recovery and session shutdown; keep idle foreground/background launches free of recording engines, reuse live engines for discovery, distinguish capture startup from temporary probes, recover removed Flatpak graphics runtimes before starting an engine, and protect active replay through runtime updates, unknown monitor state and IPC reconnects. |
 | main_window_preferences | Pass catalog language IDs through preferences and track both physical Shift keys. |
 | monitor_host | Execute C host process detection, fixed Steam operations, scope isolation, live rule reloads and complete state recovery after reconnect. |
 | monitor_ipc | Validate complete snapshots and incoming events, restrict socket access and interrupt idle connections on shutdown. |
@@ -108,9 +108,9 @@ process matching intentionally cover separate production implementations.
 | text_helpers | Preserve readable/full labels and escape user-controlled markup. |
 | theme_adaptation | Parse editor CSS with GTK and reject errors. |
 | tray | Maintain the public D-Bus/icon contract and flush replies before activation or shutdown. |
-| update_controller | Coordinate checks, notifications, cancellation and restarts without interrupting saves or edits. |
+| update_controller | Coordinate checks, notifications, cancellation and restarts without interrupting saves or edits; reuse guarded restarts for removed graphics runtimes, preserve foreground/background launches and bound failed automatic recovery. |
 | update_publication | Publish only complete release assets and prevent overwriting public releases. |
-| updates | Reject invalid/untrusted updates, verify downloads and installation commits, prevent downgrades. |
+| updates | Reject invalid/untrusted updates, verify downloads and installation commits, prevent downgrades, distinguish deleted graphics/runtime mounts from unrelated or temporary bind files, and relaunch only after the previous sandbox exits. |
 | vaapi_direct_surfaces | Execute queue ownership, teardown, fence-wait and validation-cache C contracts. |
 | video_output | Connect the color pipeline and fall back safely when GL elements or links fail. |
 | video_player | Preserve playback/seek state, detach media before background teardown, letterbox and honor physical shortcuts. |

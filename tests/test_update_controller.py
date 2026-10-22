@@ -309,49 +309,79 @@ def test_skipped_version_suppresses_notification(monkeypatch):
     assert not sent
 
 
-def test_restart_is_deferred_while_saving(monkeypatch):
+@pytest.mark.parametrize("runtime_recovery", [False, True])
+@pytest.mark.parametrize("blocker", ["saving", "loading", "editor"])
+def test_restart_waits_for_saves_and_editor_work(monkeypatch, runtime_recovery, blocker):
     updater = controller(monkeypatch)
-    updater.app.editor_window = None
-    updater.app._engine_client = SimpleNamespace(pending_saves=1)
-    updater._restart()
-    assert "wait for clip saving" in updater.status.label
-
-
-def test_restart_is_deferred_while_editor_is_being_loaded(monkeypatch):
-    updater = controller(monkeypatch)
-    updater.app.editor_window = None
-    updater.app._editor_open_pending = True
-    updater.app._engine_client = SimpleNamespace(pending_saves=0)
-    updater._restart()
-    assert "Close the editor" in updater.status.label
+    updater.app.editor_window = object() if blocker == "editor" else None
+    updater.app._editor_open_pending = blocker == "loading"
+    updater.app._engine_client = SimpleNamespace(pending_saves=int(blocker == "saving"))
+    workers = []
+    updater._worker = lambda *args: workers.append(args)
+    updater._restart(runtime_recovery=runtime_recovery)
+    assert not workers
+    assert not getattr(updater.app, "_update_restart_pending", False)
+    if not runtime_recovery:
+        assert "wait for clip saving" in updater.status.label
 
 
 @pytest.mark.parametrize("failed", [False, True])
-def test_restart_reserves_app_until_helper_is_ready(monkeypatch, failed):
+@pytest.mark.parametrize("runtime_recovery", [False, True])
+def test_restart_reserves_app_until_helper_is_ready(monkeypatch, failed, runtime_recovery):
     updater = controller(monkeypatch)
     updater.app.editor_window = None
     updater.app.setup_window = None
     updater.app._engine_client = SimpleNamespace(pending_saves=0)
-    updater.dialog = Widget()
+    updater.dialog = None if runtime_recovery else Widget()
     pending = []
-    updater._worker = lambda work, done: pending.append(done)
+    updater._worker = lambda work, done: pending.append((work, done))
     quit_calls = []
     updater.app.quit = lambda: quit_calls.append(True)
-    updater._restart()
-    updater._restart()
+    updater._restart(runtime_recovery=runtime_recovery)
+    updater._restart(runtime_recovery=runtime_recovery)
     assert len(pending) == 1
     assert updater.app._update_restart_pending
-    assert not updater.dialog.can_close
-    assert not updater.button.sensitive
+    if updater.dialog:
+        assert not updater.dialog.can_close
+        assert not updater.button.sensitive
     assert not quit_calls
-    pending[0](None, OSError("host unavailable") if failed else None)
+    work, ready = pending[0]
+    installation = updates.Installation("--user", "x86_64", "master")
+    monkeypatch.setattr(updates, "running_installation", lambda: installation)
+    helpers = []
+    monkeypatch.setattr(
+        updates, "restart_after_exit",
+        lambda installed, **kwargs: helpers.append((installed, kwargs)),
+    )
+    ready(work(), OSError("host unavailable") if failed else None)
+    assert helpers == [(installation, {"background": runtime_recovery})]
     if failed:
         assert not updater.app._update_restart_pending
-        assert updater.dialog.can_close
-        assert updater.button.sensitive
+        if updater.dialog:
+            assert updater.dialog.can_close
+            assert updater.button.sensitive
+        else:
+            assert updater.app.toasts
+            updater._restart(runtime_recovery=True)
+            assert len(pending) == 1
         assert not quit_calls
     else:
         assert quit_calls == [True]
+
+
+def test_automatic_runtime_restart_keeps_visible_app_in_foreground(monkeypatch):
+    updater = controller(monkeypatch)
+    updater.app._is_window_visible = lambda: True
+    updater.app.quit = lambda: None
+    monkeypatch.setattr(
+        updates, "running_installation", lambda: updates.Installation("--user", "x86_64", "master")
+    )
+    launches = []
+    monkeypatch.setattr(
+        updates, "restart_after_exit", lambda *_args, **kwargs: launches.append(kwargs)
+    )
+    updater._restart(runtime_recovery=True)
+    assert launches == [{"background": False}]
 
 
 @pytest.mark.parametrize("app_id", ["", "dev.zed.Zed"])

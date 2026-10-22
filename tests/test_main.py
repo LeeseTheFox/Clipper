@@ -1910,6 +1910,24 @@ def test_unexpected_engine_exit_marks_window_crashed():
     assert app._window_engine_status == "crashed"
 
 
+@pytest.mark.parametrize("running", [False, True])
+def test_removed_graphics_runtime_recovers_before_launch_without_stopping_live_engine(
+    monkeypatch, running
+):
+    manager = EngineManagerStub(running=running)
+    app = make_status_application(engine_manager=manager)
+    restarts = []
+    app._updater = types.SimpleNamespace(_restart=lambda **kwargs: restarts.append(kwargs))
+    monkeypatch.setattr(main_module, "graphics_runtime_removed", lambda: True)
+    app._log = lambda _message: None
+
+    assert app._start_engine_for_capture("game_capture") is running
+    assert not manager.terminated
+    assert restarts == ([] if running else [{"runtime_recovery": True}])
+    if not running:
+        assert not manager.start_calls
+
+
 def test_socket_error_waits_for_process_exit_to_classify_crash():
     app = make_status_application(engine_manager=EngineManagerStub(exit_code=1))
 
