@@ -52,6 +52,8 @@ def _load_main_module():
         def __init__(self, title):
             self.title = title
             self.body = None
+            self.default_action = None
+            self.buttons = []
 
         @classmethod
         def new(cls, title):
@@ -59,6 +61,12 @@ def _load_main_module():
 
         def set_body(self, body):
             self.body = body
+
+        def set_default_action(self, action):
+            self.default_action = action
+
+        def add_button(self, label, action):
+            self.buttons.append((label, action))
 
     repository.Gio = types.SimpleNamespace(
         ApplicationFlags=types.SimpleNamespace(FLAGS_NONE=0),
@@ -578,6 +586,8 @@ def make_status_application(
     app._reconcile_id = None
     app._engine_deadline_id = None
     app._engine_recovery_id = None
+    app._engine_healthy_id = None
+    app._engine_crash_notified = False
     app._engine_failures = 0
     app._engine_generation = 0
     app._status_revision = -1
@@ -621,6 +631,12 @@ def make_status_application(
     app._monitor_ipc = None
     app._monitor_socket_path = Path("/runtime/clipper/monitor.sock")
     app._show_error = lambda message: None
+    app._notifications = []
+    app._withdrawn_notifications = []
+    app.send_notification = lambda name, notification: app._notifications.append(
+        (name, notification)
+    )
+    app.withdraw_notification = app._withdrawn_notifications.append
     return app
 
 
@@ -1908,6 +1924,96 @@ def test_unexpected_engine_exit_marks_window_crashed():
     app._on_engine_exited(1)
 
     assert app._window_engine_status == "crashed"
+    # An idle capability probe failure belongs in the UI/logs, not a recording alert.
+    assert not app._notifications
+
+
+@pytest.mark.parametrize("capturing", [False, True], ids=["startup", "recording"])
+def test_recording_crash_notifies_once_across_errors_timeouts_and_retries(capturing):
+    app = make_status_application()
+    app._running_whitelist_entry = lambda *_args: {"name": "Game"}
+    app._capture_starting = not capturing
+    app._capture_active = capturing
+
+    app._on_engine_error("Engine disconnected")
+    assert not app._notifications
+    app._on_engine_exited(-11)
+    app._capture_starting = True
+    app._on_engine_deadline()
+    app._on_engine_exited(1)
+
+    assert len(app._notifications) == 1
+    name, notification = app._notifications[0]
+    assert name == "engine-crashed"
+    assert "logs" in notification.body
+    assert notification.default_action == "app.show-logs"
+    assert [action for _label, action in notification.buttons] == ["app.show-logs"]
+
+
+@pytest.mark.parametrize("stop", ["restart", "normal", "shutdown", "idle-stop", "app-exit"])
+def test_expected_engine_stops_never_send_recording_crash_notifications(stop):
+    app = make_status_application()
+    app._capture_active = True
+    app._engine_shutdown_pending = stop == "shutdown"
+    app._idle_engine_exit_expected = stop == "idle-stop"
+    app._stopping = stop == "app-exit"
+    app._on_engine_exited({"restart": 42, "normal": 0}.get(stop, 1))
+    assert not app._notifications
+
+
+def test_crash_alert_rearms_only_after_sustained_recording(monkeypatch):
+    app = make_status_application()
+    app._capture_active = True
+    timers = {}
+    next_source = iter(range(10, 100))
+
+    def schedule(seconds, callback):
+        source = next(next_source)
+        timers[source] = (seconds, callback)
+        return source
+
+    monkeypatch.setattr(main_module.GLib, "timeout_add_seconds", schedule)
+    monkeypatch.setattr(main_module.GLib, "source_remove", lambda source: timers.pop(source, None))
+    app._on_engine_exited(1)
+    app._engine_manager._running = True
+    app._on_engine_ready()
+    app._on_engine_status_event({"buffer_active": False, "game_hooked": True})
+    assert not timers  # Readiness and a hook do not establish working recording.
+
+    app._on_engine_status_event({"buffer_active": True})
+    app._on_engine_status_event({"buffer_active": True})
+    assert len(timers) == 1
+    assert next(iter(timers.values()))[0] == 30
+    app._engine_manager._running = False
+    app._on_engine_exited(1)
+    assert not timers
+    assert len(app._notifications) == 1
+
+    app._engine_manager._running = True
+    app._on_engine_status_event({"buffer_active": True})
+    _seconds, recovered = timers.pop(app._engine_healthy_id)
+    assert recovered() is False
+    assert app._withdrawn_notifications == ["engine-crashed"]
+    app._on_engine_exited(1)
+    assert len(app._notifications) == 2
+
+
+@pytest.mark.parametrize("interruption", ["buffer-stop", "ipc-disconnect"])
+def test_recording_interruption_cancels_crash_alert_rearming(monkeypatch, interruption):
+    app = make_status_application(engine_manager=EngineManagerStub(running=True))
+    app._capture_active = True
+    app._on_engine_exited(1)
+    removed = []
+    monkeypatch.setattr(main_module.GLib, "timeout_add_seconds", lambda *_args: 37)
+    monkeypatch.setattr(main_module.GLib, "source_remove", removed.append)
+    app._on_engine_status_event({"buffer_active": True})
+    if interruption == "buffer-stop":
+        app._on_engine_status_event({"buffer_active": False})
+    else:
+        app._on_engine_connection_state(main_module.STATE_DISCONNECTED)
+    assert removed == [37]
+    assert app._engine_crash_notified
+    assert len(app._notifications) == 1
 
 
 @pytest.mark.parametrize("running", [False, True])

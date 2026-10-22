@@ -1405,7 +1405,7 @@ msgstr "Экспорт…"
 msgid "Exported to %(name)s"
 msgstr "Экспортировано в %(name)s"
 
-#: ui/editor_window.py:3695 ui/main.py:2313 ui/settings_view.py:1423
+#: ui/editor_window.py:3695 ui/main.py:2367 ui/settings_view.py:1423
 msgid "Unknown error"
 msgstr "Неизвестная ошибка"
 
@@ -1697,11 +1697,11 @@ msgstr "Журналы Clipper"
 msgid "Copy logs"
 msgstr "Скопировать журналы"
 
-#: ui/main.py:85
+#: ui/main.py:87
 msgid "OBS Studio and Clipper are both running"
 msgstr "OBS Studio и Clipper запущены одновременно"
 
-#: ui/main.py:88
+#: ui/main.py:90
 msgid ""
 "Running both apps at the same time can overload the GPU or hardware encoder. "
 "This may also cause issues for games with \"Game capture\" method selected. "
@@ -1712,147 +1712,159 @@ msgstr ""
 "метод «Захват игры». Перед записью рекомендуется закрыть OBS Studio или "
 "Clipper."
 
-#: ui/main.py:596
+#: ui/main.py:602
 msgid "Engine not running"
 msgstr "Движок не запущен"
 
-#: ui/main.py:602
+#: ui/main.py:608
 msgid "Could not send save command to Clipper engine"
 msgstr "Не удалось отправить команду сохранения движку Clipper"
 
-#: ui/main.py:634
+#: ui/main.py:640
 msgid "Restart Clipper?"
 msgstr "Перезапустить Clipper?"
 
-#: ui/main.py:635
+#: ui/main.py:641
 msgid "Clipper needs to be restarted for this change to take effect."
 msgstr "Чтобы это изменение вступило в силу, необходимо перезапустить Clipper."
 
-#: ui/main.py:637 ui/update_controller.py:327
+#: ui/main.py:643 ui/update_controller.py:327
 msgid "Restart later"
 msgstr "Перезапустить позже"
 
-#: ui/main.py:638 ui/update_controller.py:331
+#: ui/main.py:644 ui/update_controller.py:331
 msgid "Restart now"
 msgstr "Перезапустить сейчас"
 
-#: ui/main.py:661
+#: ui/main.py:667
 msgid "Save or discard the video edit before logging out"
 msgstr "Перед выходом сохрани или отмени изменения видео"
 
-#: ui/main.py:772
+#: ui/main.py:778
 #, python-format
 msgid "Could not register save hotkey: %(error)s"
 msgstr "Не удалось зарегистрировать горячую клавишу сохранения: %(error)s"
 
-#: ui/main.py:811
+#: ui/main.py:817
 #, python-format
 msgid "Global hotkey unavailable: %(message)s"
 msgstr "Глобальная горячая клавиша недоступна: %(message)s"
 
-#: ui/main.py:1022
+#: ui/main.py:1028
 msgid "Acknowledge"
 msgstr "Понятно"
 
-#: ui/main.py:1036 ui/settings_view.py:1419
+#: ui/main.py:1042 ui/settings_view.py:1419
 msgid "Restarting engine…"
 msgstr "Перезапуск движка…"
 
-#: ui/main.py:1051
+#: ui/main.py:1057
 msgid "Could not send restart command to Clipper engine"
 msgstr "Не удалось отправить команду перезапуска движку Clipper"
 
-#: ui/main.py:1056
+#: ui/main.py:1062
 msgid "Engine will start when a whitelisted game is running"
 msgstr "Движок запустится, когда будет запущена разрешённая игра"
 
-#: ui/main.py:1071
+#: ui/main.py:1077
 #, python-format
 msgid "Engine restart failed: %(error)s"
 msgstr "Не удалось перезапустить движок: %(error)s"
 
-#: ui/main.py:1189
+#: ui/main.py:1195
 msgid "X11 capture uses the primary X11 display without a system picker."
 msgstr ""
 "Захват X11 использует основной дисплей X11 без системного средства выбора."
 
-#: ui/main.py:1198
+#: ui/main.py:1204
 msgid "The system display picker is already open."
 msgstr "Системное средство выбора экрана уже открыто."
 
-#: ui/main.py:1208
+#: ui/main.py:1214
 msgid "Stop the active game capture before changing the target display."
 msgstr "Останови активный захват игры перед сменой целевого экрана."
 
-#: ui/main.py:1274
+#: ui/main.py:1280
 msgid "Could not disable automatic startup"
 msgstr "Не удалось отключить автоматический запуск"
 
-#: ui/main.py:1281
+#: ui/main.py:1287
 msgid "PipeWire restore token cleared"
 msgstr "Токен восстановления PipeWire очищен"
 
-#: ui/main.py:1352
+#: ui/main.py:1358
 msgid "Clip captured"
 msgstr "Клип записан"
 
-#: ui/main.py:1353
+#: ui/main.py:1359
 msgid "Your clip has been saved."
 msgstr "Клип сохранён."
 
-#: ui/main.py:1359
+#: ui/main.py:1365
 msgid ""
 "Could not write the clip. Check the save folder and available disk space."
 msgstr ""
 "Не удалось записать клип. Проверь папку сохранения и свободное место на "
 "диске."
 
-#: ui/main.py:1361
+#: ui/main.py:1367
 #, python-format
 msgid "Failed to save clip: %(error)s"
 msgstr "Не удалось сохранить клип: %(error)s"
 
-#: ui/main.py:1397
+#: ui/main.py:1403
 #, python-format
 msgid "Could not open clip editor: %(error)s"
 msgstr "Не удалось открыть редактор клипа: %(error)s"
 
-#: ui/main.py:2067
+#: ui/main.py:1708
+msgid "Recording engine crashed"
+msgstr "Сбой движка записи"
+
+#: ui/main.py:1710
+msgid "Recording is unavailable. Check the logs to find out what went wrong."
+msgstr "Запись недоступна. Проверь журналы, чтобы выяснить причину сбоя."
+
+#: ui/main.py:1713 ui/main_window.py:177
+msgid "Show logs"
+msgstr "Показать журналы"
+
+#: ui/main.py:2112
 #, python-format
 msgid "Could not start Clipper engine: %(error)s"
 msgstr "Не удалось запустить движок Clipper: %(error)s"
 
-#: ui/main.py:2140 ui/settings_view.py:1422
+#: ui/main.py:2186 ui/settings_view.py:1422
 #, python-format
 msgid "Engine shutdown failed: %(error)s"
 msgstr "Не удалось остановить движок: %(error)s"
 
-#: ui/main.py:2181 ui/main.py:2217
+#: ui/main.py:2227 ui/main.py:2271
 msgid "Display selection was cancelled."
 msgstr "Выбор экрана отменён."
 
-#: ui/main.py:2186
+#: ui/main.py:2232
 msgid "Capture display selected successfully."
 msgstr "Экран для захвата успешно выбран."
 
-#: ui/main.py:2224
+#: ui/main.py:2278
 msgid "No display was selected before the picker timed out."
 msgstr "До истечения времени ожидания средство выбора не выбрало экран."
 
-#: ui/main.py:2312
+#: ui/main.py:2366
 #, python-format
 msgid "Display capture sync failed: %(error)s"
 msgstr "Ошибка синхронизации захвата экрана: %(error)s"
 
-#: ui/main.py:2400
+#: ui/main.py:2454
 msgid "🦊 Leese"
 msgstr "🦊 Leese"
 
-#: ui/main.py:2404
+#: ui/main.py:2458
 msgid "© 2026 Leese"
 msgstr "© 2026 Leese"
 
-#: ui/main.py:2410
+#: ui/main.py:2464
 msgid "GitHub"
 msgstr "GitHub"
 
@@ -1897,10 +1909,6 @@ msgstr "Настройки"
 #: ui/main_window.py:175
 msgid "Check for updates"
 msgstr "Проверить обновления"
-
-#: ui/main_window.py:177
-msgid "Show logs"
-msgstr "Показать журналы"
 
 #: ui/main_window.py:180
 msgid "Clear PipeWire restore token"

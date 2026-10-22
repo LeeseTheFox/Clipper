@@ -80,6 +80,8 @@ _ENGINE_STATUS_STARTING = "starting"
 _ENGINE_STATUS_RECORDING = "recording"
 _ENGINE_STATUS_EXITED = "exited"
 _ENGINE_STATUS_CRASHED = "crashed"
+_ENGINE_CRASH_NOTIFICATION_ID = "engine-crashed"
+_ENGINE_HEALTHY_SECONDS = 30
 _OBS_STUDIO_MONITOR_RULE_ID = "clipper-observer-obs-studio"
 _OBS_CONFLICT_NOTIFICATION_ID = "obs-studio-conflict"
 _OBS_CONFLICT_TITLE = _("OBS Studio and Clipper are both running")
@@ -186,6 +188,8 @@ class ClipperApplication(Adw.Application):
         self._reconcile_id: int | None = None
         self._engine_deadline_id: int | None = None
         self._engine_recovery_id: int | None = None
+        self._engine_healthy_id: int | None = None
+        self._engine_crash_notified = False
         self._engine_failures = 0
         self._engine_generation = 0
         self._status_revision = -1
@@ -477,8 +481,10 @@ class ClipperApplication(Adw.Application):
             self._export_probe_start_id = None
         if self._recording_capability_probe is not None:
             self._recording_capability_probe.close()
-        for name in ("_reconcile_id", "_engine_deadline_id", "_engine_recovery_id",
-                     "_monitor_retry_id", "_display_target_deadline_id", "_display_sync_retry_id"):
+        for name in (
+            "_reconcile_id", "_engine_deadline_id", "_engine_recovery_id", "_engine_healthy_id",
+            "_monitor_retry_id", "_display_target_deadline_id", "_display_sync_retry_id",
+        ):
             self._cancel_source(name)
         self._reset_game_audio_learning()
         if self.setup_window:
@@ -1632,6 +1638,7 @@ class ClipperApplication(Adw.Application):
         self._engine_status_data = {}
         self._display_capture_sync_pending = False
         self._cancel_source("_display_sync_retry_id")
+        self._cancel_source("_engine_healthy_id")
         if self._stopping:
             return
         if state == STATE_CONNECTED:
@@ -1649,7 +1656,7 @@ class ClipperApplication(Adw.Application):
             if state == STATE_DISCONNECTED and not self._engine_shutdown_pending:
                 if self._engine_manager.is_running():
                     self._engine_manager.terminate()
-                    self._schedule_engine_recovery()
+                    self._on_engine_exited(1)
 
     def _accept_engine_status(self, response: dict, generation: int) -> None:
         if self._stopping or generation != self._engine_generation:
@@ -1664,10 +1671,21 @@ class ClipperApplication(Adw.Application):
     def _on_engine_exited(self, exit_code: int) -> None:
         if self._stopping:
             return
+        expected = self._idle_engine_exit_expected or self._engine_shutdown_pending
+        if (
+            not expected
+            and exit_code not in (0, RESTART_EXIT_CODE)
+            and (
+                self._capture_starting
+                or self._capture_active
+                or self._running_whitelist_entry() is not None
+            )
+        ):
+            self._notify_engine_crash()
         self._capture_starting = False
         self._capture_active = False
         self._cancel_source("_engine_deadline_id")
-        expected = self._idle_engine_exit_expected or self._engine_shutdown_pending
+        self._cancel_source("_engine_healthy_id")
         self._handle_engine_process_exit(exit_code)
         self._engine_shutdown_pending = True
         if self._engine_client:
@@ -1682,6 +1700,32 @@ class ClipperApplication(Adw.Application):
             self._schedule_capture_reconcile()
         else:
             self._schedule_engine_recovery()
+
+    def _notify_engine_crash(self) -> None:
+        """Report one recording failure, including all unsuccessful retries."""
+        if self._engine_crash_notified:
+            return
+        notification = Gio.Notification.new(_("Recording engine crashed"))
+        notification.set_body(
+            _("Recording is unavailable. Check the logs to find out what went wrong.")
+        )
+        notification.set_default_action("app.show-logs")
+        notification.add_button(_("Show logs"), "app.show-logs")
+        self.send_notification(_ENGINE_CRASH_NOTIFICATION_ID, notification)
+        self._engine_crash_notified = True
+
+    def _on_engine_healthy(self) -> bool:
+        """Rearm crash alerts only after uninterrupted, working recording."""
+        self._engine_healthy_id = None
+        if (
+            not self._stopping
+            and not self._engine_shutdown_pending
+            and self._capture_active
+            and self._engine_manager.is_running()
+        ):
+            self._engine_crash_notified = False
+            self.withdraw_notification(_ENGINE_CRASH_NOTIFICATION_ID)
+        return False
 
     def _arm_engine_deadline(self) -> None:
         self._cancel_source("_engine_deadline_id")
@@ -2061,6 +2105,7 @@ class ClipperApplication(Adw.Application):
                 or self._engine_manager.capture_mode != capture_mode
             )
             if starting:
+                self._cancel_source("_engine_healthy_id")
                 self._arm_engine_deadline()
             started = self._engine_manager.start(capture_mode)
         except Exception as exc:  # noqa: BLE001
@@ -2104,6 +2149,7 @@ class ClipperApplication(Adw.Application):
             return False
 
         self._capture_starting = False
+        self._cancel_source("_engine_healthy_id")
         self._set_window_engine_status(_ENGINE_STATUS_READY)
         self._log(
             "[clipper] Stopping idle engine: no whitelisted application running "
@@ -2190,6 +2236,14 @@ class ClipperApplication(Adw.Application):
             self._sync_display_capture_whitelist(buffer_active)
         if buffer_active:
             self._engine_failures = 0
+            # A short-lived successful retry must not produce a fresh alert
+            # every time a failing engine manages to start its replay buffer.
+            if self._engine_crash_notified and self._engine_healthy_id is None:
+                self._engine_healthy_id = GLib.timeout_add_seconds(
+                    _ENGINE_HEALTHY_SECONDS, self._on_engine_healthy
+                )
+        else:
+            self._cancel_source("_engine_healthy_id")
 
         # Keep tray presentation deliberately binary: the replay buffer is
         # either recording or it is idle. A prestarted game-capture engine is
