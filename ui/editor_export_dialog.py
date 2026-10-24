@@ -297,14 +297,16 @@ class EditorExportDialog(Adw.Dialog):
         )
 
         configured_folder = Path(
-            initial_options.folder
-            if initial_options is not None
-            else config.get("output_folder", Path(project.source.path).parent)
+            config.get("output_folder", Path(project.source.path).parent)
         ).expanduser()
+        if not configured_folder.is_dir():
+            configured_folder = Path(project.source.path).parent
+        self._default_folder = configured_folder / "Exported"
         self.folder = (
-            configured_folder
-            if configured_folder.is_dir()
-            else Path(project.source.path).parent
+            Path(initial_options.folder).expanduser()
+            if initial_options is not None
+            and Path(initial_options.folder).expanduser().is_dir()
+            else self._default_folder
         )
         self._preferred_video_codec = (
             initial_options.video_codec
@@ -1127,6 +1129,13 @@ class EditorExportDialog(Adw.Dialog):
         try:
             options = self._options()
             validate_export_options(options)
+            if self.folder == self._default_folder:
+                try:
+                    self.folder.mkdir(exist_ok=True)
+                except OSError as error:
+                    raise ExportValidationError(
+                        _("The selected folder is not writable")
+                    ) from error
             destination = destination_path(options, self.project.source.path)
             if destination.is_dir():
                 raise ExportValidationError(_("A folder already uses this filename"))

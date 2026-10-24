@@ -73,6 +73,19 @@ def export_dialog(monkeypatch, tmp_path):
     return dialog, accepted
 
 
+def test_default_export_creates_exported_subfolder_on_accept(export_dialog, tmp_path):
+    dialog, accepted = export_dialog
+
+    assert dialog.folder == tmp_path / "Exported"
+    assert not dialog.folder.exists()
+
+    dialog._accept()
+
+    assert dialog.folder.is_dir()
+    assert len(accepted) == 1
+    assert accepted[0].folder == tmp_path / "Exported"
+
+
 def test_export_uses_native_adwaita_dialog_and_forward_quality_scale(export_dialog):
     dialog, _accepted = export_dialog
 
@@ -316,7 +329,8 @@ def test_closed_dialog_does_not_restore_snapshot_after_editor_cleanup():
 
 def test_existing_destination_requires_explicit_replace(export_dialog, tmp_path):
     dialog, accepted = export_dialog
-    destination = tmp_path / "source-edited.mkv"
+    destination = dialog.folder / "source-edited.mkv"
+    destination.parent.mkdir(exist_ok=True)
     destination.write_bytes(b"existing")
 
     dialog._accept()
@@ -355,7 +369,7 @@ def test_completed_export_keeps_preserved_options_editable_for_another_export(
     assert dialog.banner.get_revealed() is True
     assert dialog.banner.get_title() == "Cancel the export before closing the editor"
 
-    destination = tmp_path / "source-edited.mkv"
+    destination = dialog.folder / "source-edited.mkv"
     dialog.complete_export(destination)
     assert dialog._export_active is False
     assert dialog.get_can_close() is True

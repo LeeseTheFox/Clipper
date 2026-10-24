@@ -351,9 +351,9 @@ msgstr ""
 "«%(name)s» буде переміщено до смітника.\n"
 "Цю дію можна скасувати."
 
-#: ui/clips_view.py:2068 ui/dialogs.py:842 ui/editor_export_dialog.py:344
-#: ui/editor_export_dialog.py:602 ui/editor_export_dialog.py:630
-#: ui/editor_export_dialog.py:738 ui/editor_window.py:3740 ui/editor_wipe.py:16
+#: ui/clips_view.py:2068 ui/dialogs.py:842 ui/editor_export_dialog.py:346
+#: ui/editor_export_dialog.py:604 ui/editor_export_dialog.py:632
+#: ui/editor_export_dialog.py:740 ui/editor_window.py:3740 ui/editor_wipe.py:16
 #: ui/game_details_dialog.py:37 ui/update_controller.py:377
 msgid "Cancel"
 msgstr "Скасувати"
@@ -740,7 +740,7 @@ msgstr "Шлях призначення розташований за межам
 msgid "Export cannot overwrite the source clip"
 msgstr "Експорт не може перезаписати початковий кліп"
 
-#: ui/editor_export.py:777
+#: ui/editor_export.py:777 ui/editor_export_dialog.py:1137
 msgid "The selected folder is not writable"
 msgstr "У вибрану теку неможливо записати"
 
@@ -766,7 +766,7 @@ msgid "Export was already started"
 msgstr "Експорт уже розпочато"
 
 #: ui/editor_export.py:1074 ui/editor_export.py:1161 ui/editor_export.py:1175
-#: ui/editor_export_dialog.py:717 ui/editor_window.py:3700
+#: ui/editor_export_dialog.py:719 ui/editor_window.py:3700
 msgid "Export cancelled"
 msgstr "Експорт скасовано"
 
@@ -831,219 +831,219 @@ msgstr[0] "%(count)d година"
 msgstr[1] "%(count)d години"
 msgstr[2] "%(count)d годин"
 
-#: ui/editor_export_dialog.py:334 ui/editor_export_dialog.py:342
+#: ui/editor_export_dialog.py:336 ui/editor_export_dialog.py:344
 msgid "Export edited clip"
 msgstr "Експортувати відредагований кліп"
 
-#: ui/editor_export_dialog.py:348 ui/editor_export_dialog.py:352
+#: ui/editor_export_dialog.py:350 ui/editor_export_dialog.py:354
 #: ui/editor_window.py:1185 ui/editor_window.py:3679 ui/editor_window.py:3715
 msgid "Export"
 msgstr "Експортувати"
 
-#: ui/editor_export_dialog.py:380
+#: ui/editor_export_dialog.py:382
 msgid "Destination"
 msgstr "Призначення"
 
-#: ui/editor_export_dialog.py:384
+#: ui/editor_export_dialog.py:386
 msgid "Filename"
 msgstr "Назва файла"
 
-#: ui/editor_export_dialog.py:398
+#: ui/editor_export_dialog.py:400
 msgid "Folder"
 msgstr "Тека"
 
-#: ui/editor_export_dialog.py:399 ui/settings_view.py:1076
+#: ui/editor_export_dialog.py:401 ui/settings_view.py:1076
 msgid "Choose…"
 msgstr "Обрати…"
 
-#: ui/editor_export_dialog.py:408
+#: ui/editor_export_dialog.py:410
 msgid "File format"
 msgstr "Формат файла"
 
-#: ui/editor_export_dialog.py:409
+#: ui/editor_export_dialog.py:411
 msgid "Container used for the exported file"
 msgstr "Контейнер експортованого файла"
 
-#: ui/editor_export_dialog.py:425
+#: ui/editor_export_dialog.py:427
 msgid "Encoding"
 msgstr "Кодування"
 
-#: ui/editor_export_dialog.py:429 ui/settings_view.py:979
+#: ui/editor_export_dialog.py:431 ui/settings_view.py:979
 #: ui/setup_window.py:341
 msgid "Resolution"
 msgstr "Роздільна здатність"
 
-#: ui/editor_export_dialog.py:430
+#: ui/editor_export_dialog.py:432
 msgid "Preserves the source aspect ratio"
 msgstr "Зберігає співвідношення сторін джерела"
 
-#: ui/editor_export_dialog.py:436
+#: ui/editor_export_dialog.py:438
 #, python-format
 msgid "%(width)d × %(height)d (native)"
 msgstr "%(width)d × %(height)d (нативна)"
 
-#: ui/editor_export_dialog.py:439
+#: ui/editor_export_dialog.py:441
 msgid "Native"
 msgstr "Нативна"
 
-#: ui/editor_export_dialog.py:455 ui/setup_window.py:368
+#: ui/editor_export_dialog.py:457 ui/setup_window.py:368
 msgid "Video codec"
 msgstr "Відеокодек"
 
-#: ui/editor_export_dialog.py:456 ui/settings_view.py:994
+#: ui/editor_export_dialog.py:458 ui/settings_view.py:994
 msgid "Encoder implementation"
 msgstr "Реалізація кодера"
 
-#: ui/editor_export_dialog.py:463
+#: ui/editor_export_dialog.py:465
 msgid "Hardware acceleration"
 msgstr "Апаратне прискорення"
 
-#: ui/editor_export_dialog.py:464
+#: ui/editor_export_dialog.py:466
 msgid "libx264 — software encoding"
 msgstr "libx264 — програмне кодування"
 
-#: ui/editor_export_dialog.py:473 ui/settings_view.py:1011
+#: ui/editor_export_dialog.py:475 ui/settings_view.py:1011
 msgid "Rate control"
 msgstr "Керування бітрейтом"
 
-#: ui/editor_export_dialog.py:524 ui/setup_window.py:377
+#: ui/editor_export_dialog.py:526 ui/setup_window.py:377
 msgid "Audio codec"
 msgstr "Аудіокодек"
 
-#: ui/editor_export_dialog.py:525 ui/settings_view.py:1002
+#: ui/editor_export_dialog.py:527 ui/settings_view.py:1002
 msgid "Audio compression format"
 msgstr "Формат стиснення аудіо"
 
-#: ui/editor_export_dialog.py:530
+#: ui/editor_export_dialog.py:532
 msgid "Audio tracks"
 msgstr "Аудіодоріжки"
 
-#: ui/editor_export_dialog.py:531
+#: ui/editor_export_dialog.py:533
 msgid "Preserve tracks or mix them into one"
 msgstr "Зберігати окремі доріжки або змішати їх в одну"
 
-#: ui/editor_export_dialog.py:547 ui/editor_export_dialog.py:548
+#: ui/editor_export_dialog.py:549 ui/editor_export_dialog.py:550
 msgid "This clip has no audio tracks"
 msgstr "У цьому кліпі немає аудіодоріжок"
 
-#: ui/editor_export_dialog.py:575 ui/editor_export_dialog.py:628
+#: ui/editor_export_dialog.py:577 ui/editor_export_dialog.py:630
 msgid "Estimating time remaining…"
 msgstr "Оцінювання часу, що залишився…"
 
-#: ui/editor_export_dialog.py:588
+#: ui/editor_export_dialog.py:590
 msgid "Export progress"
 msgstr "Перебіг експорту"
 
-#: ui/editor_export_dialog.py:597
+#: ui/editor_export_dialog.py:599
 msgid "Show in folder"
 msgstr "Показати в теці"
 
-#: ui/editor_export_dialog.py:625
+#: ui/editor_export_dialog.py:627
 msgid "0% complete"
 msgstr "Виконано 0%"
 
-#: ui/editor_export_dialog.py:626
+#: ui/editor_export_dialog.py:628
 msgid "0%"
 msgstr "0%"
 
-#: ui/editor_export_dialog.py:648
+#: ui/editor_export_dialog.py:650
 #, python-format
 msgid "%(percentage)d%% complete"
 msgstr "Виконано %(percentage)d%%"
 
-#: ui/editor_export_dialog.py:650 ui/editor_window.py:1740
+#: ui/editor_export_dialog.py:652 ui/editor_window.py:1740
 #: ui/editor_window.py:2033 ui/editor_window.py:2043 ui/editor_window.py:2076
 #, python-format
 msgid "%(percentage)d%%"
 msgstr "%(percentage)d%%"
 
-#: ui/editor_export_dialog.py:670
+#: ui/editor_export_dialog.py:672
 msgid "Finishing export…"
 msgstr "Завершення експорту…"
 
-#: ui/editor_export_dialog.py:696
+#: ui/editor_export_dialog.py:698
 #, python-format
 msgid "Exported %(name)s"
 msgstr "Експортовано: %(name)s"
 
-#: ui/editor_export_dialog.py:700
+#: ui/editor_export_dialog.py:702
 msgid "100% complete"
 msgstr "Виконано 100%"
 
-#: ui/editor_export_dialog.py:701
+#: ui/editor_export_dialog.py:703
 msgid "100%"
 msgstr "100%"
 
-#: ui/editor_export_dialog.py:703
+#: ui/editor_export_dialog.py:705
 msgid "Finished"
 msgstr "Завершено"
 
-#: ui/editor_export_dialog.py:705 ui/game_details_dialog.py:37
+#: ui/editor_export_dialog.py:707 ui/game_details_dialog.py:37
 #: ui/preferences_dialog.py:29
 msgid "Close"
 msgstr "Закрити"
 
-#: ui/editor_export_dialog.py:722 ui/editor_window.py:3786
+#: ui/editor_export_dialog.py:724 ui/editor_window.py:3786
 msgid "Cancel the export before closing the editor"
 msgstr "Скасуй експорт перед закриттям редактора"
 
-#: ui/editor_export_dialog.py:753
+#: ui/editor_export_dialog.py:755
 msgid "Cancelling…"
 msgstr "Скасування…"
 
-#: ui/editor_export_dialog.py:796
+#: ui/editor_export_dialog.py:798
 msgid "Could not show exported file"
 msgstr "Не вдалося показати експортований файл"
 
-#: ui/editor_export_dialog.py:843
+#: ui/editor_export_dialog.py:845
 msgid "No compatible codec available"
 msgstr "Немає сумісного кодека"
 
-#: ui/editor_export_dialog.py:877
+#: ui/editor_export_dialog.py:879
 msgid "No compatible FFmpeg encoder is available"
 msgstr "Немає сумісного кодера FFmpeg"
 
-#: ui/editor_export_dialog.py:897
+#: ui/editor_export_dialog.py:899
 #, python-format
 msgid "%(encoder)s — software encoding; hardware unavailable"
 msgstr "%(encoder)s — програмне кодування; апаратне недоступне"
 
-#: ui/editor_export_dialog.py:900
+#: ui/editor_export_dialog.py:902
 #, python-format
 msgid "%(encoder)s — software encoding; checking hardware"
 msgstr "%(encoder)s — програмне кодування; перевірка апаратного прискорення"
 
-#: ui/editor_export_dialog.py:904
+#: ui/editor_export_dialog.py:906
 #, python-format
 msgid "%(encoder)s — software encoding"
 msgstr "%(encoder)s — програмне кодування"
 
-#: ui/editor_export_dialog.py:908
+#: ui/editor_export_dialog.py:910
 msgid "Software encoding"
 msgstr "Програмне кодування"
 
-#: ui/editor_export_dialog.py:1044
+#: ui/editor_export_dialog.py:1046
 msgid "Choose export folder"
 msgstr "Обери теку для експорту"
 
-#: ui/editor_export_dialog.py:1057
+#: ui/editor_export_dialog.py:1059
 msgid "Choose a local export folder"
 msgstr "Обери локальну теку для експорту"
 
-#: ui/editor_export_dialog.py:1067
+#: ui/editor_export_dialog.py:1069
 msgid "No compatible codec is available"
 msgstr "Немає доступного сумісного кодека"
 
-#: ui/editor_export_dialog.py:1132
+#: ui/editor_export_dialog.py:1141
 msgid "A folder already uses this filename"
 msgstr "За цим шляхом уже є тека"
 
-#: ui/editor_export_dialog.py:1140
+#: ui/editor_export_dialog.py:1149
 #, python-format
 msgid "%(name)s already exists. Choose Replace to overwrite it"
 msgstr "%(name)s уже існує. Обери «Замінити», щоб перезаписати його"
 
-#: ui/editor_export_dialog.py:1143
+#: ui/editor_export_dialog.py:1152
 msgid "Replace"
 msgstr "Замінити"
 
