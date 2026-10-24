@@ -16,6 +16,7 @@ gi.require_version("Gtk", "4.0")
 from editor_model import effective_audio_gain
 from gi.repository import Adw, GLib, Gst, Gtk
 from logs import diagnostic_tail
+from playback_performance import PlaybackTarget
 from video_output import make_clipper_video_sink
 
 _LOG = logging.getLogger("clipper.editor.preview")
@@ -1135,6 +1136,16 @@ class EditorPreview:
         self._bus_handler_id = self.bus.connect("message", self._on_bus_message)
         self.pipeline.set_state(Gst.State.PAUSED)
         self._position_timer = None
+
+    def performance_target(self):
+        """Expose the active output, excluding the speculative preroll graph."""
+        if self._closing:
+            return None
+        composition = self._timeline_composition
+        pipeline = composition.pipeline if composition is not None else self.pipeline
+        sink = composition.sink if composition is not None else self.sink
+        _result, state, _pending = pipeline.get_state(0)
+        return PlaybackTarget(pipeline, sink, state == Gst.State.PLAYING)
 
     def _ensure_position_timer(self):
         if getattr(self, "_closing", False) or not getattr(self, "_source_valid", True):

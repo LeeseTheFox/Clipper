@@ -42,6 +42,8 @@ class ShortcutSection:
 
 def create_shortcuts_menu(
     additional_items: tuple[tuple[str, str], ...] = (),
+    *,
+    debug_items: tuple[tuple[str, str], ...] = (),
 ) -> Gio.Menu:
     """Build a window menu led by the standard shortcuts action."""
     menu = Gio.Menu()
@@ -50,6 +52,11 @@ def create_shortcuts_menu(
     menu.append_item(item)
     for label, action in additional_items:
         menu.append(label, action)
+    if debug_items:
+        debug_menu = Gio.Menu()
+        for label, action in debug_items:
+            debug_menu.append(label, action)
+        menu.append_submenu(_("Debug menu"), debug_menu)
     return menu
 
 

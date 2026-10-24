@@ -62,7 +62,7 @@ process matching intentionally cover separate production implementations.
 | editor_history | Maintain undo/redo branches, saved state and bounded/coalesced history. |
 | editor_media | Preserve valid sample aspect ratio and reject invalid probe metadata. |
 | editor_model | Maintain segment boundaries, time mappings and independent audio settings; preserve a final segment. |
-| editor_preview | Keep cuts, seek/playback, live gain, decoder lifetime and stale callbacks consistent; release partial audio outputs after construction failures. |
+| editor_preview | Keep cuts, seek/playback, live gain, decoder lifetime and stale callbacks consistent; release partial audio outputs after construction failures; report performance for the active output rather than speculative decoding. |
 | editor_timeline | Maintain click/playhead/zoom mappings, scroll limits and bounded waveform sampling. |
 | editor_waveform | Preserve channel peaks and chunk boundaries; compare actual FFmpeg output across audio formats. |
 | editor_window_shortcuts | Dispatch editor actions correctly, including physical keys under non-Latin layouts. |
@@ -93,6 +93,7 @@ process matching intentionally cover separate production implementations.
 | monitor_manager | Use the correct native or Flatpak helper, validate host results and own one monitor process. |
 | native_capture | Reject unsupported direct-capture scenes and preserve idle-render consumers. |
 | pipewire_import_cache | Retain/release imported buffers and synchronization handles correctly, with and without explicit sync. |
+| playback_performance | Measure sink frame deltas across pause, seek resets and pipeline switches; release sampling timers and media references when the overlay is hidden or closed. |
 | process_watcher | Match and deduplicate game identities across native, Steam, Wine and sandbox environments. |
 | recording_preview | Keep recording identity current and long names ellipsized within real GTK preview allocations for landscape, portrait and ultrawide frames. |
 | release_notes | Generate accurate categorized history from actual Git repositories and semantic tags. |
@@ -106,7 +107,7 @@ process matching intentionally cover separate production implementations.
 | steam | Discover installations/accounts and change launch options without corrupting or claiming user-owned data. |
 | suika_game_model | Keep drops in bounds, prevent perfectly balanced repeated-drop towers and enforce momentum-preserving fruit merges at resting and solver-created contacts, bounded size-scaled neighbor impulses, score, terminal-size rules, per-fruit overflow grace/reset timing and real-time fixed-step physics independent of frame timing. |
 | text_helpers | Preserve readable/full labels and escape user-controlled markup. |
-| theme_adaptation | Parse editor CSS with GTK and reject errors. |
+| theme_adaptation | Parse editor and playback diagnostics CSS with GTK and reject errors. |
 | tray | Maintain the public D-Bus/icon contract and flush replies before activation or shutdown. |
 | update_controller | Coordinate checks, notifications, cancellation and restarts without interrupting saves or edits; reuse guarded restarts for removed graphics runtimes, preserve foreground/background launches and bound failed automatic recovery. |
 | update_publication | Publish only complete release assets and prevent overwriting public releases. |

@@ -58,6 +58,7 @@ from playback_controls import (
     PlaybackControls,
     _matches_base_key,
 )
+from playback_performance import PERFORMANCE_MENU_ITEMS, PlaybackPerformanceOverlay
 from shortcut_dialog import (
     SHORTCUTS_ACCELERATOR,
     Shortcut,
@@ -1192,7 +1193,8 @@ class EditorWindow(Adw.ApplicationWindow):
         self.menu_button.set_icon_name(HAMBURGER_MENU)
         self.menu_button.set_tooltip_text(_("Editor menu"))
         menu = create_shortcuts_menu(
-            ((_('Wipe all edits'), "win.wipe-all-edits"),)
+            ((_('Wipe all edits'), "win.wipe-all-edits"),),
+            debug_items=PERFORMANCE_MENU_ITEMS,
         )
         self.menu_button.set_menu_model(menu)
         header.pack_end(self.menu_button)
@@ -1248,6 +1250,10 @@ class EditorWindow(Adw.ApplicationWindow):
         picture_overlay.set_margin_top(1)
         picture_overlay.set_margin_bottom(1)
         picture_overlay.add_overlay(self.preview.loading_spinner)
+        self._performance_overlay = PlaybackPerformanceOverlay(
+            lambda: self.preview.performance_target(),
+        )
+        picture_overlay.add_overlay(self._performance_overlay)
 
         ambient_layer = AmbientVideoGlow(
             self.preview.picture,
@@ -1627,6 +1633,7 @@ class EditorWindow(Adw.ApplicationWindow):
         shortcuts_action = Gio.SimpleAction.new("shortcuts", None)
         shortcuts_action.connect("activate", self._show_shortcuts)
         self.add_action(shortcuts_action)
+        self.add_action(self._performance_overlay.action)
 
     def _show_shortcuts(self, *_args):
         dialog = create_shortcuts_dialog(EDITOR_SHORTCUT_SECTIONS)
@@ -3806,4 +3813,7 @@ class EditorWindow(Adw.ApplicationWindow):
         monitor = getattr(self, "_source_monitor", None)
         if monitor is not None:
             monitor.cancel()
+        performance_overlay = getattr(self, "_performance_overlay", None)
+        if performance_overlay is not None:
+            performance_overlay.cleanup()
         self.preview.cleanup()

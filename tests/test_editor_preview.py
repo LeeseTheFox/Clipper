@@ -36,6 +36,32 @@ class FakeProject:
         return output_us + 1_000
 
 
+def test_performance_stats_follow_active_output_and_ignore_speculative_decoding():
+    def output(state):
+        return SimpleNamespace(
+            pipeline=SimpleNamespace(get_state=lambda _timeout: (None, state, None)),
+            sink=object(),
+        )
+
+    legacy = output(Gst.State.PAUSED)
+    composition = output(Gst.State.PLAYING)
+    preview = SimpleNamespace(
+        _closing=False, _timeline_composition=None,
+        _speculative_composition=composition,
+        pipeline=legacy.pipeline, sink=legacy.sink,
+    )
+    target = EditorPreview.performance_target(preview)
+    assert target.sink is legacy.sink
+    assert target.playing is False
+    preview._timeline_composition = composition
+    target = EditorPreview.performance_target(preview)
+    assert target.sink is composition.sink
+    assert target.pipeline is composition.pipeline
+    assert target.playing is True
+    preview._closing = True
+    assert EditorPreview.performance_target(preview) is None
+
+
 def test_preview_failure_logs_element_and_debug_context(monkeypatch):
     records = []
     monkeypatch.setattr(editor_preview._LOG, "error", lambda *args: records.append(args))

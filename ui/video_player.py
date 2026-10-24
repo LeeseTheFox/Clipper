@@ -30,6 +30,11 @@ from playback_controls import (
     PlaybackControls,
     _matches_base_key,
 )
+from playback_performance import (
+    PERFORMANCE_MENU_ITEMS,
+    PlaybackPerformanceOverlay,
+    PlaybackTarget,
+)
 from shortcut_dialog import (
     SHORTCUTS_ACCELERATOR,
     Shortcut,
@@ -220,7 +225,7 @@ class VideoPlayer(Gtk.Box):
         self._menu_button = Gtk.MenuButton()
         self._menu_button.set_icon_name(HAMBURGER_MENU)
         self._menu_button.set_tooltip_text(_("Player menu"))
-        self._menu_button.set_menu_model(create_shortcuts_menu())
+        self._menu_button.set_menu_model(create_shortcuts_menu(debug_items=PERFORMANCE_MENU_ITEMS))
         header.pack_end(self._menu_button)
         toolbar.add_top_bar(header)
 
@@ -249,6 +254,8 @@ class VideoPlayer(Gtk.Box):
         video_overlay.add_css_class("clipper-player-surface")
         video_overlay.set_child(self._picture)
         video_overlay.add_overlay(self._loading)
+        self._performance_overlay = PlaybackPerformanceOverlay(self._performance_target)
+        video_overlay.add_overlay(self._performance_overlay)
 
         self._transport = PlaybackControls(
             on_play=self._toggle_playback,
@@ -304,7 +311,14 @@ class VideoPlayer(Gtk.Box):
         shortcuts_action = Gio.SimpleAction.new("shortcuts", None)
         shortcuts_action.connect("activate", self._show_shortcuts)
         self._window_actions.add_action(shortcuts_action)
+        self._window_actions.add_action(self._performance_overlay.action)
         self.insert_action_group("win", self._window_actions)
+
+    def _performance_target(self):
+        if self._pipeline is None or self._paintable_sink is None:
+            return None
+        _result, state, _pending = self._pipeline.get_state(0)
+        return PlaybackTarget(self._pipeline, self._paintable_sink, state == Gst.State.PLAYING)
 
     def _show_shortcuts(self, *_args) -> None:
         dialog = create_shortcuts_dialog(PLAYER_SHORTCUT_SECTIONS)
@@ -1172,6 +1186,7 @@ class VideoPlayer(Gtk.Box):
 
     def cleanup(self) -> None:
         self._closed = True
+        self._performance_overlay.cleanup()
         self.stop()
 
     def _cancel_pending_load(self) -> None:
@@ -1181,6 +1196,7 @@ class VideoPlayer(Gtk.Box):
         self._load_source_id = None
 
     def _release_media(self) -> None:
+        self._performance_overlay.reset()
         if self._position_source_id is not None:
             GLib.source_remove(self._position_source_id)
             self._position_source_id = None
