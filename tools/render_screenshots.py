@@ -11,6 +11,7 @@ import subprocess
 import sys
 import time
 import zlib
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 
@@ -322,10 +323,17 @@ def main() -> None:
             if server.poll() is not None or time.monotonic() >= deadline:
                 raise RuntimeError("Cannot start the private GTK Broadway display")
             time.sleep(.02)
-        for language in sys.argv[2:]:
+
+        def render_themes(language: str) -> None:
             for theme in ("light", "dark"):
                 subprocess.run(["python3", __file__, str(work), "--render", language, theme],
                                check=True, timeout=25)
+
+        # Each child already owns its locale, GTK state and XDG directories.
+        # Overlap frame waits without changing capture readiness or rendering.
+        with ThreadPoolExecutor(max_workers=min(3, os.cpu_count() or 1)) as pool:
+            list(pool.map(render_themes, sys.argv[2:]))
+
         os.environ["FONTCONFIG_FILE"] = str(work / "fonts.conf")
         from render_banner import render_banner
 
