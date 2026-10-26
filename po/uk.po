@@ -353,7 +353,7 @@ msgstr ""
 
 #: ui/clips_view.py:2068 ui/dialogs.py:842 ui/editor_export_dialog.py:346
 #: ui/editor_export_dialog.py:604 ui/editor_export_dialog.py:632
-#: ui/editor_export_dialog.py:740 ui/editor_window.py:3745 ui/editor_wipe.py:16
+#: ui/editor_export_dialog.py:740 ui/editor_window.py:3759 ui/editor_wipe.py:16
 #: ui/game_details_dialog.py:37 ui/update_controller.py:377
 msgid "Cancel"
 msgstr "Скасувати"
@@ -766,7 +766,7 @@ msgid "Export was already started"
 msgstr "Експорт уже розпочато"
 
 #: ui/editor_export.py:1074 ui/editor_export.py:1161 ui/editor_export.py:1175
-#: ui/editor_export_dialog.py:719 ui/editor_window.py:3705
+#: ui/editor_export_dialog.py:719 ui/editor_window.py:3708
 msgid "Export cancelled"
 msgstr "Експорт скасовано"
 
@@ -836,7 +836,7 @@ msgid "Export edited clip"
 msgstr "Експортувати відредагований кліп"
 
 #: ui/editor_export_dialog.py:350 ui/editor_export_dialog.py:354
-#: ui/editor_window.py:1185 ui/editor_window.py:3684 ui/editor_window.py:3720
+#: ui/editor_window.py:1185 ui/editor_window.py:3686 ui/editor_window.py:3724
 msgid "Export"
 msgstr "Експортувати"
 
@@ -983,7 +983,7 @@ msgstr "Завершено"
 msgid "Close"
 msgstr "Закрити"
 
-#: ui/editor_export_dialog.py:724 ui/editor_window.py:3791
+#: ui/editor_export_dialog.py:724 ui/editor_window.py:3805
 msgid "Cancel the export before closing the editor"
 msgstr "Скасуй експорт перед закриттям редактора"
 
@@ -1282,7 +1282,7 @@ msgstr "Вийти з повноекранного режиму"
 msgid "Fullscreen"
 msgstr "Повний екран"
 
-#: ui/editor_window.py:1611 ui/editor_window.py:3747
+#: ui/editor_window.py:1611 ui/editor_window.py:3761
 msgid "Save draft"
 msgstr "Зберегти чернетку"
 
@@ -1395,33 +1395,33 @@ msgstr "Пауза"
 msgid "Play"
 msgstr "Відтворити"
 
-#: ui/editor_window.py:3655
+#: ui/editor_window.py:3656
 msgid "Exporting…"
 msgstr "Експорт…"
 
-#: ui/editor_window.py:3699
+#: ui/editor_window.py:3701
 #, python-format
 msgid "Exported to %(name)s"
 msgstr "Експортовано до %(name)s"
 
-#: ui/editor_window.py:3707 ui/main.py:2373 ui/settings_view.py:1392
+#: ui/editor_window.py:3710 ui/main.py:2375 ui/settings_view.py:1392
 msgid "Unknown error"
 msgstr "Невідома помилка"
 
-#: ui/editor_window.py:3708
+#: ui/editor_window.py:3711
 #, python-format
 msgid "Export failed: %(error)s"
 msgstr "Помилка експорту: %(error)s"
 
-#: ui/editor_window.py:3744
+#: ui/editor_window.py:3758
 msgid "Save this edit?"
 msgstr "Зберегти ці зміни?"
 
-#: ui/editor_window.py:3744
+#: ui/editor_window.py:3758
 msgid "You have unsaved changes."
 msgstr "Є незбережені зміни."
 
-#: ui/editor_window.py:3746
+#: ui/editor_window.py:3760
 msgid "Discard"
 msgstr "Відкинути"
 
@@ -1790,78 +1790,78 @@ msgstr "Не вдалося вимкнути автоматичний запус
 msgid "PipeWire restore token cleared"
 msgstr "Токен відновлення PipeWire очищено"
 
-#: ui/main.py:1356
+#: ui/main.py:1350
 msgid "Clip captured"
 msgstr "Кліп захоплено"
 
-#: ui/main.py:1357
+#: ui/main.py:1351
 msgid "Your clip has been saved."
 msgstr "Твій кліп збережено."
 
-#: ui/main.py:1363
+#: ui/main.py:1357
 msgid ""
 "Could not write the clip. Check the save folder and available disk space."
 msgstr ""
 "Не вдалося записати кліп. Перевір теку збереження та вільне місце на диску."
 
-#: ui/main.py:1365
+#: ui/main.py:1359
 #, python-format
 msgid "Failed to save clip: %(error)s"
 msgstr "Не вдалося зберегти кліп: %(error)s"
 
-#: ui/main.py:1401
+#: ui/main.py:1402
 #, python-format
 msgid "Could not open clip editor: %(error)s"
 msgstr "Не вдалося відкрити редактор кліпів: %(error)s"
 
-#: ui/main.py:1713
+#: ui/main.py:1715
 msgid "Recording engine crashed"
 msgstr "Збій рушія запису"
 
-#: ui/main.py:1715
+#: ui/main.py:1717
 msgid "Recording is unavailable. Check the logs to find out what went wrong."
 msgstr "Запис недоступний. Перевір журнали, щоб з’ясувати причину збою."
 
-#: ui/main.py:1718 ui/main_window.py:177
+#: ui/main.py:1720 ui/main_window.py:177
 msgid "Show logs"
 msgstr "Показати журнали"
 
-#: ui/main.py:2118
+#: ui/main.py:2120
 #, python-format
 msgid "Could not start Clipper engine: %(error)s"
 msgstr "Не вдалося запустити рушій Clipper: %(error)s"
 
-#: ui/main.py:2192 ui/settings_view.py:1391
+#: ui/main.py:2194 ui/settings_view.py:1391
 #, python-format
 msgid "Engine shutdown failed: %(error)s"
 msgstr "Не вдалося завершити роботу рушія: %(error)s"
 
-#: ui/main.py:2233 ui/main.py:2277
+#: ui/main.py:2235 ui/main.py:2279
 msgid "Display selection was cancelled."
 msgstr "Вибір екрана скасовано."
 
-#: ui/main.py:2238
+#: ui/main.py:2240
 msgid "Capture display selected successfully."
 msgstr "Екран для захоплення успішно вибрано."
 
-#: ui/main.py:2284
+#: ui/main.py:2286
 msgid "No display was selected before the picker timed out."
 msgstr "До завершення часу очікування засобу вибору не вибрано жодного екрана."
 
-#: ui/main.py:2372
+#: ui/main.py:2374
 #, python-format
 msgid "Display capture sync failed: %(error)s"
 msgstr "Не вдалося синхронізувати захоплення екрана: %(error)s"
 
-#: ui/main.py:2460
+#: ui/main.py:2462
 msgid "🦊 Leese"
 msgstr "🦊 Leese"
 
-#: ui/main.py:2464
+#: ui/main.py:2466
 msgid "© 2026 Leese"
 msgstr "© 2026 Leese"
 
-#: ui/main.py:2470
+#: ui/main.py:2472
 msgid "GitHub"
 msgstr "GitHub"
 

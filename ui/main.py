@@ -1345,13 +1345,7 @@ class ClipperApplication(Adw.Application):
             refresh = getattr(clips_view, "refresh", None)
             if callable(refresh):
                 refresh()
-            if self._config.get("play_sound_on_clip_saved", True):
-                player = getattr(self, "_clip_sound_player", None)
-                if player is None:
-                    player = SoundPlayer()
-                    self._clip_sound_player = player
-                if not player.play():
-                    self._log("Could not play clip saved sound")
+            self.play_save_sound()
             if self._config.get("notify_on_clip_saved", True):
                 notification = Gio.Notification.new(_("Clip captured"))
                 notification.set_body(_("Your clip has been saved."))
@@ -1363,6 +1357,13 @@ class ClipperApplication(Adw.Application):
                     "Could not write the clip. Check the save folder and available disk space."
                 )
             self._show_error(_("Failed to save clip: %(error)s") % {"error": error})
+
+    def play_save_sound(self) -> None:
+        """Play optional feedback for a captured clip or completed editor export."""
+        if not self._config.get("play_sound_on_clip_saved", True):
+            return
+        if not self._clip_sound_player.play():
+            self._log("Could not play save sound")
 
     def open_editor(self, clip_path, completed_callback=None) -> None:
         """Probe a clip off the GTK thread and present its saved or new edit."""
@@ -1463,11 +1464,12 @@ class ClipperApplication(Adw.Application):
     def _show_error(self, message: str):
         """Show an error message to the user."""
         self._log(f"Error: {message}")
-        self._play_error_sound()
+        self.play_error_sound()
         if self.window and hasattr(self.window, "show_toast"):
             self.window.show_toast(message)
 
-    def _play_error_sound(self) -> None:
+    def play_error_sound(self) -> None:
+        """Play optional feedback for an application or editor export failure."""
         if not self._config.get("play_sound_on_error", True):
             return
         if not self._error_sound_player.play():
@@ -1718,7 +1720,7 @@ class ClipperApplication(Adw.Application):
         notification.add_button(_("Show logs"), "app.show-logs")
         self.send_notification(_ENGINE_CRASH_NOTIFICATION_ID, notification)
         self._engine_crash_notified = True
-        self._play_error_sound()
+        self.play_error_sound()
 
     def _on_engine_healthy(self) -> bool:
         """Rearm crash alerts only after uninterrupted, working recording."""

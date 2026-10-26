@@ -8,6 +8,7 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
 from editor_export import (
+    ExportCancelledError,
     ExportEncoderCapabilities,
     ExportOptions,
     HardwareEncoderCapability,
@@ -573,3 +574,145 @@ def test_starting_export_saves_current_draft_before_snapshotting(monkeypatch):
         ("create exporter", "export snapshot", options),
         ("start worker",),
     ]
+
+
+@pytest.fixture
+def pending_export(monkeypatch, tmp_path):
+    state = SimpleNamespace(
+        workers=[], callbacks=[], feedback=[], outcomes=[], failure=None,
+        setup_failure=False, launch_failure=False, cancelled=False, cleaned=0,
+        destination=tmp_path / "finished.mkv", sensitive=True, deletable=True,
+    )
+
+    class ExportProcessStub:
+        def __init__(self, _project, _options):
+            if state.setup_failure:
+                raise RuntimeError("invalid export setup")
+
+        def start(self):
+            pass
+
+        def finish(self, _report_progress):
+            if state.cancelled:
+                raise ExportCancelledError("cancelled")
+            if state.failure is not None:
+                raise state.failure
+            return state.destination
+
+        def cleanup(self):
+            state.cleaned += 1
+
+        def cancel(self):
+            state.cancelled = True
+
+    class ThreadStub:
+        def __init__(self, *, target, daemon):
+            self.target = target
+
+        def start(self):
+            if state.launch_failure:
+                raise RuntimeError("worker launch failed")
+            state.workers.append(self.target)
+
+    application = SimpleNamespace(
+        play_save_sound=lambda: state.feedback.append("save"),
+        play_error_sound=lambda: state.feedback.append("error"),
+    )
+    window = SimpleNamespace(
+        project=SimpleNamespace(clone=lambda: object()), save=lambda: None,
+        _exporter=None, _cleaned=False, _source_invalid=False,
+        _export_dialog=SimpleNamespace(
+            complete_export=lambda path: state.outcomes.append(("complete", path)),
+            fail_export=lambda message: state.outcomes.append(("failed", message)),
+            export_cancelled=lambda: state.outcomes.append(("cancelled", None)),
+        ),
+        export_button_label=SimpleNamespace(set_text=lambda _text: None),
+        export_button=SimpleNamespace(
+            set_sensitive=lambda value: setattr(state, "sensitive", value)
+        ),
+        set_deletable=lambda value: setattr(state, "deletable", value),
+        _show_toast=lambda message: state.outcomes.append(("toast", message)),
+        get_application=lambda: application,
+    )
+    window._play_export_sound = lambda **kwargs: EditorWindow._play_export_sound(window, **kwargs)
+    monkeypatch.setattr("editor_export.ExportProcess", ExportProcessStub)
+    monkeypatch.setattr("editor_window.threading.Thread", ThreadStub)
+    monkeypatch.setattr(
+        "editor_window.GLib.idle_add",
+        lambda callback, *args: state.callbacks.append((callback, args)),
+    )
+    return window, state
+
+
+@pytest.mark.parametrize(
+    "outcome", ["success", "failure", "cancelled", "success-after-dialog-close"]
+)
+def test_export_completion_feedback_waits_for_main_thread_and_keeps_cancellation_silent(
+    pending_export, outcome
+):
+    window, state = pending_export
+    if outcome == "failure":
+        state.failure = RuntimeError("encoder crashed")
+    EditorWindow._start_export(window, object())
+    if outcome == "cancelled":
+        EditorWindow._cancel_export(window)
+    if outcome == "success-after-dialog-close":
+        window._export_dialog = None
+    state.workers[0]()
+
+    assert not state.feedback
+    assert not state.outcomes
+    callback, args = state.callbacks.pop()
+    assert callback(*args) is False
+
+    expected_sound = [] if outcome == "cancelled" else [
+        "error" if outcome == "failure" else "save"
+    ]
+    assert state.feedback == expected_sound
+    expected_result = {
+        "success": "complete", "failure": "failed", "cancelled": "cancelled",
+        "success-after-dialog-close": "toast",
+    }[outcome]
+    assert len(state.outcomes) == 1
+    assert state.outcomes[0][0] == expected_result
+    if outcome == "success":
+        assert state.outcomes[0][1] == state.destination
+    if outcome == "failure":
+        assert "encoder crashed" in state.outcomes[0][1]
+    assert window._exporter is None
+    assert state.sensitive and state.deletable
+
+
+@pytest.mark.parametrize("retired", ["closed-editor", "new-export"])
+def test_retired_export_completion_cannot_play_sounds_or_change_current_controls(
+    pending_export, retired
+):
+    window, state = pending_export
+    EditorWindow._start_export(window, object())
+    state.workers[0]()
+    new_exporter = object()
+    if retired == "closed-editor":
+        window._cleaned = True
+    else:
+        window._exporter = new_exporter
+    callback, args = state.callbacks.pop()
+
+    assert callback(*args) is False
+
+    assert not state.feedback
+    assert not state.outcomes
+    assert not state.sensitive and not state.deletable
+    assert window._exporter is (None if retired == "closed-editor" else new_exporter)
+
+
+@pytest.mark.parametrize("failure", ["setup_failure", "launch_failure"])
+def test_export_start_failure_plays_error_feedback_and_preserves_the_error(pending_export, failure):
+    window, state = pending_export
+    setattr(state, failure, True)
+
+    with pytest.raises(RuntimeError):
+        EditorWindow._start_export(window, object())
+
+    assert state.feedback == ["error"]
+    assert window._exporter is None
+    assert not state.workers

@@ -349,7 +349,7 @@ msgstr ""
 
 #: ui/clips_view.py:2068 ui/dialogs.py:842 ui/editor_export_dialog.py:346
 #: ui/editor_export_dialog.py:604 ui/editor_export_dialog.py:632
-#: ui/editor_export_dialog.py:740 ui/editor_window.py:3745 ui/editor_wipe.py:16
+#: ui/editor_export_dialog.py:740 ui/editor_window.py:3759 ui/editor_wipe.py:16
 #: ui/game_details_dialog.py:37 ui/update_controller.py:377
 msgid "Cancel"
 msgstr "Cancel"
@@ -760,7 +760,7 @@ msgid "Export was already started"
 msgstr "Export was already started"
 
 #: ui/editor_export.py:1074 ui/editor_export.py:1161 ui/editor_export.py:1175
-#: ui/editor_export_dialog.py:719 ui/editor_window.py:3705
+#: ui/editor_export_dialog.py:719 ui/editor_window.py:3708
 msgid "Export cancelled"
 msgstr "Export cancelled"
 
@@ -827,7 +827,7 @@ msgid "Export edited clip"
 msgstr "Export edited clip"
 
 #: ui/editor_export_dialog.py:350 ui/editor_export_dialog.py:354
-#: ui/editor_window.py:1185 ui/editor_window.py:3684 ui/editor_window.py:3720
+#: ui/editor_window.py:1185 ui/editor_window.py:3686 ui/editor_window.py:3724
 msgid "Export"
 msgstr "Export"
 
@@ -974,7 +974,7 @@ msgstr "Finished"
 msgid "Close"
 msgstr "Close"
 
-#: ui/editor_export_dialog.py:724 ui/editor_window.py:3791
+#: ui/editor_export_dialog.py:724 ui/editor_window.py:3805
 msgid "Cancel the export before closing the editor"
 msgstr "Cancel the export before closing the editor"
 
@@ -1272,7 +1272,7 @@ msgstr "Exit fullscreen"
 msgid "Fullscreen"
 msgstr "Fullscreen"
 
-#: ui/editor_window.py:1611 ui/editor_window.py:3747
+#: ui/editor_window.py:1611 ui/editor_window.py:3761
 msgid "Save draft"
 msgstr "Save draft"
 
@@ -1382,33 +1382,33 @@ msgstr "Pause"
 msgid "Play"
 msgstr "Play"
 
-#: ui/editor_window.py:3655
+#: ui/editor_window.py:3656
 msgid "Exporting…"
 msgstr "Exporting…"
 
-#: ui/editor_window.py:3699
+#: ui/editor_window.py:3701
 #, python-format
 msgid "Exported to %(name)s"
 msgstr "Exported to %(name)s"
 
-#: ui/editor_window.py:3707 ui/main.py:2373 ui/settings_view.py:1392
+#: ui/editor_window.py:3710 ui/main.py:2375 ui/settings_view.py:1392
 msgid "Unknown error"
 msgstr "Unknown error"
 
-#: ui/editor_window.py:3708
+#: ui/editor_window.py:3711
 #, python-format
 msgid "Export failed: %(error)s"
 msgstr "Export failed: %(error)s"
 
-#: ui/editor_window.py:3744
+#: ui/editor_window.py:3758
 msgid "Save this edit?"
 msgstr "Save this edit?"
 
-#: ui/editor_window.py:3744
+#: ui/editor_window.py:3758
 msgid "You have unsaved changes."
 msgstr "You have unsaved changes."
 
-#: ui/editor_window.py:3746
+#: ui/editor_window.py:3760
 msgid "Discard"
 msgstr "Discard"
 
@@ -1775,78 +1775,78 @@ msgstr "Could not disable automatic startup"
 msgid "PipeWire restore token cleared"
 msgstr "PipeWire restore token cleared"
 
-#: ui/main.py:1356
+#: ui/main.py:1350
 msgid "Clip captured"
 msgstr "Clip captured"
 
-#: ui/main.py:1357
+#: ui/main.py:1351
 msgid "Your clip has been saved."
 msgstr "Your clip has been saved."
 
-#: ui/main.py:1363
+#: ui/main.py:1357
 msgid ""
 "Could not write the clip. Check the save folder and available disk space."
 msgstr ""
 "Could not write the clip. Check the save folder and available disk space."
 
-#: ui/main.py:1365
+#: ui/main.py:1359
 #, python-format
 msgid "Failed to save clip: %(error)s"
 msgstr "Failed to save clip: %(error)s"
 
-#: ui/main.py:1401
+#: ui/main.py:1402
 #, python-format
 msgid "Could not open clip editor: %(error)s"
 msgstr "Could not open clip editor: %(error)s"
 
-#: ui/main.py:1713
+#: ui/main.py:1715
 msgid "Recording engine crashed"
 msgstr "Recording engine crashed"
 
-#: ui/main.py:1715
+#: ui/main.py:1717
 msgid "Recording is unavailable. Check the logs to find out what went wrong."
 msgstr "Recording is unavailable. Check the logs to find out what went wrong."
 
-#: ui/main.py:1718 ui/main_window.py:177
+#: ui/main.py:1720 ui/main_window.py:177
 msgid "Show logs"
 msgstr "Show logs"
 
-#: ui/main.py:2118
+#: ui/main.py:2120
 #, python-format
 msgid "Could not start Clipper engine: %(error)s"
 msgstr "Could not start Clipper engine: %(error)s"
 
-#: ui/main.py:2192 ui/settings_view.py:1391
+#: ui/main.py:2194 ui/settings_view.py:1391
 #, python-format
 msgid "Engine shutdown failed: %(error)s"
 msgstr "Engine shutdown failed: %(error)s"
 
-#: ui/main.py:2233 ui/main.py:2277
+#: ui/main.py:2235 ui/main.py:2279
 msgid "Display selection was cancelled."
 msgstr "Display selection was cancelled."
 
-#: ui/main.py:2238
+#: ui/main.py:2240
 msgid "Capture display selected successfully."
 msgstr "Capture display selected successfully."
 
-#: ui/main.py:2284
+#: ui/main.py:2286
 msgid "No display was selected before the picker timed out."
 msgstr "No display was selected before the picker timed out."
 
-#: ui/main.py:2372
+#: ui/main.py:2374
 #, python-format
 msgid "Display capture sync failed: %(error)s"
 msgstr "Display capture sync failed: %(error)s"
 
-#: ui/main.py:2460
+#: ui/main.py:2462
 msgid "🦊 Leese"
 msgstr "🦊 Leese"
 
-#: ui/main.py:2464
+#: ui/main.py:2466
 msgid "© 2026 Leese"
 msgstr "© 2026 Leese"
 
-#: ui/main.py:2470
+#: ui/main.py:2472
 msgid "GitHub"
 msgstr "GitHub"
 

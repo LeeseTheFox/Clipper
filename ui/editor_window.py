@@ -3647,6 +3647,7 @@ class EditorWindow(Adw.ApplicationWindow):
             logging.getLogger("clipper.editor.export").exception(
                 "Export setup failed: options=%s", options
             )
+            self._play_export_sound(success=False)
             raise
         self._exporter = exporter
         wipe_edits_action = getattr(self, "wipe_edits_action", None)
@@ -3677,8 +3678,9 @@ class EditorWindow(Adw.ApplicationWindow):
                 GLib.idle_add(done, None, error)
 
         def done(destination, error):
-            if self._exporter is exporter:
-                self._exporter = None
+            if self._exporter is not exporter:
+                return False
+            self._exporter = None
             if self._cleaned:
                 return False
             self.export_button_label.set_text(_("Export"))
@@ -3698,6 +3700,7 @@ class EditorWindow(Adw.ApplicationWindow):
                     self._show_toast(
                         _("Exported to %(name)s") % {"name": destination.name}
                     )
+                self._play_export_sound(success=True)
             elif isinstance(error, ExportCancelledError):
                 if active_dialog is not None:
                     active_dialog.export_cancelled()
@@ -3710,6 +3713,7 @@ class EditorWindow(Adw.ApplicationWindow):
                     active_dialog.fail_export(message)
                 else:
                     self._show_toast(message)
+                self._play_export_sound(success=False)
             return False
 
         try:
@@ -3723,7 +3727,17 @@ class EditorWindow(Adw.ApplicationWindow):
                 wipe_edits_action.set_enabled(True)
             self.set_deletable(True)
             exporter.cleanup()
+            self._play_export_sound(success=False)
             raise
+
+    def _play_export_sound(self, *, success: bool) -> None:
+        application = self.get_application()
+        if application is None:
+            return
+        if success:
+            application.play_save_sound()
+        else:
+            application.play_error_sound()
 
     def _cancel_export(self, *_args):
         exporter = self._exporter
