@@ -2686,7 +2686,12 @@ class EditorWindow(Adw.ApplicationWindow):
         if x < -5 or x > width + 5:
             return
         scrollbar = self.timeline_scroll.get_hscrollbar()
-        if scrollbar is not None and scrollbar.get_mapped():
+        # Overlay scrollbars float over the lanes rather than reserving space.
+        if (
+            not self.timeline_scroll.get_overlay_scrolling()
+            and scrollbar is not None
+            and scrollbar.get_mapped()
+        ):
             height = max(0, height - scrollbar.get_height())
         color = area.get_color()
         _set_source_color(context, color)

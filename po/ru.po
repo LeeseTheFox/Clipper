@@ -334,7 +334,7 @@ msgstr "Воспроизвести клип"
 msgid "Reveal in file manager"
 msgstr "Показать в файловом менеджере"
 
-#: ui/clips_view.py:1852 ui/editor_window.py:3566
+#: ui/clips_view.py:1852 ui/editor_window.py:3571
 msgid "Could not wipe saved edits"
 msgstr "Не удалось удалить сохранённые правки"
 
@@ -353,7 +353,7 @@ msgstr ""
 
 #: ui/clips_view.py:2068 ui/dialogs.py:842 ui/editor_export_dialog.py:346
 #: ui/editor_export_dialog.py:604 ui/editor_export_dialog.py:632
-#: ui/editor_export_dialog.py:740 ui/editor_window.py:3740 ui/editor_wipe.py:16
+#: ui/editor_export_dialog.py:740 ui/editor_window.py:3745 ui/editor_wipe.py:16
 #: ui/game_details_dialog.py:37 ui/update_controller.py:377
 msgid "Cancel"
 msgstr "Отмена"
@@ -767,7 +767,7 @@ msgid "Export was already started"
 msgstr "Экспорт уже запущен"
 
 #: ui/editor_export.py:1074 ui/editor_export.py:1161 ui/editor_export.py:1175
-#: ui/editor_export_dialog.py:719 ui/editor_window.py:3700
+#: ui/editor_export_dialog.py:719 ui/editor_window.py:3705
 msgid "Export cancelled"
 msgstr "Экспорт отменён"
 
@@ -837,7 +837,7 @@ msgid "Export edited clip"
 msgstr "Экспортировать отредактированный клип"
 
 #: ui/editor_export_dialog.py:350 ui/editor_export_dialog.py:354
-#: ui/editor_window.py:1185 ui/editor_window.py:3679 ui/editor_window.py:3715
+#: ui/editor_window.py:1185 ui/editor_window.py:3684 ui/editor_window.py:3720
 msgid "Export"
 msgstr "Экспорт"
 
@@ -984,7 +984,7 @@ msgstr "Готово"
 msgid "Close"
 msgstr "Закрыть"
 
-#: ui/editor_export_dialog.py:724 ui/editor_window.py:3786
+#: ui/editor_export_dialog.py:724 ui/editor_window.py:3791
 msgid "Cancel the export before closing the editor"
 msgstr "Перед закрытием редактора отмени экспорт"
 
@@ -1259,7 +1259,7 @@ msgstr "Повторить (Ctrl+Shift+Z)"
 msgid "Split"
 msgstr "Разделить"
 
-#: ui/editor_window.py:1357 ui/editor_window.py:2726
+#: ui/editor_window.py:1357 ui/editor_window.py:2731
 msgid "Split at playhead (X)"
 msgstr "Разделить в позиции воспроизведения (X)"
 
@@ -1283,7 +1283,7 @@ msgstr "Выйти из полноэкранного режима"
 msgid "Fullscreen"
 msgstr "Полный экран"
 
-#: ui/editor_window.py:1611 ui/editor_window.py:3742
+#: ui/editor_window.py:1611 ui/editor_window.py:3747
 msgid "Save draft"
 msgstr "Сохранить черновик"
 
@@ -1363,19 +1363,19 @@ msgstr "Масштаб %(percentage)d%%"
 msgid "%(gain)s for selected audio"
 msgstr "%(gain)s для выбранного аудио"
 
-#: ui/editor_window.py:2708
+#: ui/editor_window.py:2713
 msgid "Select a segment to delete"
 msgstr "Выбери сегмент для удаления"
 
-#: ui/editor_window.py:2710
+#: ui/editor_window.py:2715
 msgid "At least one segment must remain"
 msgstr "Должен остаться хотя бы один сегмент"
 
-#: ui/editor_window.py:2712
+#: ui/editor_window.py:2717
 msgid "Delete selected segment (Del)"
 msgstr "Удалить выбранный сегмент (Del)"
 
-#: ui/editor_window.py:2715
+#: ui/editor_window.py:2720
 #, python-format
 msgid "Delete %(count)d selected segment (Del)"
 msgid_plural "Delete %(count)d selected segments (Del)"
@@ -1383,46 +1383,46 @@ msgstr[0] "Удалить %(count)d выбранный сегмент (Del)"
 msgstr[1] "Удалить %(count)d выбранных сегмента (Del)"
 msgstr[2] "Удалить %(count)d выбранных сегментов (Del)"
 
-#: ui/editor_window.py:2728
+#: ui/editor_window.py:2733
 msgid "Select one segment to split"
 msgstr "Выбери один сегмент для разделения"
 
-#: ui/editor_window.py:3159 ui/hotkeys.py:540 ui/playback_controls.py:162
+#: ui/editor_window.py:3164 ui/hotkeys.py:540 ui/playback_controls.py:162
 #: ui/video_player.py:1072
 msgid "Pause"
 msgstr "Пауза"
 
-#: ui/editor_window.py:3159 ui/playback_controls.py:162 ui/video_player.py:1072
+#: ui/editor_window.py:3164 ui/playback_controls.py:162 ui/video_player.py:1072
 msgid "Play"
 msgstr "Воспроизвести"
 
-#: ui/editor_window.py:3650
+#: ui/editor_window.py:3655
 msgid "Exporting…"
 msgstr "Экспорт…"
 
-#: ui/editor_window.py:3694
+#: ui/editor_window.py:3699
 #, python-format
 msgid "Exported to %(name)s"
 msgstr "Экспортировано в %(name)s"
 
-#: ui/editor_window.py:3702 ui/main.py:2367 ui/settings_view.py:1423
+#: ui/editor_window.py:3707 ui/main.py:2367 ui/settings_view.py:1423
 msgid "Unknown error"
 msgstr "Неизвестная ошибка"
 
-#: ui/editor_window.py:3703
+#: ui/editor_window.py:3708
 #, python-format
 msgid "Export failed: %(error)s"
 msgstr "Ошибка экспорта: %(error)s"
 
-#: ui/editor_window.py:3739
+#: ui/editor_window.py:3744
 msgid "Save this edit?"
 msgstr "Сохранить эти изменения?"
 
-#: ui/editor_window.py:3739
+#: ui/editor_window.py:3744
 msgid "You have unsaved changes."
 msgstr "Есть несохранённые изменения."
 
-#: ui/editor_window.py:3741
+#: ui/editor_window.py:3746
 msgid "Discard"
 msgstr "Не сохранять"
 
