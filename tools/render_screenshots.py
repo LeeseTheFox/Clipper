@@ -42,7 +42,7 @@ def render_language(work: Path, language: str, theme: str) -> None:
     Adw.init()
     settings = Gtk.Settings.get_default()
     appearance = json.loads((FIXTURE / "environment.json").read_text())["appearance"]
-    settings.props.gtk_font_name = appearance["font_name"]
+    settings.props.gtk_font_name = f"{appearance['font_family']} {appearance['font_size']}"
     settings.props.gtk_enable_animations = False
     settings.props.gtk_xft_dpi = 96 * 1024
     settings.props.gtk_xft_antialias = 1
@@ -189,11 +189,12 @@ def render_language(work: Path, language: str, theme: str) -> None:
         if not snapshot(window, "audio"):
             later(capture_audio)
             return
+        window_size = (window.get_width(), window.get_height())
         window.cleanup()
         window.destroy()
-        capture_editor()
+        capture_editor(window_size)
 
-    def capture_editor():
+    def capture_editor(window_size: tuple[int, int]):
         import editor_waveform
         import editor_window
         from editor_model import EditorProject
@@ -238,7 +239,10 @@ def render_language(work: Path, language: str, theme: str) -> None:
 
         editor_window.EditorPreview = StillPreview
         editor = editor_window.EditorWindow(app, project, config, lambda _project: None)
-        editor.set_size_request(*editor.get_default_size())
+        # Match the actual main-window allocation, including its GTK layout,
+        # so all four banner sections share the same scale and frame.
+        editor.set_default_size(*window_size)
+        editor.set_size_request(*window_size)
         selected = project.segments[editor_data["selected_segment"]].id
         editor._set_selection({selected}, selected)
         editor._refresh(update_preview=False)
@@ -285,6 +289,7 @@ def main() -> None:
     if len(sys.argv) == 5 and sys.argv[2] == "--render":
         render_language(work, sys.argv[3], sys.argv[4])
         return
+    appearance = json.loads((FIXTURE / "environment.json").read_text())["appearance"]
     (work / "fonts.conf").write_text(f'''<?xml version="1.0"?>
 <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
 <fontconfig>
@@ -293,7 +298,7 @@ def main() -> None:
   <dir>{work / 'fonts'}</dir>
   <dir>/usr/share/fonts/dejavu</dir>
   <cachedir>{work / 'font-cache'}</cachedir>
-  <alias><family>sans-serif</family><prefer><family>Noto Sans</family></prefer></alias>
+  <alias><family>sans-serif</family><prefer><family>{appearance['font_family']}</family></prefer></alias>
   <alias><family>monospace</family><prefer><family>DejaVu Sans Mono</family></prefer></alias>
   <match target="font"><edit name="hintstyle" mode="assign"><const>hintslight</const></edit></match>
   <match target="font"><edit name="rgba" mode="assign"><const>none</const></edit></match>
@@ -321,6 +326,12 @@ def main() -> None:
             for theme in ("light", "dark"):
                 subprocess.run(["python3", __file__, str(work), "--render", language, theme],
                                check=True, timeout=25)
+        os.environ["FONTCONFIG_FILE"] = str(work / "fonts.conf")
+        from render_banner import render_banner
+
+        for language in sys.argv[2:]:
+            render_banner(work / "output" / language, appearance["font_family"])
+            print(f"Composed {language} README banner", flush=True)
     finally:
         server.terminate()
         server.wait(timeout=5)

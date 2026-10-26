@@ -4,6 +4,10 @@
   <a href="README.ru.md">Русский</a>
 </p>
 
+<p align="center">
+  <img src="assets/screenshots/en/banner.png" alt="Clipper" width="1200">
+</p>
+
 # Clipper
 
 Clipper is a Linux app for saving clips from your recent gameplay. Add the games
@@ -150,9 +154,9 @@ later builds reuse the local Flatpak Builder cache.
 - [Reproducible screenshots](tools/screenshot_fixture/README.md)
 
 Refresh every localized screenshot in both themes with
-`./tools/generate_screenshots.sh`. The bundled demo data needs no configured
-app, games, or clips. Use `./tools/generate_screenshots.sh --check` to verify
-identical reproduction.
+`./tools/generate_screenshots.sh`. This also generates the README banners.
+The bundled demo data needs no configured app, games, or clips. Use
+`./tools/generate_screenshots.sh --check` to verify identical reproduction.
 
 ## 💜 Contributing
 

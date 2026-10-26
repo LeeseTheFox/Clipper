@@ -4,6 +4,10 @@
   <strong>Русский</strong>
 </p>
 
+<p align="center">
+  <img src="assets/screenshots/ru/banner.png" alt="Clipper" width="1200">
+</p>
+
 # Clipper
 
 Clipper — это приложение для Linux, позволяющее сохранять клипы из недавнего
@@ -157,8 +161,9 @@ Builder.
 - [Воспроизводимые скриншоты](tools/screenshot_fixture/README.md)
 
 Обновите скриншоты на всех языках в обеих темах командой
-`./tools/generate_screenshots.sh`. Готовые демонстрационные данные не требуют
-настроенного приложения, игр или клипов. Команда
+`./tools/generate_screenshots.sh`. Эта команда также создаёт баннеры README.
+Готовые демонстрационные данные не требуют настроенного приложения, игр или
+клипов. Команда
 `./tools/generate_screenshots.sh --check` проверяет точное воспроизведение.
 
 ## 💜 Участие в разработке

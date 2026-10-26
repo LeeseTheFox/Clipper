@@ -4,6 +4,10 @@
   <a href="README.ru.md">Русский</a>
 </p>
 
+<p align="center">
+  <img src="assets/screenshots/uk/banner.png" alt="Clipper" width="1200">
+</p>
+
 # Clipper
 
 Clipper — це додаток для Linux, який дає змогу зберігати кліпи вашого геймплею.
@@ -158,8 +162,9 @@ Builder.
 - [Відтворювані знімки екрана](tools/screenshot_fixture/README.md)
 
 Оновіть знімки екрана всіма мовами в обох темах командою
-`./tools/generate_screenshots.sh`. Готові демонстраційні дані не потребують
-налаштованого застосунку, ігор або кліпів. Команда
+`./tools/generate_screenshots.sh`. Ця команда також створює банери README.
+Готові демонстраційні дані не потребують налаштованого застосунку, ігор або
+кліпів. Команда
 `./tools/generate_screenshots.sh --check` перевіряє точне відтворення.
 
 ## 💜 Участь у розробці

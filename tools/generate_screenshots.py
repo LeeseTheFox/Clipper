@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render the README gallery with the pinned GTK runtime and bundled scene."""
+"""Render the README banner and gallery with the pinned GTK runtime and bundled scene."""
 
 from __future__ import annotations
 
@@ -70,7 +70,7 @@ def manifest_source(module: str) -> tuple[str, str]:
 
 
 def prepare_sources(destination: Path) -> None:
-    """Reuse the manifest pins; never put dependency assets in the repository."""
+    """Prepare manifest-pinned dependencies and bundled, licensed fixture fonts."""
     cache = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
     cache = cache / "clipper-screenshots/downloads"
     cache.mkdir(parents=True, exist_ok=True)
@@ -106,23 +106,12 @@ def prepare_sources(destination: Path) -> None:
                     raise RuntimeError(f"Cannot read {member.name}")
                 with stream, target.open("wb") as output:
                     shutil.copyfileobj(stream, output)
-    appearance = json.loads((FIXTURE / "environment.json").read_text())["appearance"]
-    fonts = destination / "fonts"
-    fonts.mkdir()
-    for name, source in appearance["fonts"].items():
-        checksum = source["sha256"]
-        cached = cache / checksum
-        if not cached.is_file() or digest(cached) != checksum:
-            with urllib.request.urlopen(source["url"], timeout=60) as response:
-                payload = response.read()
-            if hashlib.sha256(payload).hexdigest() != checksum:
-                raise RuntimeError(f"Checksum mismatch: {name}")
-            cached.write_bytes(payload)
-        shutil.copyfile(cached, fonts / name)
+    # Bundled font files and their license are checked with the other fixtures.
+    shutil.copytree(FIXTURE / "fonts", destination / "fonts")
 
 
-def readme_with_dark_screenshots(content: str, language: str) -> str:
-    """Keep translated alt text and use dark screenshots in every README."""
+def readme_with_generated_images(content: str, language: str) -> str:
+    """Insert the banner and dark gallery while retaining translated alt text."""
     for scene in SCENES:
         image = re.compile(
             rf'(?P<indent> *)<img src="assets/screenshots/{re.escape(language)}/'
@@ -146,6 +135,17 @@ def readme_with_dark_screenshots(content: str, language: str) -> str:
             f'{match["attrs"]}>'
         )
         content = content[:start] + image_tag + content[end:]
+    banner = (
+        f'<p align="center">\n'
+        f'  <img src="assets/screenshots/{language}/banner.png" alt="Clipper" width="1200">\n'
+        f'</p>'
+    )
+    headings = list(re.finditer(r"^# Clipper[ \t]*$", content, re.MULTILINE))
+    if len(headings) != 1:
+        raise RuntimeError(f"Expected one Clipper heading in README for {language}")
+    if f'assets/screenshots/{language}/banner.png' not in content:
+        start = headings[0].start()
+        content = content[:start] + banner + "\n\n" + content[start:]
     return content
 
 
@@ -169,7 +169,7 @@ def main() -> int:
     if output == DEFAULT_OUTPUT:
         for language in languages:
             path = REPO / ("README.md" if language == "en" else f"README.{language}.md")
-            readmes[path] = readme_with_dark_screenshots(path.read_text(), language)
+            readmes[path] = readme_with_generated_images(path.read_text(), language)
     with tempfile.TemporaryDirectory(prefix="clipper-screenshots-") as temporary:
         work = Path(temporary)
         prepare_sources(work)
@@ -192,6 +192,7 @@ def main() -> int:
         print(result.stdout.strip())
         paths = [Path(language) / f"{scene}-{theme}.png"
                  for language in languages for theme in THEMES for scene in SCENES]
+        paths.extend(Path(language) / "banner.png" for language in languages)
         changed = []
         for relative in paths:
             generated = work / "output" / relative
@@ -219,7 +220,7 @@ def main() -> int:
         for path, content in readmes.items():
             if path.read_text() != content:
                 path.write_text(content)
-        print(f"Updated {len(paths)} screenshots; {len(readmes)} READMEs use dark screenshots")
+        print(f"Updated {len(paths)} images including banners; {len(readmes)} READMEs refreshed")
     return 0
 
 
