@@ -10,9 +10,6 @@ gi.require_version("Adw", "1")
 
 from capability_response import RecordingCapabilityProbe
 from config import (
-    DEFAULT_CLIP_SOUND_VOLUME,
-    MAX_CLIP_SOUND_VOLUME,
-    MIN_CLIP_SOUND_VOLUME,
     OUTPUT_FORMATS,
     REPLAY_BUFFER_SIZE_DEFAULT_MB,
 )
@@ -578,13 +575,10 @@ class SettingsView(Gtk.Box):
                 self._config.get("notify_on_clip_saved", True)
             )
             self._play_sound_on_clip_saved_switch.set_active(
-                self._config.get("play_sound_on_clip_saved", False)
+                self._config.get("play_sound_on_clip_saved", True)
             )
-            self._clip_sound_volume_scale.set_value(
-                self._config.get("clip_sound_volume", DEFAULT_CLIP_SOUND_VOLUME)
-            )
-            self._clip_sound_volume_scale.set_sensitive(
-                self._play_sound_on_clip_saved_switch.get_active()
+            self._play_sound_on_error_switch.set_active(
+                self._config.get("play_sound_on_error", True)
             )
         finally:
             self._suppress_signals = False
@@ -916,20 +910,6 @@ class SettingsView(Gtk.Box):
         if key == "quality_cqp":
             value = _slider_value_to_cqp(self._quality_scale.get_value())
             self._save_key_if_changed("quality_cqp", value, _CQP_DEFAULT)
-        elif key == "clip_sound_volume":
-            value = round(self._clip_sound_volume_scale.get_value(), 2)
-            self._save_key_if_changed(
-                "clip_sound_volume", value, DEFAULT_CLIP_SOUND_VOLUME
-            )
-
-    def _on_clip_sound_enabled_changed(self, switch, _param):
-        enabled = switch.get_active()
-        self._clip_sound_volume_scale.set_sensitive(enabled)
-        self._save_key("play_sound_on_clip_saved", enabled)
-
-    @staticmethod
-    def _format_clip_sound_volume(_scale, value, _user_data=None):
-        return f"{round(value * 100):d}%"
 
     def _on_bitrate_value_changed(self, spin):
         if self._suppress_signals:
@@ -1124,47 +1104,36 @@ class SettingsView(Gtk.Box):
 
         group.add(notification_row)
 
-        # Sound feedback
-        sound_row = Adw.ActionRow()
-        sound_row.set_title(_("Play sound when a clip is captured"))
-        sound_row.set_subtitle(_("Play audio feedback after saving a clip"))
-
-        self._play_sound_on_clip_saved_switch = Gtk.Switch()
-        self._play_sound_on_clip_saved_switch.set_valign(Gtk.Align.CENTER)
-        self._play_sound_on_clip_saved_switch.connect(
-            "notify::active",
-            self._on_clip_sound_enabled_changed,
+        sound_row, self._play_sound_on_clip_saved_switch = (
+            self._create_sound_feedback_row(
+                _("Play sound when a clip is captured"),
+                _("Play audio feedback after saving a clip"),
+                "play_sound_on_clip_saved",
+            )
         )
-        self._clip_sound_volume_scale = Gtk.Scale.new_with_range(
-            Gtk.Orientation.HORIZONTAL,
-            MIN_CLIP_SOUND_VOLUME,
-            MAX_CLIP_SOUND_VOLUME,
-            0.05,
-        )
-        self._clip_sound_volume_scale.set_value(DEFAULT_CLIP_SOUND_VOLUME)
-        self._clip_sound_volume_scale.set_draw_value(True)
-        self._clip_sound_volume_scale.set_value_pos(Gtk.PositionType.RIGHT)
-        self._clip_sound_volume_scale.set_size_request(150, -1)
-        self._clip_sound_volume_scale.set_valign(Gtk.Align.CENTER)
-        self._clip_sound_volume_scale.set_sensitive(False)
-        self._clip_sound_volume_scale.get_adjustment().set_page_increment(0.1)
-        self._clip_sound_volume_scale.set_format_value_func(
-            self._format_clip_sound_volume
-        )
-        self._clip_sound_volume_scale.update_property(
-            [Gtk.AccessibleProperty.LABEL], [_("Volume")]
-        )
-        self._clip_sound_volume_scale.set_tooltip_text(_("Volume"))
-        self._connect_deferred_scale(
-            self._clip_sound_volume_scale, "clip_sound_volume"
-        )
-        sound_row.add_suffix(self._clip_sound_volume_scale)
-        sound_row.add_suffix(self._play_sound_on_clip_saved_switch)
-        sound_row.set_activatable_widget(self._play_sound_on_clip_saved_switch)
-
         group.add(sound_row)
+        error_row, self._play_sound_on_error_switch = (
+            self._create_sound_feedback_row(
+                _("Play sound on errors"),
+                _("Play audio feedback for errors and recording crashes"),
+                "play_sound_on_error",
+            )
+        )
+        group.add(error_row)
 
         return group
+
+    def _create_sound_feedback_row(self, title, subtitle, enabled_key):
+        row = Adw.ActionRow(title=title, subtitle=subtitle)
+        switch = Gtk.Switch(valign=Gtk.Align.CENTER)
+        switch.connect(
+            "notify::active",
+            lambda widget, _param: self._save_key(enabled_key, widget.get_active()),
+        )
+
+        row.add_suffix(switch)
+        row.set_activatable_widget(switch)
+        return row, switch
 
     def create_app_settings(self):
         """Create app settings group"""

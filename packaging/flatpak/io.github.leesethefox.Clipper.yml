@@ -304,6 +304,7 @@ modules:
       - install -d /app/share/clipper/ui
       - find ui -maxdepth 1 -type f -name '*.py' ! -name 'test_*.py' -exec install -Dm644 '{}' '/app/share/clipper/{}' ';'
       - install -Dm644 ui/sounds/clip-saved.wav /app/share/clipper/ui/sounds/clip-saved.wav
+      - install -Dm644 ui/sounds/error.wav /app/share/clipper/ui/sounds/error.wav
       - python3 tools/validate_game_capture_payload.py /app --self-test
     sources:
       - type: dir

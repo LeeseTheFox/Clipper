@@ -89,8 +89,8 @@ def test_save_and_reload(tmp_path):
         "minimize_to_tray_on_close": True,
         "remember_window_sizes": False,
         "notify_on_clip_saved": False,
-        "play_sound_on_clip_saved": True,
-        "clip_sound_volume": 1.75,
+        "play_sound_on_clip_saved": False,
+        "play_sound_on_error": False,
         "rate_control": "vbr",
         "video_bitrate": 16000,
         "video_max_bitrate": 24000,
@@ -211,12 +211,20 @@ def test_portal_hotkey_display_state_round_trips_verbatim(tmp_path):
     assert cfg2["save_hotkey_portal_managed"] is True
 
 
-def test_clip_capture_sound_volume_is_clamped(tmp_path):
+def test_retired_feedback_gains_are_dropped_without_resetting_sound_preferences(tmp_path):
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps({
+        "clip_sound_volume": 2.0, "error_sound_volume": 1.8,
+        "play_sound_on_clip_saved": False, "play_sound_on_error": False,
+    }))
     cfg = make_config(tmp_path)
+    cfg.set("fps", 30)
 
-    cfg.set("clip_sound_volume", 3)
-
-    assert cfg["clip_sound_volume"] == 2.0
+    saved = json.loads(path.read_text())
+    assert "clip_sound_volume" not in saved
+    assert "error_sound_volume" not in saved
+    assert saved["play_sound_on_clip_saved"] is False
+    assert saved["play_sound_on_error"] is False
 
 
 def test_invalid_rate_control_rejected(tmp_path):

@@ -1,15 +1,14 @@
-"""Short, optional audio feedback for successful clip captures."""
+"""Short, optional audio feedback for clip captures and application errors."""
 
 from collections.abc import Callable
 from pathlib import Path
 
-from config import normalize_clip_sound_volume
-
 CLIP_SAVED_SOUND_PATH = Path(__file__).resolve().parent / "sounds" / "clip-saved.wav"
+ERROR_SOUND_PATH = Path(__file__).resolve().parent / "sounds" / "error.wav"
 
 
 class _GstSoundStream:
-    """Small GStreamer-backed stream that permits gain above 100%."""
+    """Small GStreamer-backed feedback stream."""
 
     def __init__(self, filename: str) -> None:
         import gi
@@ -20,8 +19,8 @@ class _GstSoundStream:
         Gst.init(None)
         self._gst = Gst
         self._pipeline = Gst.ElementFactory.make(
-            "playbin3", "clipper-capture-feedback"
-        ) or Gst.ElementFactory.make("playbin", "clipper-capture-feedback")
+            "playbin3", "clipper-sound-feedback"
+        ) or Gst.ElementFactory.make("playbin", "clipper-sound-feedback")
         if self._pipeline is None:
             raise RuntimeError("GStreamer playback is unavailable")
         self._pipeline.set_property("uri", Path(filename).resolve().as_uri())
@@ -39,8 +38,8 @@ class _GstSoundStream:
         self._pipeline.set_state(self._gst.State.NULL)
 
 
-class ClipSoundPlayer:
-    """Play the bundled clip-success sound while retaining the media stream."""
+class SoundPlayer:
+    """Play a bundled feedback sound while retaining the media stream."""
 
     def __init__(
         self,
@@ -51,8 +50,8 @@ class ClipSoundPlayer:
         self._media_factory = media_factory
         self._stream = None
 
-    def play(self, volume: float = 1.0) -> bool:
-        """Start playback and return whether the sound could be started."""
+    def play(self) -> bool:
+        """Start playback at 100% and return whether the sound could be started."""
         if not self._sound_path.is_file():
             return False
 
@@ -64,9 +63,9 @@ class ClipSoundPlayer:
             if media_factory is None:
                 media_factory = _GstSoundStream
             self._stream = media_factory(str(self._sound_path))
-            self._stream.set_volume(normalize_clip_sound_volume(volume))
+            self._stream.set_volume(1.0)
             self._stream.play()
-        except Exception:  # Audio feedback must never turn a saved clip into an error.
+        except Exception:  # Optional audio must never interrupt the operation being reported.
             self._stream = None
             return False
 

@@ -3,6 +3,7 @@ import sys
 import types
 from pathlib import Path
 
+import pytest
 from capability_response import RecordingCapabilityProbe
 
 
@@ -304,7 +305,7 @@ def _make_view(
     view._remember_window_sizes_switch = ActiveStub()
     view._notify_on_clip_saved_switch = ActiveStub()
     view._play_sound_on_clip_saved_switch = ActiveStub()
-    view._clip_sound_volume_scale = ValueStub(1.0)
+    view._play_sound_on_error_switch = ActiveStub()
     view._show_toast = lambda _message: None
     return view
 
@@ -573,38 +574,17 @@ def test_saved_custom_resolution_is_kept_and_selected_on_load():
     assert view._resolution_row.selected == view._resolution_values.index("1600x900")
 
 
-def test_sound_feedback_setting_is_loaded_into_switch():
+@pytest.mark.parametrize("sound", ["clip", "error"])
+def test_default_sound_feedback_can_be_disabled_independently_without_resaving(sound):
     view = _make_view()
-    view._config = ConfigStub(
-        {"play_sound_on_clip_saved": True, "clip_sound_volume": 1.65}
-    )
+    disabled_key = "play_sound_on_clip_saved" if sound == "clip" else "play_sound_on_error"
+    view._config = ConfigStub({disabled_key: False})
 
     view._load_from_config()
 
-    assert view._play_sound_on_clip_saved_switch.get_active() is True
-    assert view._clip_sound_volume_scale.get_value() == 1.65
-    assert view._clip_sound_volume_scale.sensitive is True
-
-
-def test_sound_feedback_switch_controls_volume_slider_and_is_saved():
-    view = _make_view()
-    view._config = ConfigStub()
-    switch = ActiveStub(True)
-
-    view._on_clip_sound_enabled_changed(switch, None)
-
-    assert view._clip_sound_volume_scale.sensitive is True
-    assert view._config.saved == [("play_sound_on_clip_saved", True)]
-
-
-def test_sound_feedback_volume_is_saved_as_gain():
-    view = _make_view()
-    view._config = ConfigStub()
-    view._clip_sound_volume_scale.set_value(1.35)
-
-    view._save_slider("clip_sound_volume")
-
-    assert view._config.saved == [("clip_sound_volume", 1.35)]
+    assert view._play_sound_on_clip_saved_switch.get_active() is (sound != "clip")
+    assert view._play_sound_on_error_switch.get_active() is (sound != "error")
+    assert view._config.saved == []
 
 
 def test_replay_buffer_size_is_loaded_from_config():

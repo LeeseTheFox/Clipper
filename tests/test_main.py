@@ -101,9 +101,6 @@ def _load_main_module():
 
     config = types.ModuleType("config")
     config.ClipperConfig = type("ClipperConfig", (), {})
-    config.normalize_clip_sound_volume = lambda value: max(
-        0.0, min(2.0, float(value))
-    )
 
     engine_client = types.ModuleType("engine_client")
     engine_client.STATE_CONNECTED = 2
@@ -168,7 +165,8 @@ def _load_main_module():
     setup_window.SetupWindow = type("SetupWindow", (), {})
 
     sound_feedback = types.ModuleType("sound_feedback")
-    sound_feedback.ClipSoundPlayer = type("ClipSoundPlayer", (), {})
+    sound_feedback.SoundPlayer = type("SoundPlayer", (), {})
+    sound_feedback.ERROR_SOUND_PATH = Path("error.wav")
 
     tray = types.ModuleType("tray")
     tray.ClipperTray = type(
@@ -364,13 +362,13 @@ class ConfigStub:
         whitelist: list[dict] | None = None,
         notify_on_clip_saved: bool = True,
         play_sound_on_clip_saved: bool = False,
-        clip_sound_volume: float = 1.0,
+        play_sound_on_error: bool = False,
     ) -> None:
         self._minimize_to_tray_on_close = minimize_to_tray_on_close
         self._whitelist = whitelist or []
         self._notify_on_clip_saved = notify_on_clip_saved
         self._play_sound_on_clip_saved = play_sound_on_clip_saved
-        self._clip_sound_volume = clip_sound_volume
+        self._play_sound_on_error = play_sound_on_error
 
     def get(self, key: str, default=None):
         if key == "minimize_to_tray_on_close":
@@ -381,8 +379,8 @@ class ConfigStub:
             return self._notify_on_clip_saved
         if key == "play_sound_on_clip_saved":
             return self._play_sound_on_clip_saved
-        if key == "clip_sound_volume":
-            return self._clip_sound_volume
+        if key == "play_sound_on_error":
+            return self._play_sound_on_error
         if key == "setup_completed":
             return True
         return default
@@ -1696,19 +1694,22 @@ def test_clip_saved_does_not_show_notification_when_disabled():
     app._on_clip_saved({"ok": True})
 
 
-def test_clip_saved_plays_sound_when_enabled():
+@pytest.mark.parametrize("enabled", [None, True], ids=["default", "enabled"])
+def test_clip_saved_plays_enabled_sound_without_using_legacy_gain(enabled):
     app = object.__new__(ClipperApplication)
-    app._config = ConfigStub(
-        False, play_sound_on_clip_saved=True, clip_sound_volume=1.6
-    )
-    app._clip_sound_player = types.SimpleNamespace(play=lambda _volume: True)
+    app._config = {
+        "clip_sound_volume": 2.0,
+        "notify_on_clip_saved": False,
+    }
+    if enabled is not None:
+        app._config["play_sound_on_clip_saved"] = enabled
     played = []
-    app._clip_sound_player.play = lambda volume: played.append(volume) or True
+    app._clip_sound_player = types.SimpleNamespace(play=lambda: played.append(True) or True)
     app.send_notification = lambda *_args: None
 
     app._on_clip_saved({"ok": True})
 
-    assert played == [1.6]
+    assert played == [True]
 
 
 def test_clip_saved_does_not_play_sound_when_disabled():
@@ -1730,6 +1731,27 @@ def test_failed_clip_does_not_play_success_sound():
     )
 
     app._on_clip_saved({"ok": False, "error": "Save failed"})
+
+
+@pytest.mark.parametrize("enabled", [None, False, True], ids=["default", "disabled", "enabled"])
+def test_failed_save_plays_only_enabled_error_feedback_and_still_shows_error(enabled):
+    app = make_status_application()
+    app._show_error = types.MethodType(ClipperApplication._show_error, app)
+    app._config = {"error_sound_volume": 2.0}
+    if enabled is not None:
+        app._config["play_sound_on_error"] = enabled
+    errors = []
+    played = []
+    app.window = types.SimpleNamespace(show_toast=errors.append)
+    # A missing audio backend must not suppress the actual save failure.
+    app._error_sound_player = types.SimpleNamespace(
+        play=lambda: played.append(True) or False
+    )
+
+    app._on_clip_saved({"ok": False, "error": "save_failed"})
+
+    assert played == ([] if enabled is False else [True])
+    assert len(errors) == 1
 
 
 def test_idle_engine_status_defaults_to_ready():
@@ -1931,18 +1953,25 @@ def test_unexpected_engine_exit_marks_window_crashed():
 @pytest.mark.parametrize("capturing", [False, True], ids=["startup", "recording"])
 def test_recording_crash_notifies_once_across_errors_timeouts_and_retries(capturing):
     app = make_status_application()
+    app._config = ConfigStub(False, play_sound_on_error=True)
+    played = []
+    app._error_sound_player = types.SimpleNamespace(
+        play=lambda: played.append(True) or True
+    )
     app._running_whitelist_entry = lambda *_args: {"name": "Game"}
     app._capture_starting = not capturing
     app._capture_active = capturing
 
     app._on_engine_error("Engine disconnected")
     assert not app._notifications
+    assert not played
     app._on_engine_exited(-11)
     app._capture_starting = True
     app._on_engine_deadline()
     app._on_engine_exited(1)
 
     assert len(app._notifications) == 1
+    assert played == [True]
     name, notification = app._notifications[0]
     assert name == "engine-crashed"
     assert "logs" in notification.body
@@ -1953,6 +1982,10 @@ def test_recording_crash_notifies_once_across_errors_timeouts_and_retries(captur
 @pytest.mark.parametrize("stop", ["restart", "normal", "shutdown", "idle-stop", "app-exit"])
 def test_expected_engine_stops_never_send_recording_crash_notifications(stop):
     app = make_status_application()
+    app._config = ConfigStub(False, play_sound_on_error=True)
+    app._error_sound_player = types.SimpleNamespace(
+        play=lambda: pytest.fail("Expected engine stops must be silent")
+    )
     app._capture_active = True
     app._engine_shutdown_pending = stop == "shutdown"
     app._idle_engine_exit_expected = stop == "idle-stop"
@@ -1963,6 +1996,11 @@ def test_expected_engine_stops_never_send_recording_crash_notifications(stop):
 
 def test_crash_alert_rearms_only_after_sustained_recording(monkeypatch):
     app = make_status_application()
+    app._config = ConfigStub(False, play_sound_on_error=True)
+    played = []
+    app._error_sound_player = types.SimpleNamespace(
+        play=lambda: played.append(True) or True
+    )
     app._capture_active = True
     timers = {}
     next_source = iter(range(10, 100))
@@ -1988,6 +2026,7 @@ def test_crash_alert_rearms_only_after_sustained_recording(monkeypatch):
     app._on_engine_exited(1)
     assert not timers
     assert len(app._notifications) == 1
+    assert len(played) == 1
 
     app._engine_manager._running = True
     app._on_engine_status_event({"buffer_active": True})
@@ -1996,6 +2035,7 @@ def test_crash_alert_rearms_only_after_sustained_recording(monkeypatch):
     assert app._withdrawn_notifications == ["engine-crashed"]
     app._on_engine_exited(1)
     assert len(app._notifications) == 2
+    assert len(played) == 2
 
 
 @pytest.mark.parametrize("interruption", ["buffer-stop", "ipc-disconnect"])

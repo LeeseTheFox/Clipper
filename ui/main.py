@@ -34,7 +34,7 @@ from capture_modes import (
     DEFAULT_CAPTURE_MODE,
     capture_mode_for_entry,
 )
-from config import ClipperConfig, normalize_clip_sound_volume
+from config import ClipperConfig
 from display_auth import normalize_display_auth_env
 from engine_client import STATE_CONNECTED, STATE_DISCONNECTED, EngineClient
 from engine_manager import RESTART_EXIT_CODE, EngineProcessManager
@@ -57,7 +57,7 @@ from logs import LogBuffer, consume_handoff, create_handoff, install_diagnostics
 from monitor_ipc import MonitorIpcServer, default_monitor_socket_path
 from monitor_manager import HostMonitorManager
 from process_watcher import monitor_rule_id
-from sound_feedback import ClipSoundPlayer
+from sound_feedback import ERROR_SOUND_PATH, SoundPlayer
 from tray import ClipperTray
 from updates import graphics_runtime_removed
 
@@ -169,7 +169,8 @@ class ClipperApplication(Adw.Application):
         self._config = ClipperConfig()
         self._log_buffer = log_buffer if log_buffer is not None else LogBuffer()
         install_diagnostics(self._log)
-        self._clip_sound_player = ClipSoundPlayer()
+        self._clip_sound_player = SoundPlayer()
+        self._error_sound_player = SoundPlayer(ERROR_SOUND_PATH)
         self._autostart_manager = AutostartManager()
         self._tray: ClipperTray | None = None
         self._engine_client: EngineClient | None = None
@@ -1344,15 +1345,12 @@ class ClipperApplication(Adw.Application):
             refresh = getattr(clips_view, "refresh", None)
             if callable(refresh):
                 refresh()
-            if self._config.get("play_sound_on_clip_saved", False):
+            if self._config.get("play_sound_on_clip_saved", True):
                 player = getattr(self, "_clip_sound_player", None)
                 if player is None:
-                    player = ClipSoundPlayer()
+                    player = SoundPlayer()
                     self._clip_sound_player = player
-                volume = normalize_clip_sound_volume(
-                    self._config.get("clip_sound_volume", 1.0)
-                )
-                if not player.play(volume):
+                if not player.play():
                     self._log("Could not play clip saved sound")
             if self._config.get("notify_on_clip_saved", True):
                 notification = Gio.Notification.new(_("Clip captured"))
@@ -1465,8 +1463,15 @@ class ClipperApplication(Adw.Application):
     def _show_error(self, message: str):
         """Show an error message to the user."""
         self._log(f"Error: {message}")
+        self._play_error_sound()
         if self.window and hasattr(self.window, "show_toast"):
             self.window.show_toast(message)
+
+    def _play_error_sound(self) -> None:
+        if not self._config.get("play_sound_on_error", True):
+            return
+        if not self._error_sound_player.play():
+            self._log("Could not play error sound")
 
     def _log(self, message: str) -> None:
         """Record a message for the debug log viewer and standard output."""
@@ -1713,6 +1718,7 @@ class ClipperApplication(Adw.Application):
         notification.add_button(_("Show logs"), "app.show-logs")
         self.send_notification(_ENGINE_CRASH_NOTIFICATION_ID, notification)
         self._engine_crash_notified = True
+        self._play_error_sound()
 
     def _on_engine_healthy(self) -> bool:
         """Rearm crash alerts only after uninterrupted, working recording."""
