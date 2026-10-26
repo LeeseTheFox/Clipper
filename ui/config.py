@@ -529,7 +529,9 @@ class ClipperConfig:
 
             if isinstance(existing, dict):
                 for key in ENGINE_MANAGED_KEYS:
-                    if not data_to_save.get(key) and existing.get(key):
+                    # The engine can rotate its token after this UI instance
+                    # loads. Ordinary preference saves must keep its latest value.
+                    if existing.get(key):
                         data_to_save[key] = existing[key]
 
         dir_fd = self._path.parent

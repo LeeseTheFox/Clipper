@@ -115,9 +115,13 @@ def test_save_and_reload(tmp_path):
     assert not list(tmp_path.glob("*.tmp"))
 
 
-def test_save_preserves_engine_managed_pipewire_restore_token(tmp_path):
-    cfg = make_config(tmp_path)
+@pytest.mark.parametrize("loaded_token", ["", "older-engine-token"])
+def test_preference_save_preserves_newer_engine_token(tmp_path, loaded_token):
     cfg_path = tmp_path / "config.json"
+    cfg_path.write_text(
+        json.dumps({"pipewire_restore_token": loaded_token}), encoding="utf-8"
+    )
+    cfg = make_config(tmp_path)
     cfg_path.write_text(
         json.dumps({"pipewire_restore_token": "engine-token"}),
         encoding="utf-8",
@@ -128,6 +132,7 @@ def test_save_preserves_engine_managed_pipewire_restore_token(tmp_path):
     saved = json.loads(cfg_path.read_text(encoding="utf-8"))
     assert saved["fps"] == 30
     assert saved["pipewire_restore_token"] == "engine-token"
+    assert cfg["pipewire_restore_token"] == "engine-token"
 
 
 def test_clear_pipewire_restore_token_bypasses_preservation(tmp_path):
