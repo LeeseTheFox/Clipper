@@ -8,6 +8,10 @@ This file gives coding agents the minimum repo-specific instructions needed to w
 ignored. Never stage, commit, or publish it, including with `git add -f`; requests
 to update both instruction files do not authorize publishing the override.
 
+Shared project guidance belongs in agent-neutral files. Read any directory-level
+`AGENTS.md` governing a file before editing it. Agent-specific entry points should
+refer to shared guidance rather than maintain separate copies of project rules.
+
 ## Project Layout
 
 - `clipper`: top-level launcher for the engine + UI
@@ -119,6 +123,30 @@ to update both instruction files do not authorize publishing the override.
 - Do not install or reinstall the Clipper Flatpak automatically. Before running `./tools/install_flatpak_quiet.sh`, obtain explicit user consent or follow an explicit user direction.
 - Do not add new project/runtime dependencies unless the task requires them.
 
+## Code Integrity
+
+Read [Clipper danger patterns](.agents/rules/ai-danger-patterns.md) before a
+non-trivial code change and review the diff against it before finishing. It
+covers failure handling, platform identity, boundary validation, control flow,
+abstractions, asynchronous ownership and safe file publication. These are
+correctness requirements, not a reason to rewrite unrelated working code.
+
+Before changing a compatibility boundary, read its canonical contract:
+
+- Shared configuration ownership and engine IPC: [engine/README.md](engine/README.md).
+- Update assets, installation scope and restart: [docs/auto-updates.md](docs/auto-updates.md).
+- Diagnostic routing and sensitive data: [docs/logging.md](docs/logging.md).
+
+### Final review
+
+- Follow changed paths through success, failure, cancellation, reconnect and
+  shutdown where applicable. Check that stale work cannot affect a new owner.
+- Review the complete diff and working tree. Keep unrelated changes and local
+  overrides out of commits; keep each commit focused on one logical change.
+- Report the checks actually run, their outcomes and any unresolved blockers.
+  Distinguish automated regression checks from real rendering, GPU, capture or
+  packaging validation. Do not describe an unrun check as passing.
+
 ## Documentation Policy
 
 - Keep repository docs useful to future readers: describe current behavior,
@@ -129,6 +157,15 @@ to update both instruction files do not authorize publishing the override.
 - Update existing guidance when behavior changes and remove obsolete statements
   instead of appending a chronological account. Keep translated READMEs aligned
   when changing user-facing instructions.
+- Keep each rule or contract in one canonical place and link to it elsewhere.
+  Put non-obvious constraints beside the code they protect; comments describe
+  current behavior and consequences, while change history belongs in commits.
+- Keep agent guidance focused on constraints that are costly or unsafe to
+  rediscover. Avoid source inventories, changing counts and configuration
+  snapshots. Put directory-specific guidance in the narrowest applicable scope.
+- Prefer an existing check or meaningful regression test for enforceable rules.
+  Do not add a parallel review ritual or tool-specific skill merely to repeat
+  guidance already covered here.
 
 ## Commit Messages
 
