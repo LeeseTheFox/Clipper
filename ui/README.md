@@ -2,7 +2,9 @@
 
 The UI is a Python application built with GTK4 and libadwaita. It owns the things people interact with: configuration, game detection, hotkeys, tray integration, notifications, and the lifetime of the recording engine.
 
-The engine runs separately. UI and engine exchange newline-delimited JSON over a Unix socket, so the GTK process does not need to carry the OBS/libobs work.
+The engine runs separately, so the GTK process does not need to carry the
+OBS/libobs work. See the [engine IPC contract](../engine/README.md#ipc) for
+message framing, reply ordering, and asynchronous save completion.
 
 ## Layout
 
@@ -10,7 +12,9 @@ The engine runs separately. UI and engine exchange newline-delimited JSON over a
 - `main_window.py` owns the **Clips**, **Games**, and **Audio** pages, the **Preferences** dialog, and the engine status indicator.
 - `engine_manager.py` starts `clipper-engine` and reports readiness and process exit. `engine_client.py` fetches state on connection and receives subsequent status events; the UI does not periodically poll the engine.
 - `monitor_manager.py` runs the same process-monitor helper on the host in Flatpak builds and directly in native runs. Complete snapshots restore game state after reconnects.
-- `config.py` writes JSON configuration atomically under the XDG config directory.
+- `config.py` writes JSON configuration atomically under the XDG config directory;
+  see [shared configuration ownership](../engine/README.md#shared-configuration)
+  before changing persistence.
 
 ## Clip editor
 

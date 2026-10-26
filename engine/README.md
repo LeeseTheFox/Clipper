@@ -11,7 +11,21 @@
 - Reports available encoders, formats, devices, capture modes, and audio sources to the UI.
 - Routes one mixed track or up to six separate tracks, including microphone and runtime PipeWire application-audio sources.
 
-The engine reads `$XDG_CONFIG_HOME/clipper/config.json`, falling back to `~/.config/clipper/config.json`. The UI normally starts it with either `--capture-mode display_capture` or `--capture-mode game_capture`.
+The UI normally starts the engine with either `--capture-mode display_capture` or `--capture-mode game_capture`.
+
+## Shared configuration
+
+The UI and engine share `$XDG_CONFIG_HOME/clipper/config.json`, falling back to
+`~/.config/clipper/config.json` when `XDG_CONFIG_HOME` is unset or empty. In the
+Flatpak these paths belong to the application's sandbox.
+
+The UI owns user preferences. The engine writes `pipewire_restore_token` after
+the desktop portal issues a token. Ordinary UI saves reread the file and preserve
+the latest nonempty engine-owned token, even when memory holds an older one.
+Clearing the display selection and factory reset intentionally bypass that
+preservation through the dedicated configuration methods in `ui/config.py`.
+Both writers replace the JSON file atomically; this prevents partial reads but
+does not serialize simultaneous writes.
 
 ## Build and run
 
@@ -30,7 +44,20 @@ For focused debugging, the engine also accepts `--socket`, `--output-dir`, `--ma
 
 The common commands are `get_status`, `get_capabilities`, `get_audio_capabilities`, `list_audio_sources`, `start_replay_buffer`, `stop_replay_buffer`, `save_replay_buffer`, `update_audio_volumes`, `get_preview_frame`, and `shutdown`.
 
-Each response contains `ok`. Asynchronous events include `status_changed` and `clip_saved`.
+The wire format is UTF-8 JSON objects separated by newlines. A socket read can
+contain part of a message or several messages. Commands contain `cmd`; responses
+contain `ok`; asynchronous events contain `event`. Replies arrive in command
+order on each connection, without request IDs. The client must reserve a reply
+slot even for commands without callbacks. Events may arrive between replies and
+must not consume those slots. Engine responses and event broadcasts share the
+client write mutex so their bytes cannot interleave within a message.
+
+A successful `save_replay_buffer` response only acknowledges the request.
+`clip_saved` or `clip_save_failed` reports its completion. The UI permits one
+pending save, waits for completion before notifying the user, and blocks an
+update restart while a save is pending. A rejected command releases the pending
+save immediately. Keep these rules aligned with `ui/engine_client.py` and the
+engine IPC tests when changing either end of the protocol.
 
 ## Validate changes
 
