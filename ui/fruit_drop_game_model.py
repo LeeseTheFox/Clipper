@@ -22,7 +22,7 @@ PHYSICS_STEP_SECONDS = 1.0 / 120.0
 MERGE_CONTACT_TOLERANCE = 0.5
 
 # The deliberately compact set of eleven growing fruit is enough for the
-# familiar Suika-style progression without making the little board too busy.
+# fruit-merging progression without making the little board too busy.
 # Every step is visibly larger than the last, even at the small end.
 FRUIT_RADII = (10.0, 14.0, 19.0, 25.0, 32.0, 41.0, 52.0, 65.0, 80.0, 98.0, 120.0)
 FRUIT_POINTS = (1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66)

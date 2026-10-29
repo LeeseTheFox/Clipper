@@ -2331,11 +2331,11 @@ class ClipperApplication(Adw.Application):
             self._fruit_drop_window.destroy()
             self._fruit_drop_window = None
 
-        from suika_game import SuikaGameWindow
+        from fruit_drop_game import FruitDropGameWindow
 
         saved_score = self._config.get("fruit_drop_high_score", 0)
         high_score = saved_score if type(saved_score) is int and saved_score >= 0 else 0
-        game_window = SuikaGameWindow(
+        game_window = FruitDropGameWindow(
             transient_for=self.window,
             high_score=high_score,
             high_score_changed=self._save_fruit_drop_high_score,

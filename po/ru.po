@@ -1440,6 +1440,30 @@ msgstr ""
 msgid "Wipe edits"
 msgstr "Удалить правки"
 
+#: ui/fruit_drop_game.py:53 ui/fruit_drop_game.py:69
+msgid "Fruit drop"
+msgstr "Фруктопад"
+
+#: ui/fruit_drop_game.py:82
+msgid "Score"
+msgstr "Счёт"
+
+#: ui/fruit_drop_game.py:83
+msgid "Best"
+msgstr "Лучший"
+
+#: ui/fruit_drop_game.py:96
+msgid "Fruit drop game board"
+msgstr "Игровое поле «Фруктопад»"
+
+#: ui/fruit_drop_game.py:171
+msgid "Game over"
+msgstr "Игра окончена"
+
+#: ui/fruit_drop_game.py:174
+msgid "Play again"
+msgstr "Играть снова"
+
 #: ui/game_details.py:15 ui/game_details.py:40 ui/game_details.py:41
 #: ui/game_details_dialog.py:74 ui/game_details_dialog.py:77
 #: ui/game_details_dialog.py:100 ui/game_details_dialog.py:150
@@ -2402,30 +2426,6 @@ msgstr "Начать работу с Clipper"
 #: ui/shortcut_dialog.py:48
 msgid "Shortcuts"
 msgstr "Горячие клавиши"
-
-#: ui/suika_game.py:53 ui/suika_game.py:69
-msgid "Fruit drop"
-msgstr "Фруктопад"
-
-#: ui/suika_game.py:82
-msgid "Score"
-msgstr "Счёт"
-
-#: ui/suika_game.py:83
-msgid "Best"
-msgstr "Лучший"
-
-#: ui/suika_game.py:96
-msgid "Fruit drop game board"
-msgstr "Игровое поле «Фруктопад»"
-
-#: ui/suika_game.py:171
-msgid "Game over"
-msgstr "Игра окончена"
-
-#: ui/suika_game.py:174
-msgid "Play again"
-msgstr "Играть снова"
 
 #: ui/tray.py:143
 msgid "Idle"

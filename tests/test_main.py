@@ -312,9 +312,9 @@ def test_fruit_drop_always_starts_with_a_fresh_window(monkeypatch):
         def present(self):
             self.presented = True
 
-    module = types.ModuleType("suika_game")
-    module.SuikaGameWindow = NewWindow
-    monkeypatch.setitem(sys.modules, "suika_game", module)
+    module = types.ModuleType("fruit_drop_game")
+    module.FruitDropGameWindow = NewWindow
+    monkeypatch.setitem(sys.modules, "fruit_drop_game", module)
 
     app = object.__new__(ClipperApplication)
     previous_window = ExistingWindow()

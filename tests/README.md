@@ -104,7 +104,7 @@ implementations, even where their cases look similar.
 | sound_feedback | Play the bundled asset with bounded gain and tolerate missing/unavailable media. |
 | startup_benchmark | Measure the right processes and decode desktop presentation/handoff state accurately. |
 | steam | Discover installations/accounts and change launch options without corrupting or claiming user-owned data. |
-| suika_game_model | Keep drops in bounds and prevent perfectly balanced towers from repeated drops. Preserve momentum when fruit merge at resting or solver-created contacts, and limit size-scaled impulses to nearby fruit. Check scoring, terminal-size rules, per-fruit overflow grace periods and resets, and fixed-step physics independent of rendering frame times. |
+| fruit_drop_game_model | Keep drops in bounds and prevent perfectly balanced towers from repeated drops. Preserve momentum when fruit merge at resting or solver-created contacts, and limit size-scaled impulses to nearby fruit. Check scoring, terminal-size rules, per-fruit overflow grace periods and resets, and fixed-step physics independent of rendering frame times. |
 | text_helpers | Preserve readable/full labels and escape user-controlled markup. |
 | theme_adaptation | Parse editor CSS with GTK and reject errors. |
 | tray | Maintain the public D-Bus/icon contract and flush replies before activation or shutdown. |

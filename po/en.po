@@ -1425,6 +1425,30 @@ msgstr "All cuts and audio changes for '%(name)s' will be permanently removed."
 msgid "Wipe edits"
 msgstr "Wipe edits"
 
+#: ui/fruit_drop_game.py:53 ui/fruit_drop_game.py:69
+msgid "Fruit drop"
+msgstr "Fruit drop"
+
+#: ui/fruit_drop_game.py:82
+msgid "Score"
+msgstr "Score"
+
+#: ui/fruit_drop_game.py:83
+msgid "Best"
+msgstr "Best"
+
+#: ui/fruit_drop_game.py:96
+msgid "Fruit drop game board"
+msgstr "Fruit drop game board"
+
+#: ui/fruit_drop_game.py:171
+msgid "Game over"
+msgstr "Game over"
+
+#: ui/fruit_drop_game.py:174
+msgid "Play again"
+msgstr "Play again"
+
 #: ui/game_details.py:15 ui/game_details.py:40 ui/game_details.py:41
 #: ui/game_details_dialog.py:74 ui/game_details_dialog.py:77
 #: ui/game_details_dialog.py:100 ui/game_details_dialog.py:150
@@ -2382,30 +2406,6 @@ msgstr "Start using Clipper"
 #: ui/shortcut_dialog.py:48
 msgid "Shortcuts"
 msgstr "Shortcuts"
-
-#: ui/suika_game.py:53 ui/suika_game.py:69
-msgid "Fruit drop"
-msgstr "Fruit drop"
-
-#: ui/suika_game.py:82
-msgid "Score"
-msgstr "Score"
-
-#: ui/suika_game.py:83
-msgid "Best"
-msgstr "Best"
-
-#: ui/suika_game.py:96
-msgid "Fruit drop game board"
-msgstr "Fruit drop game board"
-
-#: ui/suika_game.py:171
-msgid "Game over"
-msgstr "Game over"
-
-#: ui/suika_game.py:174
-msgid "Play again"
-msgstr "Play again"
 
 #: ui/tray.py:143
 msgid "Idle"
