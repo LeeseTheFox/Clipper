@@ -1,15 +1,16 @@
 # Building Clipper as a Flatpak
 
-This directory holds the standalone Flatpak package for Clipper.
+This directory contains the manifest and metadata for Clipper’s standalone
+Flatpak package.
 
-## Files here
+## Files
 
 - `io.github.leesethefox.Clipper.yml` is the manifest.
 - `io.github.leesethefox.Clipper.desktop` is the exported desktop entry.
 - `io.github.leesethefox.Clipper.metainfo.xml` is the AppStream metadata.
-- `lint-exceptions.json` records the intentional `finish-args-flatpak-spawn-access` exception.
+- `lint-exceptions.json` lists approved Flatpak linter exceptions.
 
-## Check the package quickly
+## Package checks
 
 These checks do not compile OBS/libobs:
 
@@ -26,41 +27,64 @@ To check an installed local build without rebuilding it:
 ./tools/flatpak_smoke_test.py
 ```
 
-The smoke test checks installed metadata, starts the packaged engine, saves a display-capture clip, and verifies host-monitor IPC through `flatpak-spawn --host`. Add `--isolated-data` when you want temporary HOME and XDG data directories.
+The smoke test checks installed metadata, starts the packaged engine, saves a
+display-capture clip, and checks host-monitor IPC through `flatpak-spawn --host`.
+Use `--isolated-data` to run with temporary HOME and XDG data directories.
 
 ## Build it
 
-OBS/libobs builds use substantial memory and disk. Always use the bounded wrapper from the repository root:
+Install Flatpak Builder and the GNOME 51 SDK:
+
+```bash
+flatpak install --user flathub org.gnome.Sdk//51 org.flatpak.Builder
+```
+
+The build wrapper also requires `systemd-run`.
+
+OBS/libobs builds use substantial memory and disk. From the repository root,
+use the build wrapper to limit resource use:
 
 ```bash
 ./tools/run_flatpak_build_quiet.sh
 ```
 
-It limits the build to 6 GiB of memory, disables swap, and uses one job. It reuses the Flatpak Builder cache, downloading only missing pinned sources. The first build can therefore need network access.
+The wrapper limits the build to 6 GiB of memory, disables swap, and uses one
+job. It reuses the Flatpak Builder cache and downloads missing pinned sources.
+The first build requires network access.
 
-Do not commit local build output. `.gitignore` excludes `build-dir/`, `build-dir-bounded/`, `build-dir-download/`, `repo/`, and `.flatpak-builder/`.
+Keep build output out of commits. `.gitignore` excludes `build-dir/`,
+`build-dir-bounded/`, `build-dir-download/`, `repo/`, and `.flatpak-builder/`.
 
-Install the completed local build with:
+## Install a local build
+
+Install the completed build with:
 
 ```bash
 ./tools/install_flatpak_quiet.sh
 ```
 
-The installer exports and prepares a bundle before closing Clipper. `repo/` is
-build output, not an application update source: local builds and GitHub releases
-are installed as bundles, and Clipper's updater manages release updates.
+The installer prepares the bundle before closing Clipper. Both local builds
+and GitHub releases are installed as bundles; Clipper’s updater handles release
+updates. The local `repo/` directory is only build output.
+
 If the installed app still has a repository origin, the installer migrates it
 once through a normal uninstall and bundle install. It retains application data,
 including settings, editor drafts and exported game-capture hooks. Subsequent
 installs replace the bundle without repeating the migration.
 
-## Why Clipper talks to Flatpak
+## Host access
 
-The manifest requests `--talk-name=org.freedesktop.Flatpak` so Clipper can run its own fixed host-monitor helper with `flatpak-spawn --host`. Flatpak hides the host process list, and no XDG portal lets an app watch an allowlist of host processes.
+The manifest requests `--talk-name=org.freedesktop.Flatpak` to run Clipper’s
+host-monitor helper through `flatpak-spawn --host`. Flatpak hides host processes,
+and no XDG portal supports watching the configured games. This helper lets
+Clipper detect when those games start and stop.
 
-The helper only checks processes, drives its monitor service, and handles the explicit Steam restart flow. It does not run as root, accept shell snippets or arbitrary commands, launch games, modify Steam launch options, or inject into games.
+The helper checks processes, manages the monitor service, and handles requested
+Steam restarts. It runs without root privileges and accepts only fixed
+operations. It cannot run arbitrary commands or shell snippets, launch games,
+change Steam launch options, or inject into games.
 
-Clip disposal normally uses the desktop trash portal. If it returns a generic
+Deleting clips normally uses the desktop trash portal. If it returns a generic
 failure for a regular clip, Clipper uses the existing host access to try the
 host's `gio trash` utility. The fallback verifies the file's device and inode
 before trashing, preserves the host trash location and directory permissions,
@@ -72,11 +96,11 @@ fallback fails, Clipper reports the failure and retains the clip's editor data.
 The package builds x86_64 and i386 Vulkan/OpenGL hooks and the OBS receiver from
 the same pinned obs-vkcapture revision. Only the hooks use a GLIBC 2.17 build
 sysroot; its RPMs and libraries are build inputs, not installed dependencies.
-The receiver uses a per-user Clipper socket so an OBS installation cannot take
-its connection. The build validates ELF architecture, ABI imports, library
+The receiver uses a per-user Clipper socket to avoid connection conflicts
+with OBS. The build validates ELF architecture, ABI imports, library
 paths, hashes, licenses, and both architectures' ability to load the hooks.
 
-At runtime Clipper copies the small payload to
+At runtime Clipper copies the game-capture files to
 `~/.var/app/io.github.leesethefox.Clipper/data/game-capture`, activating updates
 atomically. Flatpak Steam gets read access to this directory through one
 per-user filesystem override, which applies to user and system Steam installs.
@@ -101,11 +125,13 @@ Clipper prefix can be removed safely. Older payload versions are retained so
 already-running games can continue loading their libraries.
 
 Native glibc Linux and Flatpak Steam are the supported game-capture targets.
-Unsupported third-party sandboxes (including Steam Snap) should use display capture.
+Use Display capture for other sandboxes, including Steam Snap.
 ARM, native musl games, and anti-cheat-restricted injection are not covered by
 the x86_64/i386 payload.
 
-For real frame verification, compile `engine/gamecapture/frame_harness.c` with
+## Check captured frames
+
+To verify captured frames, compile `engine/gamecapture/frame_harness.c` with
 `-lGL -lX11 -lvulkan`, then run
 `./venv/bin/python tools/game_capture_frame_smoke.py /absolute/path/to/harness --api vulkan`
 (or `--api opengl`). The test uses the installed Clipper receiver, saves a clip,
@@ -140,16 +166,18 @@ compatible with an arbitrary host OBS installation.
   copy budget; CPY2 aligns copies with the consumer's monotonic deadline. Old
   peers retain compatible fixed-size messages. Neither path limits game FPS.
 
-For troubleshooting, explicit `0` disables each corresponding optimization in
-the engine environment: `CLIPPER_VAAPI_IMPORT_CACHE`,
+## Troubleshoot capture patches
+
+Set any of these engine environment variables to `0` to disable that
+optimization: `CLIPPER_VAAPI_IMPORT_CACHE`,
 `CLIPPER_VAAPI_DIRECT_SURFACES`, `CLIPPER_NATIVE_CAPTURE`, and
 `CLIPPER_HOOK_COPY_PACING`. The smoke tool exposes matching `--no-...` options.
-Native capture requires direct surfaces; import-cache controls affect the
+Native capture requires direct surfaces. Import-cache controls affect the
 ordinary copy path. Keep FFmpeg's default encoder queue depth.
 
 GNOME 51 supplies the FFmpeg VAAPI teardown fixes needed for repeated replay
 sessions. Its SDK also requires `-fno-link-libatomic` when linking the static host
-monitor. Test restart resource stability with:
+monitor. Check resource use across repeated engine restarts with:
 
 ```bash
 ./venv/bin/python tools/smoke_replay_saves.py \
@@ -171,5 +199,5 @@ Run capture checks sequentially because the receiver socket is shared. The
 OpenGL chart checks color and orientation; Vulkan checks changing frame IDs.
 Native unit tests extract packaged C functions using
 `tools/generate_native_test_headers.py` and compile them against driver stubs.
-They cover guards and resource lifetimes, but hardware smoke tests are still
-needed for pixels and synchronization. These checks do not measure gameplay FPS.
+These unit tests check guards and resource lifetimes. Use hardware smoke tests
+to verify rendered frames and synchronization. Neither check measures gameplay FPS.
