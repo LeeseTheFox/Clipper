@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import game_details
 import pytest
-from game_details import replace_executable, steam_details
+from game_details import replace_executable, steam_details, updated_game
 
 
 def test_replace_updates_detection_preserves_settings_and_does_not_mutate(tmp_path):
@@ -111,3 +111,44 @@ def test_missing_steam_metadata_does_not_guess(monkeypatch):
         "42",
         "Not available",
     )
+
+
+def test_capture_edit_keeps_process_scope_and_concurrently_learned_metadata():
+    # Host-observed sandbox paths need not exist in Clipper's own namespace.
+    original = {
+        "path": "/app/bin/game", "flatpak_id": "first.app", "match_mode": "executable",
+        "capture_mode": "display_capture", "process_name": "game-main",
+    }
+    current = dict(original, audio_process="learned-audio", icon_path="cached-icon")
+    other = dict(current, flatpak_id="second.app")
+    updated = updated_game([current, other], original, original["path"], "game_capture")
+    assert updated == [dict(current, capture_mode="game_capture"), other]
+    assert current["capture_mode"] == "display_capture"
+    with pytest.raises(ValueError, match="changed"):
+        updated_game(updated, original, original["path"], "game_capture")
+
+
+def test_details_can_update_executable_and_capture_method_together(tmp_path):
+    executable = tmp_path / "new.exe"
+    executable.touch()
+    original = {"path": "old.exe", "capture_mode": "display_capture"}
+    result = updated_game([original], original, str(executable), "game_capture")
+    assert result[0]["executable_path"] == str(executable)
+    assert result[0]["capture_mode"] == "game_capture"
+
+
+def test_steam_capture_edit_targets_saved_account_without_editing_executable():
+    original = {
+        "appid": "1", "steam_installation": "chosen", "steam_account_id": "42",
+        "capture_mode": "game_capture",
+        "game_capture_integration": {"managed_launch_options": True},
+    }
+    other = dict(original, steam_account_id="43")
+    result = updated_game([original, other], original, None, "display_capture")
+    assert result == [
+        {key: value for key, value in dict(original, capture_mode="display_capture").items()
+         if key != "game_capture_integration"},
+        other,
+    ]
+    with pytest.raises(ValueError, match="changed"):
+        updated_game([other], original, None, "display_capture")

@@ -364,6 +364,15 @@ class SteamInstallation:
     game_visible_data_root: Path | None = None
 
 
+@dataclass
+class CaptureChange:
+    entry: dict
+    installation: SteamInstallation
+    running: bool
+    previous: dict | None = None
+    remove: bool = False
+
+
 @dataclass(frozen=True)
 class SteamAccount:
     account_id: str
@@ -567,31 +576,62 @@ def capture_updates(config) -> list[tuple[dict, SteamInstallation, bool]]:
 
 
 def apply_capture_updates(config, updates: list[tuple[dict, SteamInstallation, bool]]) -> None:
-    for environment in dict.fromkeys(item.environment for _entry, item, _running in updates):
-        group = [item for item in updates if item[1].environment == environment]
+    changes = []
+    for previous, installation, running in updates:
+        entry = dict(
+            previous,
+            steam_installation=installation.stable_id,
+            steam_environment=installation.environment.value,
+        ) if previous else {}
+        if entry:
+            entry["steam_account_id"] = select_steam_account(
+                installation.data_root, entry.get("steam_account_id")
+            ).account_id
+        changes.append(CaptureChange(entry, installation, running, previous))
+    apply_capture_changes(config, changes)
+
+
+def apply_capture_changes(config, changes: list[CaptureChange]) -> None:
+    """Apply additions, edits or removals with one restart per running client.
+
+    Each entry retains the existing write-ahead recovery contract. Completed
+    entries survive a later failure; recover the interrupted entry before Steam
+    can restart and rewrite its configuration.
+    """
+    from capture_modes import CAPTURE_MODE_GAME, capture_mode_for_entry
+
+    for environment in dict.fromkeys(change.installation.environment for change in changes):
+        group = [change for change in changes if change.installation.environment == environment]
 
         def commit(group=group, environment=environment):
             recover_capture_change(config)
-            for previous, installation, _running in group:
-                if not previous:
-                    continue  # Recovery-only work, including an interrupted first add.
-                entry = dict(
-                    previous,
-                    steam_installation=installation.stable_id,
-                    steam_environment=environment.value,
-                )
-                entry["steam_account_id"] = select_steam_account(
-                    installation.data_root, entry.get("steam_account_id")
-                ).account_id
-                apply_game_capture_update_transaction(
-                    config,
-                    previous,
-                    entry,
-                    str(game_capture.wrapper_path()),
-                    installation.data_root,
-                )
+            try:
+                for change in group:
+                    entry, installation = change.entry, change.installation
+                    if not entry:
+                        continue  # Recovery-only work for an interrupted first add.
+                    if change.remove:
+                        remove_game_capture_entry(
+                            config, change.previous or entry, entry, installation
+                        )
+                    elif change.previous is None:
+                        apply_game_capture_add_transaction(
+                            config, entry, str(game_capture.wrapper_path()), installation.data_root
+                        )
+                    elif capture_mode_for_entry(entry) == CAPTURE_MODE_GAME:
+                        apply_game_capture_update_transaction(
+                            config, change.previous, entry,
+                            str(game_capture.wrapper_path()), installation.data_root,
+                        )
+                    else:
+                        apply_game_capture_disable_transaction(
+                            config, change.previous, entry, installation.data_root
+                        )
+            except Exception:
+                recover_capture_change(config)
+                raise
 
-        if any(running for _entry, _installation, running in group):
+        if any(change.running for change in group):
             restart_steam_around(commit, environment)
         else:
             commit()
@@ -1331,6 +1371,32 @@ def apply_game_capture_remove_transaction(config, game_data: dict, steam_root: P
         LaunchOptionMutation(current, restored, integration["wrapper_prefix"], True),
         "remove",
         whitelist,
+    )
+
+
+def apply_game_capture_disable_transaction(
+    config, previous_entry: dict, game_data: dict, steam_root: Path
+) -> dict:
+    """Switch to display capture, removing only Clipper-owned launch options."""
+    integration = previous_entry.get("game_capture_integration", {})
+    if not integration.get("managed_launch_options"):
+        raise LaunchOptionConflictError("Clipper does not own this launch option")
+    current = get_launch_options(
+        game_data["appid"], steam_root, account_id=game_data.get("steam_account_id")
+    )
+    restored = remove_managed_capture_options(
+        current,
+        original=integration["original_launch_options"],
+        applied=integration["applied_launch_options"],
+        wrapper_prefix=integration["wrapper_prefix"],
+    )
+    entry = dict(game_data)
+    entry.pop("game_capture_integration", None)
+    whitelist = _replace_whitelist_entry(list(config.get("whitelist", [])), previous_entry, entry)
+    return _commit_capture_change(
+        config, entry, steam_root,
+        LaunchOptionMutation(current, restored, integration["wrapper_prefix"], True),
+        "disable", whitelist, previous_entry,
     )
 
 

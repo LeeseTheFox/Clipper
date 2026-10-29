@@ -54,7 +54,7 @@ process matching intentionally cover separate production implementations.
 | clip_player_overlay | Render preview clipping and handoffs correctly, wait for a decoded frame before revealing or playing, cancel stale loads and animations, preserve playback across fullscreen layout changes, restore gallery focus and release media when the host is hidden. |
 | config | Persist typed settings, recover malformed files, migrate schemas and preserve engine-owned tokens when the engine rotates them after the UI loads; allow explicit token clearing and factory resets. |
 | copy_pacing | Execute capture pacing, lifecycle and wire-format checks in the C implementation. |
-| dialogs | Expose the appropriate capture instructions and copy the actual launch option. |
+| dialogs | Expose the appropriate capture instructions, copy the actual launch option, and preserve Steam batch selections across search while applying one capture method and excluding already configured games. |
 | display_auth | Recover valid X11 authorization after session credentials change. |
 | editor_drafts | Save, restore, rename and reject stale or malformed edits without losing usable history. |
 | editor_export | Preserve aspect ratio, timing, audio and codec contracts, including native encoder quality scales in exports and capability probes, VAAPI HEVC encoder headers and cropping in hvc1 containers and AV1/VP9 quality options scoped away from audio; validate output despite AAC priming packet order, report original encoding failures before shutdown noise and clean failed exports. GPU output correctness requires a real hardware export and decoded-frame inspection. |
@@ -77,7 +77,7 @@ process matching intentionally cover separate production implementations.
 | game_audio_learning | Learn audio identity only from verified game processes and update the matching configuration. |
 | game_capture | Publish/repair payloads atomically, preserve working copies, quote executable launch arguments and preserve overlay precedence in the generated preload wrapper to prevent launch hangs. Real overlay loading and captured frames require a hardware smoke check. |
 | game_capture_frame_smoke | Consume command replies despite interleaved state events, wait for actual save completion and fail promptly on engine errors/disconnects. |
-| game_details | Replace executable identity safely, preserve user settings and resolve the correct Steam account. |
+| game_details | Replace executable identity and capture method safely, preserve process scope and learned metadata, reject stale edits, and resolve the correct Steam account. |
 | game_icons | Find appropriate game artwork, avoid blocking discovery and bound extracted-icon caches. |
 | hotkeys | Normalize valid chords, use physical keys and handle portal approval/cancellation races. |
 | i18n | Discover catalogs, resolve locales, load the saved language early and validate translated UI coverage. |
@@ -104,7 +104,7 @@ process matching intentionally cover separate production implementations.
 | shortcut_dialog | Validate accelerator syntax and open the correct shortcut collection from menus and physical keys under non-Latin layouts. |
 | sound_feedback | Keep capture and error feedback assets readable as PCM audio, play at fixed 100% gain and tolerate missing/unavailable media. |
 | startup_benchmark | Measure the right processes and decode desktop presentation/handoff state accurately. |
-| steam | Discover installations/accounts and change launch options without corrupting or claiming user-owned data. |
+| steam | Discover installations/accounts and change launch options without corrupting or claiming user-owned data; batch changes with one restart per client, retain completed additions after failures, and recover interrupted capture-method edits. |
 | suika_game_model | Keep drops in bounds, prevent perfectly balanced repeated-drop towers and enforce momentum-preserving fruit merges at resting and solver-created contacts, bounded size-scaled neighbor impulses, score, terminal-size rules, per-fruit overflow grace/reset timing and real-time fixed-step physics independent of frame timing. |
 | text_helpers | Preserve readable/full labels and escape user-controlled markup. |
 | theme_adaptation | Parse editor and playback diagnostics CSS with GTK and reject errors. |
@@ -115,5 +115,5 @@ process matching intentionally cover separate production implementations.
 | vaapi_direct_surfaces | Execute queue ownership, teardown, fence-wait and validation-cache C contracts. |
 | video_output | Connect the color pipeline and fall back safely when GL elements or links fail. |
 | video_player | Preserve playback/seek state, detach media before background teardown, letterbox and honor physical shortcuts. |
-| whitelist_view | Persist scoped identities and present/search/remove the intended game. |
+| whitelist_view | Persist scoped identities and present/search/remove the intended game; save display-capture batches together, preserve the picker and configuration when a batch restart is cancelled, and commit capture-method edits only after preparation succeeds while retaining the game and its settings. |
 | window_state | Restore usable sizes after monitor changes and preserve other windows' saved state. |

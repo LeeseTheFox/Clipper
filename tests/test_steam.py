@@ -945,3 +945,139 @@ def test_managed_removal_refuses_unrelated_user_edit():
             applied='"/managed/wrapper" %command%',
             wrapper_prefix='"/managed/wrapper"',
         )
+
+
+@pytest.mark.parametrize("running", [False, True])
+def test_batch_add_configures_all_games_with_one_restart_per_running_client(
+    tmp_path, monkeypatch, running
+):
+    config = ClipperConfig(tmp_path / "config.json")
+    monkeypatch.setattr(steam_mod.game_capture, "wrapper_path", lambda: Path(_bundled_wrapper()))
+    installations = [
+        SteamInstallation(
+            environment.value, environment,
+            _make_fake_steam(tmp_path / environment.value, launch_options={"1": "keep", "2": ""}),
+        )
+        for environment in (EnvironmentKind.NATIVE_STEAM, EnvironmentKind.FLATPAK_STEAM_USER)
+    ]
+    active = {installation.environment: running for installation in installations}
+    monkeypatch.setattr(
+        steam_mod, "_is_steam_running", lambda *, environment=None: active.get(environment, False)
+    )
+    restarts = []
+
+    def restart(action, environment):
+        restarts.append(environment)
+        active[environment] = False
+        action()
+        # Both entries must be committed before the client is relaunched.
+        committed = config.get("whitelist")
+        assert len([
+            entry for entry in committed if entry["steam_environment"] == environment.value
+        ]) == 2
+        active[environment] = True
+
+    monkeypatch.setattr(steam_mod, "restart_steam_around", restart)
+    changes = [
+        steam_mod.CaptureChange({
+            "appid": appid, "name": f"Game {appid}", "capture_mode": "game_capture",
+            "steam_installation": installation.stable_id,
+            "steam_environment": installation.environment.value,
+            "steam_account_id": "12345678",
+        }, installation, running)
+        for installation in installations for appid in ("1", "2")
+    ]
+
+    steam_mod.apply_capture_changes(config, changes)
+
+    assert restarts == (
+        [installation.environment for installation in installations] if running else []
+    )
+    assert len(config.get("whitelist")) == 4
+    assert config.get("pending_game_capture_change") is None
+    for installation in installations:
+        for appid in ("1", "2"):
+            assert get_launch_options(appid, installation.data_root) == compose_capture_options(
+                "keep" if appid == "1" else "", _bundled_wrapper()
+            )
+
+
+def test_failed_batch_keeps_completed_games_and_recovers_before_steam_reopens(
+    tmp_path, steam_not_running, monkeypatch
+):
+    root = _make_fake_steam(tmp_path, launch_options={"1": "first", "2": "second"})
+    monkeypatch.setattr(steam_mod.game_capture, "wrapper_path", lambda: Path(_bundled_wrapper()))
+    config = ClipperConfig(tmp_path / "config.json")
+    installation = SteamInstallation("native:test", EnvironmentKind.NATIVE_STEAM, root)
+    monkeypatch.setattr(steam_mod, "discover_steam_installations", lambda: [installation])
+    real_set = config.set
+
+    def fail_second_entry(key, value):
+        if key == "whitelist" and len(value) == 2:
+            raise OSError("cannot persist second entry")
+        real_set(key, value)
+
+    monkeypatch.setattr(config, "set", fail_second_entry)
+    relaunched = []
+
+    def restart(action, environment):
+        try:
+            action()
+        finally:
+            assert config.get("pending_game_capture_change") is None
+            assert get_launch_options("2", root) == "second"
+            relaunched.append(environment)
+
+    monkeypatch.setattr(steam_mod, "restart_steam_around", restart)
+    changes = [
+        steam_mod.CaptureChange({
+            "appid": appid, "name": f"Game {appid}", "capture_mode": "game_capture",
+            "steam_installation": installation.stable_id, "steam_account_id": "12345678",
+        }, installation, True)
+        for appid in ("1", "2")
+    ]
+
+    with pytest.raises(OSError, match="second entry"):
+        steam_mod.apply_capture_changes(config, changes)
+
+    assert relaunched == [installation.environment]
+    assert [entry["appid"] for entry in config.get("whitelist")] == ["1"]
+    assert get_launch_options("1", root) == compose_capture_options("first", _bundled_wrapper())
+
+
+@pytest.mark.parametrize("fail_persistence", [False, True])
+def test_switch_to_display_restores_owned_options_and_recovers_interrupted_edit(
+    tmp_path, steam_not_running, monkeypatch, fail_persistence
+):
+    root = _make_fake_steam(tmp_path, launch_options={"1": "MANGOHUD=1 %command% -arg"})
+    config_path = tmp_path / "config.json"
+    config = ClipperConfig(config_path)
+    entry = steam_mod.apply_game_capture_add_transaction(config, {
+        "appid": "1", "name": "Game", "capture_mode": "game_capture",
+        "steam_installation": "native:test", "steam_account_id": "12345678",
+    }, _bundled_wrapper(), root)
+    replacement = dict(entry, capture_mode="display_capture")
+    applied = get_launch_options("1", root)
+    if fail_persistence:
+        real_set = config.set
+
+        def fail_edit(key, value):
+            if key == "whitelist":
+                raise OSError("cannot persist capture edit")
+            real_set(key, value)
+
+        monkeypatch.setattr(config, "set", fail_edit)
+        with pytest.raises(OSError, match="capture edit"):
+            steam_mod.apply_game_capture_disable_transaction(config, entry, replacement, root)
+        recovered = ClipperConfig(config_path)
+        installation = SteamInstallation("native:test", EnvironmentKind.NATIVE_STEAM, root)
+        assert reconcile_pending_game_capture_change(recovered, [installation]) == "rolled_back"
+        assert get_launch_options("1", root) == applied
+        assert recovered.get("whitelist") == [entry]
+    else:
+        updated = steam_mod.apply_game_capture_disable_transaction(config, entry, replacement, root)
+        assert get_launch_options("1", root) == "MANGOHUD=1 %command% -arg"
+        assert config.get("whitelist") == [updated]
+        assert updated["capture_mode"] == "display_capture"
+        assert "game_capture_integration" not in updated
+        assert config.get("pending_game_capture_change") is None

@@ -347,10 +347,10 @@ msgstr ""
 "'%(name)s' will be moved to the trash.\n"
 "This can be reversed."
 
-#: ui/clips_view.py:2068 ui/dialogs.py:842 ui/editor_export_dialog.py:346
+#: ui/clips_view.py:2068 ui/dialogs.py:908 ui/editor_export_dialog.py:346
 #: ui/editor_export_dialog.py:604 ui/editor_export_dialog.py:632
 #: ui/editor_export_dialog.py:740 ui/editor_window.py:3759 ui/editor_wipe.py:16
-#: ui/game_details_dialog.py:37 ui/update_controller.py:377
+#: ui/game_details_dialog.py:44 ui/update_controller.py:377
 msgid "Cancel"
 msgstr "Cancel"
 
@@ -374,7 +374,7 @@ msgstr "Could not delete clip"
 msgid "Could not move clip to trash"
 msgstr "Could not move clip to trash"
 
-#: ui/dialogs.py:30
+#: ui/dialogs.py:35
 msgid ""
 "Screen capture starts capturing your whole selected screen when an added "
 "game is running.\n"
@@ -388,7 +388,7 @@ msgstr ""
 "Game capture adds a special flag to the game's launch options so Clipper can "
 "hook into the game's direct Vulkan output and capture only the game window."
 
-#: ui/dialogs.py:37
+#: ui/dialogs.py:42
 msgid ""
 "Display capture records your selected screen while this game is running.\n"
 "\n"
@@ -404,103 +404,107 @@ msgstr ""
 "lets Clipper hook into the game's direct Vulkan output and capture only the "
 "game window."
 
-#: ui/dialogs.py:125
+#: ui/dialogs.py:131
 msgid "Add selected"
 msgstr "Add selected"
 
-#: ui/dialogs.py:150
+#: ui/dialogs.py:158 ui/game_details_dialog.py:112
 msgid "Capture method"
 msgstr "Capture method"
 
-#: ui/dialogs.py:174
+#: ui/dialogs.py:182
 msgid "Required launch option"
 msgstr "Required launch option"
 
-#: ui/dialogs.py:181
+#: ui/dialogs.py:189
 msgid "Copy this into the game's launch options before starting it."
 msgstr "Copy this into the game's launch options before starting it."
 
-#: ui/dialogs.py:196
+#: ui/dialogs.py:204
 msgid "Copy the required launch option"
 msgstr "Copy the required launch option"
 
-#: ui/dialogs.py:200 ui/dialogs.py:474
+#: ui/dialogs.py:208 ui/dialogs.py:482
 msgid "Copy launch option"
 msgstr "Copy launch option"
 
-#: ui/dialogs.py:255 ui/whitelist_view.py:455
+#: ui/dialogs.py:263 ui/whitelist_view.py:455
 msgid "Add a non-Steam game"
 msgstr "Add a non-Steam game"
 
-#: ui/dialogs.py:278
+#: ui/dialogs.py:286
 msgid "Pick a process"
 msgstr "Pick a process"
 
-#: ui/dialogs.py:288
+#: ui/dialogs.py:296
 msgid "Search processes…"
 msgstr "Search processes…"
 
-#: ui/dialogs.py:301
+#: ui/dialogs.py:309
 msgid "Or pick an executable path"
 msgstr "Or pick an executable path"
 
-#: ui/dialogs.py:310
+#: ui/dialogs.py:318
 msgid "/path/to/game.exe"
 msgstr "/path/to/game.exe"
 
-#: ui/dialogs.py:316
+#: ui/dialogs.py:324
 msgid "Choose executable"
 msgstr "Choose executable"
 
-#: ui/dialogs.py:371
+#: ui/dialogs.py:379
 msgid "Could not load host processes"
 msgstr "Could not load host processes"
 
-#: ui/dialogs.py:373
+#: ui/dialogs.py:381
 msgid "No running processes found"
 msgstr "No running processes found"
 
-#: ui/dialogs.py:462
+#: ui/dialogs.py:470
 msgid "Copied"
 msgstr "Copied"
 
-#: ui/dialogs.py:515 ui/game_details_dialog.py:92 ui/game_details_dialog.py:165
+#: ui/dialogs.py:523 ui/game_details_dialog.py:99 ui/game_details_dialog.py:211
 msgid "Choose game executable"
 msgstr "Choose game executable"
 
-#: ui/dialogs.py:516 ui/game_details_dialog.py:165
+#: ui/dialogs.py:524 ui/game_details_dialog.py:211
 msgid "Choose"
 msgstr "Choose"
 
-#: ui/dialogs.py:531
+#: ui/dialogs.py:539
 msgid "Choose a local executable file."
 msgstr "Choose a local executable file."
 
-#: ui/dialogs.py:592
-msgid "Select Steam game"
-msgstr "Select Steam game"
+#: ui/dialogs.py:602 ui/whitelist_view.py:452
+msgid "Add Steam games"
+msgstr "Add Steam games"
 
-#: ui/dialogs.py:617
+#: ui/dialogs.py:627
 msgid "Search games…"
 msgstr "Search games…"
 
-#: ui/dialogs.py:645
+#: ui/dialogs.py:636
+msgid "Applies to all selected games."
+msgstr "Applies to all selected games."
+
+#: ui/dialogs.py:658
 msgid "Scanning Steam libraries…"
 msgstr "Scanning Steam libraries…"
 
-#: ui/dialogs.py:709
+#: ui/dialogs.py:722
 msgid "Steam not found"
 msgstr "Steam not found"
 
-#: ui/dialogs.py:711
+#: ui/dialogs.py:724
 msgid "Could not find Steam. Start Steam once, then try again."
 msgstr "Could not find Steam. Start Steam once, then try again."
 
-#: ui/dialogs.py:714
+#: ui/dialogs.py:727
 msgid "No games found"
 msgstr "No games found"
 
-#: ui/dialogs.py:717
+#: ui/dialogs.py:730
 msgid ""
 "No Steam games are currently installed.\n"
 "Install games through Steam and try again."
@@ -508,48 +512,59 @@ msgstr ""
 "No Steam games are currently installed.\n"
 "Install games through Steam and try again."
 
-#: ui/dialogs.py:753
+#: ui/dialogs.py:772
 msgid "Flatpak Steam"
 msgstr "Flatpak Steam"
 
-#: ui/dialogs.py:753 ui/game_details.py:36
+#: ui/dialogs.py:772 ui/game_details.py:70
 msgid "Native Steam"
 msgstr "Native Steam"
 
-#: ui/dialogs.py:755 ui/game_details.py:39
+#: ui/dialogs.py:774 ui/game_details.py:73
 msgid "Steam Snap"
 msgstr "Steam Snap"
 
-#: ui/dialogs.py:758
+#: ui/dialogs.py:777
 #, python-format
 msgid "%(source)s · account %(account)s"
 msgstr "%(source)s · account %(account)s"
 
-#: ui/dialogs.py:824
+#: ui/dialogs.py:807 ui/dialogs.py:808 ui/dialogs.py:810
+msgid "Already added"
+msgstr "Already added"
+
+#: ui/dialogs.py:861
+#, python-format
+msgid "Add %(count)s game"
+msgid_plural "Add %(count)s games"
+msgstr[0] "Add %(count)s game"
+msgstr[1] "Add %(count)s games"
+
+#: ui/dialogs.py:890
 msgid "Warning"
 msgstr "Warning"
 
-#: ui/dialogs.py:826
+#: ui/dialogs.py:892
 msgid "OK"
 msgstr "OK"
 
-#: ui/dialogs.py:834
+#: ui/dialogs.py:900
 msgid "Game capture requires a Steam restart"
 msgstr "Game capture requires a Steam restart"
 
-#: ui/dialogs.py:836
+#: ui/dialogs.py:902
 msgid ""
-"The <b>Game capture</b> method changes this game's Steam launch options. "
-"Steam must be closed while Clipper applies the change.\n"
+"The <b>Game capture</b> method changes Steam launch options. Steam must be "
+"closed while Clipper applies these changes.\n"
 "\n"
 "Restart Steam now to continue, or cancel without changing the whitelist."
 msgstr ""
-"The <b>Game capture</b> method changes this game's Steam launch options. "
-"Steam must be closed while Clipper applies the change.\n"
+"The <b>Game capture</b> method changes Steam launch options. Steam must be "
+"closed while Clipper applies these changes.\n"
 "\n"
 "Restart Steam now to continue, or cancel without changing the whitelist."
 
-#: ui/dialogs.py:843
+#: ui/dialogs.py:909
 msgid "Restart Steam"
 msgstr "Restart Steam"
 
@@ -969,8 +984,7 @@ msgstr "100%"
 msgid "Finished"
 msgstr "Finished"
 
-#: ui/editor_export_dialog.py:707 ui/game_details_dialog.py:37
-#: ui/preferences_dialog.py:29
+#: ui/editor_export_dialog.py:707 ui/preferences_dialog.py:29
 msgid "Close"
 msgstr "Close"
 
@@ -1425,76 +1439,83 @@ msgstr "All cuts and audio changes for '%(name)s' will be permanently removed."
 msgid "Wipe edits"
 msgstr "Wipe edits"
 
-#: ui/game_details.py:15 ui/game_details.py:40 ui/game_details.py:41
-#: ui/game_details_dialog.py:74 ui/game_details_dialog.py:77
-#: ui/game_details_dialog.py:100 ui/game_details_dialog.py:150
-#: ui/game_details_dialog.py:151 ui/game_details_dialog.py:152
-msgid "Not available"
-msgstr "Not available"
-
-#: ui/game_details.py:37
-msgid "Flatpak Steam (user)"
-msgstr "Flatpak Steam (user)"
-
-#: ui/game_details.py:38
-msgid "Flatpak Steam (system)"
-msgstr "Flatpak Steam (system)"
-
-#: ui/game_details.py:53
-msgid "Choose an existing executable file using its full path."
-msgstr "Choose an existing executable file using its full path."
-
-#: ui/game_details.py:60
-msgid "Steam game executables cannot be edited here."
-msgstr "Steam game executables cannot be edited here."
-
-#: ui/game_details.py:76
+#: ui/game_details.py:29 ui/game_details.py:33 ui/game_details.py:110
 msgid "This game has changed. Close its details and try again."
 msgstr "This game has changed. Close its details and try again."
 
-#: ui/game_details.py:100
+#: ui/game_details.py:49 ui/game_details.py:74 ui/game_details.py:75
+#: ui/game_details_dialog.py:81 ui/game_details_dialog.py:84
+#: ui/game_details_dialog.py:107 ui/game_details_dialog.py:181
+#: ui/game_details_dialog.py:182 ui/game_details_dialog.py:183
+msgid "Not available"
+msgstr "Not available"
+
+#: ui/game_details.py:71
+msgid "Flatpak Steam (user)"
+msgstr "Flatpak Steam (user)"
+
+#: ui/game_details.py:72
+msgid "Flatpak Steam (system)"
+msgstr "Flatpak Steam (system)"
+
+#: ui/game_details.py:87
+msgid "Choose an existing executable file using its full path."
+msgstr "Choose an existing executable file using its full path."
+
+#: ui/game_details.py:94
+msgid "Steam game executables cannot be edited here."
+msgstr "Steam game executables cannot be edited here."
+
+#: ui/game_details.py:134
 msgid "This executable is already in the Games list."
 msgstr "This executable is already in the Games list."
 
-#: ui/game_details_dialog.py:27
+#: ui/game_details_dialog.py:34
 msgid "Game details"
 msgstr "Game details"
 
-#: ui/game_details_dialog.py:64 ui/whitelist_view.py:622
+#: ui/game_details_dialog.py:72 ui/whitelist_view.py:622
 msgid "Manual"
 msgstr "Manual"
 
-#: ui/game_details_dialog.py:64 ui/whitelist_view.py:622
+#: ui/game_details_dialog.py:72 ui/whitelist_view.py:622
 msgid "Steam"
 msgstr "Steam"
 
-#: ui/game_details_dialog.py:74
+#: ui/game_details_dialog.py:81
 msgid "Steam account"
 msgstr "Steam account"
 
-#: ui/game_details_dialog.py:77
+#: ui/game_details_dialog.py:84
 msgid "Executable"
 msgstr "Executable"
 
-#: ui/game_details_dialog.py:87
+#: ui/game_details_dialog.py:94
 msgid "Flatpak application"
 msgstr "Flatpak application"
 
-#: ui/game_details_dialog.py:88
+#: ui/game_details_dialog.py:95
 msgid "Executable path"
 msgstr "Executable path"
 
-#: ui/game_details_dialog.py:99
+#: ui/game_details_dialog.py:106
 msgid "Executable name"
 msgstr "Executable name"
 
-#: ui/game_details_dialog.py:106
+#: ui/game_details_dialog.py:135
 msgid "Save"
 msgstr "Save"
 
-#: ui/game_details_dialog.py:184
-msgid "Could not save the executable path. Try again."
-msgstr "Could not save the executable path. Try again."
+#: ui/game_details_dialog.py:251
+#, python-format
+msgid ""
+"Could not save the game.\n"
+"\n"
+"%(error)s"
+msgstr ""
+"Could not save the game.\n"
+"\n"
+"%(error)s"
 
 #: ui/hotkeys.py:49 ui/settings_view.py:82
 msgid "Ctrl"
@@ -2626,10 +2647,6 @@ msgstr "This game"
 msgid "Search games by name or path"
 msgstr "Search games by name or path"
 
-#: ui/whitelist_view.py:452
-msgid "Add a Steam game"
-msgstr "Add a Steam game"
-
 #: ui/whitelist_view.py:459
 msgid "Add new"
 msgstr "Add new"
@@ -2644,21 +2661,43 @@ msgstr "%(name)s is already in the whitelist."
 msgid "Remove %(name)s"
 msgstr "Remove %(name)s"
 
-#: ui/whitelist_view.py:690
-msgid "Executable updated"
-msgstr "Executable updated"
+#: ui/whitelist_view.py:679
+msgid "A game capture change is already in progress."
+msgstr "A game capture change is already in progress."
 
-#: ui/whitelist_view.py:758 ui/whitelist_view.py:909
+#: ui/whitelist_view.py:706 ui/whitelist_view.py:901
+msgid "Game updated"
+msgstr "Game updated"
+
+#: ui/whitelist_view.py:817
+#, python-format
+msgid ""
+"Could not add all selected games. Games already added have been kept.\n"
+"\n"
+"%(error)s"
+msgstr ""
+"Could not add all selected games. Games already added have been kept.\n"
+"\n"
+"%(error)s"
+
+#: ui/whitelist_view.py:824
 #, python-format
 msgid "Added %(name)s"
 msgstr "Added %(name)s"
 
-#: ui/whitelist_view.py:774 ui/whitelist_view.py:909
+#: ui/whitelist_view.py:830 ui/whitelist_view.py:906
+#, python-format
+msgid "Added %(count)s game"
+msgid_plural "Added %(count)s games"
+msgstr[0] "Added %(count)s game"
+msgstr[1] "Added %(count)s games"
+
+#: ui/whitelist_view.py:848 ui/whitelist_view.py:903
 #, python-format
 msgid "Removed %(name)s"
 msgstr "Removed %(name)s"
 
-#: ui/whitelist_view.py:897
+#: ui/whitelist_view.py:999
 #, python-format
 msgid ""
 "Could not finish the Game capture change.\n"

@@ -3,7 +3,7 @@ Dialog windows for Clipper
 """
 
 import gi
-from i18n import _
+from i18n import _, ngettext
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
@@ -23,7 +23,12 @@ from icon_names import (
     WARNING,
 )
 from monitor_manager import HostMonitorManager
-from process_watcher import process_choice_matches_search, process_choices, running_process_choices
+from process_watcher import (
+    entries_share_executable_identity,
+    process_choice_matches_search,
+    process_choices,
+    running_process_choices,
+)
 from text_helpers import configure_single_line_ellipsis
 
 CAPTURE_METHOD_HELP_TEXT = _(
@@ -83,6 +88,7 @@ def _append_picker_list(
     on_row_selected,
     *,
     search_margin_top=12,
+    multiple=False,
 ):
     """Build the shared search/list area, leaving data and selection to the caller."""
     search_entry = Gtk.SearchEntry()
@@ -106,8 +112,8 @@ def _append_picker_list(
     item_list.set_margin_end(6)
     item_list.set_margin_top(6)
     item_list.set_margin_bottom(6)
-    item_list.set_selection_mode(Gtk.SelectionMode.SINGLE)
-    item_list.connect("row-selected", on_row_selected)
+    item_list.set_selection_mode(Gtk.SelectionMode.NONE if multiple else Gtk.SelectionMode.SINGLE)
+    item_list.connect("row-activated" if multiple else "row-selected", on_row_selected)
     scrolled.set_child(item_list)
     main_box.append(scrolled)
     return search_entry, item_list, scrolled
@@ -130,10 +136,10 @@ def _append_picker_button(main_box, on_clicked):
     return button
 
 
-def _new_capture_mode_dropdown() -> Gtk.DropDown:
+def _new_capture_mode_dropdown(mode=DEFAULT_CAPTURE_MODE) -> Gtk.DropDown:
     return new_id_dropdown(
         CAPTURE_MODE_OPTIONS,
-        DEFAULT_CAPTURE_MODE,
+        mode,
         max_width_chars=18,
         width_request=180,
     )
@@ -141,6 +147,8 @@ def _new_capture_mode_dropdown() -> Gtk.DropDown:
 
 def _new_capture_method_row(
     help_text: str = CAPTURE_METHOD_HELP_TEXT,
+    *,
+    mode=DEFAULT_CAPTURE_MODE,
 ) -> tuple[Gtk.Box, Gtk.DropDown]:
     capture_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
     capture_box.set_margin_start(12)
@@ -160,7 +168,7 @@ def _new_capture_method_row(
     info_icon.add_css_class("dim-label")
     capture_box.append(info_icon)
 
-    capture_mode_dropdown = _new_capture_mode_dropdown()
+    capture_mode_dropdown = _new_capture_mode_dropdown(mode)
     capture_box.append(capture_mode_dropdown)
     return capture_box, capture_mode_dropdown
 
@@ -583,13 +591,15 @@ class ProcessPickerDialog(Gtk.Window):
 
 
 class SteamGamePickerDialog(Gtk.Window):
-    """Dialog for picking a Steam game"""
+    """Pick Steam games with one capture method for the entire selection."""
 
-    __gsignals__ = {"game-selected": (GObject.SIGNAL_RUN_FIRST, None, (object,))}
+    __gsignals__ = {"games-selected": (GObject.SIGNAL_RUN_FIRST, None, (object,))}
 
-    def __init__(self, parent):
+    def __init__(self, parent, existing_games=()):
         super().__init__()
-        self.set_title(_("Select Steam game"))
+        self.existing_games = existing_games
+        self._pending = False
+        self.set_title(_("Add Steam games"))
         self.set_transient_for(parent)
         self.set_modal(True)
         self.set_default_size(400, 500)
@@ -616,12 +626,15 @@ class SteamGamePickerDialog(Gtk.Window):
             main_box,
             _("Search games…"),
             self.on_search_changed,
-            self.on_game_row_selected,
+            self.on_game_row_activated,
+            multiple=True,
         )
         self.game_data_list = []
         self.loading_state = self.create_loading_state()
 
-        capture_box, self.capture_mode_dropdown = _new_capture_method_row()
+        capture_box, self.capture_mode_dropdown = _new_capture_method_row(
+            CAPTURE_METHOD_HELP_TEXT + "\n\n" + _("Applies to all selected games.")
+        )
         main_box.append(capture_box)
 
         self.add_button = _append_picker_button(main_box, self.on_add_clicked)
@@ -634,7 +647,7 @@ class SteamGamePickerDialog(Gtk.Window):
 
     def _on_key_pressed(self, controller, keyval, keycode, state):
         """Handle key press events"""
-        if keyval == Gdk.KEY_Escape and not state:
+        if keyval == Gdk.KEY_Escape and not state and not self._pending:
             self.close()
             return True
         return False
@@ -733,7 +746,13 @@ class SteamGamePickerDialog(Gtk.Window):
         row_box.set_margin_top(12)
         row_box.set_margin_bottom(12)
 
+        row._clipper_game_data = game_data
+        row._clipper_check = Gtk.CheckButton(valign=Gtk.Align.CENTER)
+        row._clipper_check.update_property([Gtk.AccessibleProperty.LABEL], [game_data["name"]])
+        row._clipper_check.connect("toggled", self._on_game_toggled, row)
+
         icon = _new_game_icon(game_data)
+        row._clipper_icon = icon
         row_box.append(icon)
         _load_game_icon_async(game_data, icon)
 
@@ -745,7 +764,7 @@ class SteamGamePickerDialog(Gtk.Window):
         name_label = Gtk.Label(label=game_data["name"])
         name_label.set_halign(Gtk.Align.START)
         name_label.set_xalign(0)
-        configure_single_line_ellipsis(name_label, mode=Pango.EllipsizeMode.END)
+        configure_single_line_ellipsis(name_label, mode=Pango.EllipsizeMode.END, tooltip_text="")
         name_label.add_css_class("heading")
         info_box.append(name_label)
 
@@ -761,11 +780,35 @@ class SteamGamePickerDialog(Gtk.Window):
         detail.add_css_class("caption")
         detail.add_css_class("dim-label")
         info_box.append(detail)
-
         row_box.append(info_box)
+        row_box.append(row._clipper_check)
 
         row.set_child(row_box)
+        self._update_game_availability(row)
         return row
+
+    def _update_game_availability(self, row):
+        added = any(
+            entries_share_executable_identity(row._clipper_game_data, game)
+            for game in self.existing_games
+        )
+        check = row._clipper_check
+        was_unavailable = not check.get_sensitive()
+        check.set_sensitive(not added)
+        row.get_child().set_sensitive(not added)
+        if added:
+            row._clipper_icon.add_css_class("dim-label")
+        else:
+            row._clipper_icon.remove_css_class("dim-label")
+        if added or was_unavailable:
+            check.set_active(added)
+        row.set_activatable(not added)
+        # Keep the row sensitive so its tooltip works over the disabled checkbox.
+        row.set_tooltip_text(_("Already added") if added else None)
+        check.set_tooltip_text(_("Already added") if added else None)
+        check.update_property(
+            [Gtk.AccessibleProperty.DESCRIPTION], [_("Already added") if added else ""]
+        )
 
     def on_search_changed(self, entry):
         """Filter games list based on search"""
@@ -781,41 +824,64 @@ class SteamGamePickerDialog(Gtk.Window):
             return search_text in game["name"].lower() or search_text in game["appid"]
 
         self.games_list.set_filter_func(filter_func)
-        selected_row = self.games_list.get_selected_row()
-        if selected_row is not None and not filter_func(selected_row):
-            self.games_list.unselect_row(selected_row)
         self.update_add_button_state()
 
-    def on_game_row_selected(self, listbox, row):
-        """Refresh the add button when a Steam game row is selected."""
+    def on_game_row_activated(self, listbox, row):
+        if row._clipper_check.get_sensitive():
+            row._clipper_check.set_active(not row._clipper_check.get_active())
+
+    def _on_game_toggled(self, check, row):
+        # Different accounts for the same installation are alternative write
+        # targets, not separate recording rules. Keep the chosen account explicit.
+        if check.get_sensitive() and check.get_active():
+            other = self.games_list.get_first_child()
+            while other is not None:
+                if other is not row and entries_share_executable_identity(
+                    row._clipper_game_data, other._clipper_game_data
+                ):
+                    other._clipper_check.set_active(False)
+                other = other.get_next_sibling()
         self.update_add_button_state()
 
-    def _selected_game_data(self) -> dict | None:
-        selected_row = self.games_list.get_selected_row()
-        if selected_row is None:
-            return None
-
-        index = selected_row.get_index()
-        if 0 <= index < len(self.game_data_list):
-            return self.game_data_list[index]
-        return None
+    def _selected_game_data(self) -> list[dict]:
+        games = []
+        row = self.games_list.get_first_child()
+        while row is not None:
+            if row._clipper_check.get_sensitive() and row._clipper_check.get_active():
+                games.append(row._clipper_game_data)
+            row = row.get_next_sibling()
+        return games
 
     def update_add_button_state(self):
-        """Enable Add Game only when a Steam game row is selected."""
+        """Include checked games hidden by search in the selection count."""
         if not hasattr(self, "add_button"):
             return
-        self.add_button.set_sensitive(self._selected_game_data() is not None)
+        count = len(self._selected_game_data())
+        self.add_button.set_label(
+            ngettext("Add %(count)s game", "Add %(count)s games", count) % {"count": count}
+        )
+        self.add_button.set_sensitive(count > 0 and not self._pending)
+
+    def set_pending(self, pending):
+        self._pending = pending
+        self.set_deletable(not pending)
+        self.get_child().set_sensitive(not pending)
+        self.update_add_button_state()
+
+    def refresh_existing_games(self, games):
+        self.existing_games = games
+        row = self.games_list.get_first_child()
+        while row is not None:
+            self._update_game_availability(row)
+            row = row.get_next_sibling()
+        self.update_add_button_state()
 
     def on_add_clicked(self, button):
-        """Emit signal with selected game data"""
-        selected_game = self._selected_game_data()
-        if selected_game is not None:
-            game_data = dict(selected_game)
-            game_data["capture_mode"] = dropdown_active_id(
-                self.capture_mode_dropdown, DEFAULT_CAPTURE_MODE
-            )
-            self.emit("game-selected", game_data)
-            self.close()
+        selected_games = self._selected_game_data()
+        if not selected_games or self._pending:
+            return
+        mode = dropdown_active_id(self.capture_mode_dropdown, DEFAULT_CAPTURE_MODE)
+        self.emit("games-selected", [dict(game, capture_mode=mode) for game in selected_games])
 
 
 def show_warning_dialog(parent, message):
@@ -833,8 +899,8 @@ def show_steam_restart_dialog(parent, on_restart, *, on_cancel=None):
     dialog = Adw.AlertDialog.new(
         _("Game capture requires a Steam restart"),
         _(
-            "The <b>Game capture</b> method changes this game's Steam launch "
-            "options. Steam must be closed while Clipper applies the change.\n\n"
+            "The <b>Game capture</b> method changes Steam launch options. "
+            "Steam must be closed while Clipper applies these changes.\n\n"
             "Restart Steam now to continue, or cancel without changing the whitelist."
         ),
     )

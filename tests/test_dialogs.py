@@ -4,6 +4,7 @@ import types
 from pathlib import Path
 
 from capture_modes import CAPTURE_MODE_DISPLAY, CAPTURE_MODE_GAME
+from process_watcher import entries_share_executable_identity
 
 
 class WidgetStub:
@@ -128,6 +129,7 @@ def _load_dialogs_module():
     monitor_manager.HostMonitorManager = type("HostMonitorManager", (), {})
 
     process_watcher = types.ModuleType("process_watcher")
+    process_watcher.entries_share_executable_identity = entries_share_executable_identity
     process_watcher.process_choices = lambda _processes: []
     process_watcher.process_choice_matches_search = lambda _process, _query: True
     process_watcher.running_process_choices = lambda: []
@@ -247,3 +249,45 @@ def test_non_steam_launch_option_is_only_visible_for_game_capture():
     dialog.capture_mode_dropdown.selected = 1
     dialog._on_capture_mode_changed(dialog.capture_mode_dropdown, None)
     assert dialog.game_capture_launch_option_box.visible is True
+
+
+def test_steam_batch_keeps_hidden_choices_and_excludes_unavailable_games():
+    games = [
+        {"appid": "1", "name": "First", "steam_installation": "native:test"},
+        {"appid": "2", "name": "Second", "steam_installation": "native:test"},
+        {"appid": "3", "name": "Already configured", "steam_installation": "native:test"},
+    ]
+    rows = []
+    for index, game in enumerate(games):
+        rows.append(types.SimpleNamespace(
+            _clipper_game_data=game,
+            _clipper_check=types.SimpleNamespace(
+                get_active=lambda: True, get_sensitive=lambda index=index: index < 2,
+            ),
+            get_index=lambda index=index: index,
+            get_next_sibling=lambda index=index: rows[index + 1] if index + 1 < len(rows) else None,
+        ))
+    visible = []
+    dialog = object.__new__(dialogs.SteamGamePickerDialog)
+    dialog.games_list = types.SimpleNamespace(
+        get_first_child=lambda: rows[0],
+        set_filter_func=lambda predicate: visible.extend(row for row in rows if predicate(row)),
+    )
+    dialog.game_data_list = games
+    dialog.add_button = WidgetStub()
+    dialog._pending = False
+    dialog.capture_mode_dropdown = DropdownStub(selected=1)
+    emitted = []
+    dialog.emit = lambda signal, value: emitted.append((signal, value))
+
+    dialog.on_search_changed(types.SimpleNamespace(get_text=lambda: "Second"))
+    dialog.on_add_clicked(None)
+
+    assert visible == [rows[1]]
+    assert emitted == [
+        ("games-selected", [dict(game, capture_mode="game_capture") for game in games[:2]])
+    ]
+    assert all("capture_mode" not in game for game in games)
+    dialog._pending = True
+    dialog.on_add_clicked(None)
+    assert len(emitted) == 1  # Double activation cannot submit a second batch.

@@ -9,19 +9,26 @@ from i18n import _
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
-from capture_modes import capture_mode_for_entry, capture_mode_label
+from capture_modes import CAPTURE_MODE_GAME, CAPTURE_MODE_OPTIONS, capture_mode_for_entry
+from dialogs import (
+    CAPTURE_METHOD_HELP_TEXT,
+    NON_STEAM_CAPTURE_METHOD_HELP_TEXT,
+    _new_game_capture_launch_option,
+)
 from game_details import steam_details
 from gi.repository import Adw, GLib, Gtk
-from icon_names import FOLDER_OPEN, GAME, PROCESS, STEAM
+from icon_names import FOLDER_OPEN, PROCESS, STEAM
+from recording_controls import create_combo_row
 
 _DETAILS_EXECUTOR = ThreadPoolExecutor(max_workers=1, thread_name_prefix="game-details")
 
 
 class GameDetailsDialog(Adw.Dialog):
-    def __init__(self, entry, name, artwork, save_executable):
+    def __init__(self, entry, name, artwork, save_game):
         super().__init__()
         self._entry = dict(entry)
-        self._save_executable = save_executable
+        self._save_game = save_game
+        self._saving = False
         self._closed = False
         self.connect("closed", self._on_closed)
         self.set_title(_("Game details"))
@@ -34,15 +41,16 @@ class GameDetailsDialog(Adw.Dialog):
         header = Adw.HeaderBar()
         header.set_show_start_title_buttons(False)
         header.set_show_end_title_buttons(False)
-        close = Gtk.Button(label=_("Close") if "appid" in entry else _("Cancel"))
-        close.connect("clicked", lambda *_args: self.close())
-        header.pack_start(close)
-        self.set_focus(close)
+        self._close = Gtk.Button(label=_("Cancel"))
+        self._close.connect("clicked", lambda *_args: self.close())
+        header.pack_start(self._close)
+        self.set_focus(self._close)
         toolbar.add_top_bar(header)
         scrolled = Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.NEVER)
         scrolled.set_propagate_natural_height(True)
         scrolled.set_max_content_height(540)
         content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18)
+        self._content = content
         for side in ("top", "bottom", "start", "end"):
             getattr(content, f"set_margin_{side}")(24)
         scrolled.set_child(content)
@@ -63,7 +71,6 @@ class GameDetailsDialog(Adw.Dialog):
             STEAM if "appid" in entry else PROCESS,
             _("Steam") if "appid" in entry else _("Manual"),
         )
-        self._metadata(identity, GAME, capture_mode_label(capture_mode_for_entry(entry)))
         hero.append(identity)
         content.append(hero)
 
@@ -99,17 +106,41 @@ class GameDetailsDialog(Adw.Dialog):
                 _("Executable name"),
                 str(entry.get("executable_name") or Path(value).name or _("Not available")),
             )
-            self.error = Gtk.Label(wrap=True, xalign=0)
-            self.error.add_css_class("error")
-            self.error.set_visible(False)
-            content.append(self.error)
-            self.save = Gtk.Button(label=_("Save"), halign=Gtk.Align.END)
-            self.save.add_css_class("suggested-action")
-            self.save.set_sensitive(False)
-            self.save.connect("clicked", self._save)
-            header.pack_end(self.save)
-            self.set_default_widget(self.save)
+        capture_group = Adw.PreferencesGroup()
+        modes = [mode for _label, mode in CAPTURE_MODE_OPTIONS]
+        self.capture_mode_row = create_combo_row(
+            _("Capture method"), None,
+            [label for label, _mode in CAPTURE_MODE_OPTIONS],
+            modes.index(capture_mode_for_entry(entry)), self._changed,
+        )
+        self.capture_mode_row.set_tooltip_text(
+            CAPTURE_METHOD_HELP_TEXT if "appid" in entry else NON_STEAM_CAPTURE_METHOD_HELP_TEXT
+        )
+        capture_group.add(self.capture_mode_row)
+        content.append(capture_group)
+        self._launch_option_box = None
+        if "appid" not in entry:
+            self._launch_option_box, launch_entry, copy = _new_game_capture_launch_option()
+            copy.connect(
+                "clicked", lambda *_args: self.get_display().get_clipboard().set(
+                    launch_entry.get_text()
+                )
+            )
+            content.append(self._launch_option_box)
+
+        self.error = Gtk.Label(wrap=True, xalign=0)
+        self.error.add_css_class("error")
+        self.error.set_visible(False)
+        content.append(self.error)
+        self.save = Gtk.Button(label=_("Save"), halign=Gtk.Align.END)
+        self.save.add_css_class("suggested-action")
+        self.save.set_sensitive(False)
+        self.save.connect("clicked", self._save)
+        header.pack_end(self.save)
+        self.set_default_widget(self.save)
+        if "appid" not in entry:
             self.executable.connect("changed", self._changed)
+        self._changed()
 
     @staticmethod
     def _metadata(parent, icon_name, text):
@@ -155,10 +186,25 @@ class GameDetailsDialog(Adw.Dialog):
         self._account.set_subtitle(account)
         return False
 
+    def _selected_capture_mode(self):
+        return CAPTURE_MODE_OPTIONS[self.capture_mode_row.get_selected()][1]
+
     def _changed(self, *_args):
-        value = self.executable.get_text().strip()
-        previous = str(self._entry.get("executable_path") or self._entry.get("path") or "")
-        self.save.set_sensitive(bool(value) and value != previous)
+        mode = self._selected_capture_mode()
+        changed = mode != capture_mode_for_entry(self._entry)
+        if "appid" not in self._entry:
+            value = self.executable.get_text().strip()
+            previous = str(self._entry.get("executable_path") or self._entry.get("path") or "")
+            changed = bool(value) and (changed or value != previous)
+        if self._launch_option_box is not None:
+            self._launch_option_box.set_visible(mode == CAPTURE_MODE_GAME)
+            # Adw.Dialog retains its initial height when content is revealed.
+            # Keep the required launcher instructions visible without scrolling.
+            _, height, _, _ = self.get_child().measure(
+                Gtk.Orientation.VERTICAL, self.get_content_width()
+            )
+            self.set_content_height(height)
+        self.save.set_sensitive(changed and not self._saving)
         self.error.set_visible(False)
 
     def _browse(self, *_args):
@@ -174,14 +220,34 @@ class GameDetailsDialog(Adw.Dialog):
             self.executable.set_text(selected.get_path())
 
     def _save(self, *_args):
+        if self._saving:
+            return
+        self._saving = True
+        self.set_can_close(False)
+        self._content.set_sensitive(False)
+        self._close.set_sensitive(False)
+        self.save.set_sensitive(False)
+        path = self.executable.get_text() if "appid" not in self._entry else None
         try:
-            self._save_executable(self._entry, self.executable.get_text())
-        except ValueError as error:
-            self.error.set_text(str(error))
-            self.error.set_visible(True)
+            self._save_game(
+                self._entry, path, self._selected_capture_mode(), self._saved,
+                parent=self,
+            )
+        except (ValueError, OSError) as error:
+            self._saved(False, error)
+
+    def _saved(self, success, error=None):
+        if self._closed:
             return
-        except OSError:
-            self.error.set_text(_("Could not save the executable path. Try again."))
+        self._saving = False
+        self.set_can_close(True)
+        self._content.set_sensitive(True)
+        self._close.set_sensitive(True)
+        self._changed()
+        if success:
+            self.close()
+        elif error is not None:
+            self.error.set_text(
+                _("Could not save the game.\n\n%(error)s") % {"error": error}
+            )
             self.error.set_visible(True)
-            return
-        self.close()

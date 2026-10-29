@@ -4,8 +4,42 @@ import os
 from pathlib import Path
 
 import steam
+from capture_modes import CAPTURE_MODE_GAME, capture_mode_for_entry, with_capture_mode
 from i18n import _
 from process_watcher import entries_share_executable_identity
+
+
+def updated_game(entries: list[dict], original: dict, path: str | None, mode: str) -> list[dict]:
+    """Apply details edits to the current entry without losing learned metadata."""
+    def identity(entry):
+        if "appid" in entry:
+            return (
+                "steam", entry.get("appid"), entry.get("steam_installation"),
+                entry.get("steam_account_id"),
+            )
+        return (
+            "manual", entry.get("path") or entry.get("executable_path"),
+            entry.get("flatpak_id", ""), entry.get("process_name", ""),
+        )
+
+    matches = [
+        index for index, entry in enumerate(entries) if identity(entry) == identity(original)
+    ]
+    if len(matches) != 1:
+        raise ValueError(_("This game has changed. Close its details and try again."))
+    index = matches[0]
+    current = entries[index]
+    if capture_mode_for_entry(current) != capture_mode_for_entry(original):
+        raise ValueError(_("This game has changed. Close its details and try again."))
+    result = list(entries)
+    old_path = str(current.get("executable_path") or current.get("path") or "")
+    if path is not None and path.strip() != old_path:
+        result = replace_executable(entries, current, path)
+    entry = with_capture_mode(result[index], mode)
+    if mode != CAPTURE_MODE_GAME:
+        entry.pop("game_capture_integration", None)
+    result[index] = entry
+    return result
 
 
 def steam_details(entry: dict) -> tuple[str, str, str]:

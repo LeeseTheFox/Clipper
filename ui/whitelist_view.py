@@ -9,7 +9,7 @@ from hashlib import sha256
 from pathlib import Path
 
 import gi
-from i18n import _
+from i18n import _, ngettext
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Gdk", "4.0")
@@ -449,7 +449,7 @@ class WhitelistView(Gtk.Box):
         self.insert_action_group("games", self._add_action_group)
 
         add_menu = Gio.Menu()
-        steam_item = Gio.MenuItem.new(_("Add a Steam game"), "games.add-steam")
+        steam_item = Gio.MenuItem.new(_("Add Steam games"), "games.add-steam")
         steam_item.set_icon(Gio.ThemedIcon.new(STEAM))
         add_menu.append_item(steam_item)
         manual_item = Gio.MenuItem.new(_("Add a non-Steam game"), "games.add-manually")
@@ -604,7 +604,7 @@ class WhitelistView(Gtk.Box):
         name_label.set_hexpand(True)
         name_label.set_xalign(0)
         name_label.add_css_class("heading")
-        configure_single_line_ellipsis(name_label, max_width_chars=40)
+        configure_single_line_ellipsis(name_label, max_width_chars=40, tooltip_text="")
         info_box.append(name_label)
 
         capture_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
@@ -668,15 +668,54 @@ class WhitelistView(Gtk.Box):
         artwork, frame, picture, placeholder = self._new_game_artwork(entry)
         self._load_game_icon_async(dict(entry), frame, picture, placeholder)
         dialog = GameDetailsDialog(
-            entry, _entry_display_name(entry), artwork, self._save_game_executable
+            entry, _entry_display_name(entry), artwork, self._save_game_details
         )
         dialog.present(self.get_root())
 
-    def _save_game_executable(self, original, path):
-        from game_details import replace_executable
+    def _save_game_details(self, original, path, mode, completed, *, parent=None):
+        from game_details import updated_game
 
+        if getattr(self, "_steam_change_pending", False):
+            raise ValueError(_("A game capture change is already in progress."))
         entries = self._load_whitelist() if self._config is not None else self._whitelist
-        updated = replace_executable(entries, original, path)
+        updated = updated_game(entries, original, path, mode)
+        changes = [(old, new) for old, new in zip(entries, updated, strict=True) if old != new]
+        if not changes:
+            completed(True)
+            return
+        previous, entry = changes[0]
+        mode_changed = capture_mode_for_entry(previous) != capture_mode_for_entry(entry)
+        managed = previous.get("game_capture_integration", {}).get("managed_launch_options")
+        if "appid" in entry and mode_changed and (mode == CAPTURE_MODE_GAME or managed):
+            self._change_steam_games(
+                [entry], previous=previous, completed=completed, parent=parent
+            )
+            return
+
+        def finish(future=None):
+            self._cancel_steam_change()
+            try:
+                if future is not None:
+                    future.result()
+                # Payload preparation can run while audio identity is learned.
+                current = self._load_whitelist() if self._config is not None else self._whitelist
+                self._persist_games(updated_game(current, original, path, mode))
+            except Exception as error:
+                completed(False, error)
+                return False
+            self._show_toast(_("Game updated"))
+            completed(True)
+            return False
+
+        if "appid" not in entry and mode == CAPTURE_MODE_GAME:
+            self._steam_change_pending = True
+            self.set_sensitive(False)
+            future = _STEAM_RESTART_EXECUTOR.submit(game_capture.prepare)
+            future.add_done_callback(lambda result: GLib.idle_add(finish, result))
+        else:
+            finish()
+
+    def _persist_games(self, updated):
         if self._config is not None:
             self._config.set("whitelist", updated)
             self.reload_from_config()
@@ -687,13 +726,12 @@ class WhitelistView(Gtk.Box):
             for entry in updated:
                 self._add_entry(entry)
             self._update_content_state()
-        self._show_toast(_("Executable updated"))
 
     def on_add_steam_game(self, button):
         """Show Steam game picker dialog"""
         window = self.get_root()
-        dialog = SteamGamePickerDialog(window)
-        dialog.connect("game-selected", self.on_steam_game_selected)
+        dialog = SteamGamePickerDialog(window, self._whitelist)
+        dialog.connect("games-selected", self.on_steam_games_selected)
         dialog.present()
 
     def on_process_picker(self, button):
@@ -740,29 +778,65 @@ class WhitelistView(Gtk.Box):
         self._finish_add_game(game_data)
         return False
 
-    def on_steam_game_selected(self, dialog, game_data):
-        """Add the selected installation/account, preparing hooks in the background."""
-        game_data = with_capture_mode(game_data, game_data.get("capture_mode"))
-        duplicate = self._duplicate_entry_for(game_data)
-        if duplicate is not None:
-            self._show_duplicate_entry_warning(game_data, duplicate)
+    def on_steam_games_selected(self, dialog, games):
+        if getattr(self, "_steam_change_pending", False) or not games:
             return
-        if capture_mode_for_entry(game_data) != CAPTURE_MODE_GAME:
-            self._finish_add_game(game_data)
+        games = [with_capture_mode(game, game.get("capture_mode")) for game in games]
+        for index, game in enumerate(games):
+            duplicate = self._duplicate_entry_for(game) or next(
+                (entry for entry in games[:index]
+                 if entries_share_executable_identity(game, entry)),
+                None,
+            )
+            if duplicate is not None:
+                self._show_duplicate_entry_warning(game, duplicate)
+                return
+        if capture_mode_for_entry(games[0]) != CAPTURE_MODE_GAME:
+            try:
+                self._finish_add_games(games)
+            except OSError as error:
+                self._batch_add_failed(dialog, error)
+                return
+            dialog.close()
             return
-        self._change_steam_game(game_data, remove=False)
+
+        def finished(success, error=None):
+            dialog.set_pending(False)
+            if success:
+                dialog.close()
+            elif error is not None:
+                self._batch_add_failed(dialog, error)
+
+        dialog.set_pending(True)
+        self._change_steam_games(games, completed=finished, parent=dialog)
+
+    def _batch_add_failed(self, dialog, error):
+        dialog.refresh_existing_games(self._whitelist)
+        show_warning_dialog(
+            dialog,
+            _("Could not add all selected games. Games already added have been kept."
+              "\n\n%(error)s") % {"error": error},
+        )
 
     def _finish_add_game(self, game_data: dict) -> None:
         self._add_entry(game_data)
         self._save_whitelist()
         self._show_toast(_("Added %(name)s") % {"name": _entry_display_name(game_data)})
 
+    def _finish_add_games(self, games):
+        current = self._load_whitelist() if self._config is not None else self._whitelist
+        self._persist_games([*current, *games])
+        self._show_toast(
+            ngettext("Added %(count)s game", "Added %(count)s games", len(games))
+            % {"count": len(games)}
+        )
+
     def on_remove_game(self, button, row):
         if row is None or getattr(self, "_steam_change_pending", False):
             return
         game_data = row._clipper_game_data
         if "appid" in game_data and capture_mode_for_entry(game_data) == CAPTURE_MODE_GAME:
-            self._change_steam_game(game_data, remove=True)
+            self._change_steam_games([game_data], remove=True)
         else:
             self._finish_remove_game(game_data, row)
 
@@ -773,64 +847,92 @@ class WhitelistView(Gtk.Box):
         self._update_content_state()
         self._show_toast(_("Removed %(name)s") % {"name": _entry_display_name(game_data)})
 
-    def _change_steam_game(self, game_data: dict, *, remove: bool) -> None:
+    def _change_steam_games(
+        self, games: list[dict], *, remove=False, previous=None, completed=None, parent=None
+    ) -> None:
         if getattr(self, "_steam_change_pending", False):
             return
         self._steam_change_pending = True
         self.set_sensitive(False)
 
         def prepare():
-            installation = steam.installation_for_entry(game_data)
-            entry = dict(game_data)
-            entry["steam_installation"] = installation.stable_id
-            entry["steam_environment"] = installation.environment.value
-            entry["steam_account_id"] = steam.select_steam_account(
-                installation.data_root, entry.get("steam_account_id")
-            ).account_id
-            if not remove:
-                game_capture.prepare(installation.environment)
-            running = steam._is_steam_running(environment=installation.environment)
-            return installation, entry, running
+            changes = []
+            environments = set()
+            running_clients = {}
+            for game in games:
+                installation = steam.installation_for_entry(game)
+                entry = dict(game)
+                entry["steam_installation"] = installation.stable_id
+                entry["steam_environment"] = installation.environment.value
+                entry["steam_account_id"] = steam.select_steam_account(
+                    installation.data_root, entry.get("steam_account_id")
+                ).account_id
+                if (not remove and capture_mode_for_entry(entry) == CAPTURE_MODE_GAME
+                        and installation.environment not in environments):
+                    game_capture.prepare(installation.environment)
+                    environments.add(installation.environment)
+                if installation.environment not in running_clients:
+                    running_clients[installation.environment] = steam._is_steam_running(
+                        environment=installation.environment
+                    )
+                changes.append(steam.CaptureChange(
+                    entry, installation, running_clients[installation.environment],
+                    previous or (game if remove else None), remove
+                ))
+            return changes
+
+        def cancelled():
+            self._cancel_steam_change()
+            if completed is not None:
+                completed(False)
+
+        def finished(future):
+            self._cancel_steam_change()
+            self.reload_from_config()
+            try:
+                future.result()
+            except Exception as error:
+                if completed is not None:
+                    completed(False, error)
+                else:
+                    self._change_failed(error)
+                return False
+            if previous is not None:
+                self._show_toast(_("Game updated"))
+            elif remove:
+                self._show_toast(_("Removed %(name)s") % {"name": _entry_display_name(games[0])})
+            else:
+                self._show_toast(
+                    ngettext("Added %(count)s game", "Added %(count)s games", len(games))
+                    % {"count": len(games)}
+                )
+            if completed is not None:
+                completed(True)
+            return False
 
         def prepared(future):
             try:
-                installation, entry, running = future.result()
+                changes = future.result()
             except Exception as exc:
-                self._change_failed(exc)
+                self._cancel_steam_change()
+                if completed is not None:
+                    completed(False, exc)
+                else:
+                    self._change_failed(exc)
                 return False
 
             def apply():
                 self.set_sensitive(False)
 
-                def commit():
-                    steam.recover_capture_change(self._config)
-                    if remove:
-                        steam.remove_game_capture_entry(
-                            self._config, game_data, entry, installation
-                        )
-                    else:
-                        steam.apply_game_capture_add_transaction(
-                            self._config,
-                            entry,
-                            str(game_capture.wrapper_path()),
-                            installation.data_root,
-                        )
-
-                def work():
-                    if running:
-                        steam.restart_steam_around(commit, installation.environment)
-                    else:
-                        commit()
-
-                completed = _STEAM_RESTART_EXECUTOR.submit(work)
-                completed.add_done_callback(
-                    lambda result: GLib.idle_add(self._finish_steam_change, result, entry, remove)
+                work = _STEAM_RESTART_EXECUTOR.submit(
+                    steam.apply_capture_changes, self._config, changes
                 )
+                work.add_done_callback(lambda result: GLib.idle_add(finished, result))
 
-            if running:
+            if any(change.running for change in changes):
                 self.set_sensitive(True)
                 show_steam_restart_dialog(
-                    self.get_root(), apply, on_cancel=self._cancel_steam_change
+                    parent or self.get_root(), apply, on_cancel=cancelled
                 )
             else:
                 apply()
@@ -896,19 +998,6 @@ class WhitelistView(Gtk.Box):
             self.get_root(),
             _("Could not finish the Game capture change.\n\n%(error)s") % {"error": error},
         )
-
-    def _finish_steam_change(self, future: Future, entry: dict, remove: bool) -> bool:
-        self._cancel_steam_change()
-        try:
-            future.result()
-        except Exception as exc:
-            self.reload_from_config()
-            self._change_failed(exc)
-            return False
-        self.reload_from_config()
-        message = _("Removed %(name)s") if remove else _("Added %(name)s")
-        self._show_toast(message % {"name": _entry_display_name(entry)})
-        return False
 
     def _show_toast(self, message):
         """Show a toast notification"""

@@ -1,7 +1,13 @@
 import importlib.util
 import sys
 import types
+from concurrent.futures import Future
 from pathlib import Path
+
+import pytest
+import steam
+from config import ClipperConfig
+from game_capture import EnvironmentKind
 
 
 def _load_whitelist_module():
@@ -107,6 +113,7 @@ class ConfigStub:
 
     def set(self, key, value):
         self.saved.append((key, value))
+        self.data[key] = value
 
 
 class GamesListStub:
@@ -236,6 +243,171 @@ def test_entry_search_matches_names_and_paths_case_insensitively():
     assert _entry_matches_search(game, "steamlibrary")
     assert _entry_matches_search(game, "CS2")
     assert not _entry_matches_search(game, "portal")
+
+
+@pytest.mark.parametrize("save_fails", [False, True])
+def test_display_batch_publishes_games_only_after_saving_without_a_steam_change(save_fails):
+    view = _make_view()
+    existing = {"appid": "0", "name": "Existing", "audio_process": "recently-learned"}
+    stale = dict(existing, audio_process="old")
+    view._config.data["whitelist"] = [existing]
+    view._whitelist = [stale]
+    closed = []
+    dialog = types.SimpleNamespace(
+        close=lambda: closed.append(True), refresh_existing_games=lambda _games: None,
+    )
+    games = [
+        {"appid": "1", "name": "First", "capture_mode": "display_capture"},
+        {"appid": "2", "name": "Second", "capture_mode": "display_capture"},
+    ]
+    if save_fails:
+        def fail_save(*_args):
+            raise OSError("read-only configuration")
+        view._config.set = fail_save
+    view.on_steam_games_selected(dialog, games)
+    assert view._config.saved == ([] if save_fails else [("whitelist", [existing, *games])])
+    assert view._whitelist == ([stale] if save_fails else [existing, *games])
+    assert closed == ([] if save_fails else [True])
+
+
+class ImmediateExecutor:
+    def submit(self, function, *args):
+        future = Future()
+        try:
+            future.set_result(function(*args))
+        except Exception as error:
+            future.set_exception(error)
+        return future
+
+
+def test_batch_restart_cancellation_preserves_selection_and_configuration(monkeypatch):
+    view = _make_view()
+    view.set_sensitive = lambda _value: None
+    view.get_root = lambda: None
+    monkeypatch.setattr(whitelist_module, "_STEAM_RESTART_EXECUTOR", ImmediateExecutor())
+    monkeypatch.setattr(whitelist_module.GLib, "idle_add", lambda function, *args: function(*args))
+    installation = types.SimpleNamespace(
+        stable_id="chosen", data_root=Path("/steam/chosen"),
+        environment=EnvironmentKind.NATIVE_STEAM,
+    )
+    monkeypatch.setattr(
+        whitelist_module.steam, "installation_for_entry", lambda _entry: installation, raising=False
+    )
+    monkeypatch.setattr(whitelist_module.steam, "select_steam_account",
+                        lambda *_args: types.SimpleNamespace(account_id="42"), raising=False)
+    monkeypatch.setattr(whitelist_module.steam, "_is_steam_running", lambda **_kwargs: True,
+                        raising=False)
+    monkeypatch.setattr(whitelist_module.steam, "CaptureChange",
+                        lambda entry, _installation, running, *_args:
+                        types.SimpleNamespace(entry=entry, running=running), raising=False)
+    monkeypatch.setattr(whitelist_module.game_capture, "prepare", lambda *_args: None)
+    confirmations = []
+    monkeypatch.setattr(whitelist_module, "show_steam_restart_dialog",
+                        lambda _parent, apply, on_cancel:
+                        confirmations.append((apply, on_cancel)))
+    pending, closed = [], []
+    dialog = types.SimpleNamespace(
+        set_pending=lambda value: pending.append(value), close=lambda: closed.append(True),
+    )
+    games = [{"appid": str(index), "name": str(index), "capture_mode": "game_capture"}
+             for index in (1, 2)]
+
+    view.on_steam_games_selected(dialog, games)
+    assert len(confirmations) == 1
+    assert pending == [True]
+    assert view._config.saved == []
+    confirmations[0][1]()
+    assert pending == [True, False]
+    assert not view._steam_change_pending
+    assert view._config.saved == []
+    assert closed == []
+
+
+@pytest.mark.parametrize("prepare_fails", [False, True])
+def test_manual_capture_edit_waits_for_hooks_and_preserves_settings_on_failure(
+    monkeypatch, prepare_fails
+):
+    view = _make_view()
+    original = {"name": "Game", "path": "/app/bin/game", "flatpak_id": "fixture.game",
+                "capture_mode": "display_capture", "match_mode": "executable"}
+    view._config = ConfigStub({"whitelist": [original]})
+    view.set_sensitive = lambda _value: None
+    view.reload_from_config = lambda: None
+    pending = Future()
+    monkeypatch.setattr(whitelist_module, "_STEAM_RESTART_EXECUTOR",
+                        types.SimpleNamespace(submit=lambda *_args: pending))
+    monkeypatch.setattr(whitelist_module.GLib, "idle_add", lambda function, *args: function(*args))
+    results = []
+    view._save_game_details(
+        original, original["path"], "game_capture",
+        lambda success, error=None: results.append((success, error)),
+    )
+    assert view._config.saved == []
+    assert results == []
+    assert view._steam_change_pending
+    learned = dict(original, audio_process="learned-while-preparing")
+    view._config.data["whitelist"] = [learned]
+
+    if prepare_fails:
+        error = OSError("missing hooks")
+        pending.set_exception(error)
+        assert results == [(False, error)]
+        assert view._config.get("whitelist") == [learned]
+    else:
+        pending.set_result(None)
+        assert results == [(True, None)]
+        assert view._config.get("whitelist") == [dict(learned, capture_mode="game_capture")]
+    assert not view._steam_change_pending
+
+
+def test_steam_details_switch_capture_both_ways_without_removing_game(tmp_path, monkeypatch):
+    root = tmp_path / "steam"
+    localconfig = root / "userdata/42/config/localconfig.vdf"
+    localconfig.parent.mkdir(parents=True)
+    localconfig.write_text(steam.vkv_dump({"UserLocalConfigStore": {
+        "Software": {"Valve": {"Steam": {"apps": {"1": {
+            "LaunchOptions": "MANGOHUD=1 %command% -arg",
+        }}}}},
+    }}))
+    installation = steam.SteamInstallation("chosen", EnvironmentKind.NATIVE_STEAM, root)
+    monkeypatch.setattr(whitelist_module, "steam", steam)
+    monkeypatch.setattr(steam, "installation_for_entry", lambda _entry: installation)
+    monkeypatch.setattr(steam, "_is_steam_running", lambda **_kwargs: False)
+    monkeypatch.setattr(whitelist_module.game_capture, "prepare", lambda *_args: None)
+    monkeypatch.setattr(whitelist_module.game_capture, "wrapper_path",
+                        lambda: tmp_path / "clipper-gamecapture")
+    monkeypatch.setattr(whitelist_module, "_STEAM_RESTART_EXECUTOR", ImmediateExecutor())
+    monkeypatch.setattr(whitelist_module.GLib, "idle_add", lambda function, *args: function(*args))
+    view = _make_view()
+    view._config = ClipperConfig(tmp_path / "config.json")
+    original = {
+        "appid": "1", "name": "Game", "steam_installation": "chosen",
+        "steam_account_id": "42", "capture_mode": "display_capture", "audio_process": "keep-audio",
+    }
+    view._config.set("whitelist", [original])
+    view.set_sensitive = lambda _value: None
+    reloads, results = [], []
+    view.reload_from_config = lambda: reloads.append(view._config.get("whitelist"))
+    def completed(success, error=None):
+        results.append((success, error))
+
+    view._save_game_details(original, None, "game_capture", completed)
+    hooked = view._config.get("whitelist")[0]
+    assert hooked["capture_mode"] == "game_capture"
+    assert hooked["game_capture_integration"]["managed_launch_options"]
+    assert "clipper-gamecapture" in steam.get_launch_options("1", root, account_id="42")
+    view._save_game_details(hooked, None, "display_capture", completed)
+
+    assert results == [(True, None), (True, None)]
+    assert [entries[0]["capture_mode"] for entries in reloads] == [
+        "game_capture", "display_capture",
+    ]
+    restored = view._config.get("whitelist")
+    assert len(restored) == 1
+    assert restored[0]["capture_mode"] == "display_capture"
+    assert restored[0]["audio_process"] == "keep-audio"
+    assert "game_capture_integration" not in restored[0]
+    assert steam.get_launch_options("1", root, account_id="42") == "MANGOHUD=1 %command% -arg"
 
 
 def test_placeholder_color_is_stable_for_the_same_game_identity():
