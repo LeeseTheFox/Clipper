@@ -6,6 +6,13 @@
 
 # Clipper
 
+<p align="center">
+  <a href="https://github.com/LeeseTheFox/Clipper/releases/latest"><img src="https://img.shields.io/github/v/release/LeeseTheFox/Clipper" alt="Остання версія"></a>
+  <a href="https://github.com/LeeseTheFox/Clipper/commits"><img src="https://img.shields.io/github/last-commit/LeeseTheFox/Clipper?label=updated" alt="Останнє оновлення"></a>
+  <a href="https://github.com/LeeseTheFox/Clipper/releases"><img src="https://img.shields.io/github/downloads/LeeseTheFox/Clipper/total" alt="Завантаження"></a>
+  <a href="https://github.com/LeeseTheFox/Clipper/stargazers"><img src="https://img.shields.io/github/stars/LeeseTheFox/Clipper" alt="Зірки GitHub"></a>
+</p>
+
 Clipper — це додаток для Linux, який дає змогу зберігати кліпи вашого геймплею.
 Додайте свої ігри, налаштуйте гарячу клавішу й натисніть її, коли
 станеться щось варте збереження.

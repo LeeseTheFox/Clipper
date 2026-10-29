@@ -6,6 +6,13 @@
 
 # Clipper
 
+<p align="center">
+  <a href="https://github.com/LeeseTheFox/Clipper/releases/latest"><img src="https://img.shields.io/github/v/release/LeeseTheFox/Clipper" alt="Latest release"></a>
+  <a href="https://github.com/LeeseTheFox/Clipper/commits"><img src="https://img.shields.io/github/last-commit/LeeseTheFox/Clipper?label=updated" alt="Last updated"></a>
+  <a href="https://github.com/LeeseTheFox/Clipper/releases"><img src="https://img.shields.io/github/downloads/LeeseTheFox/Clipper/total" alt="Downloads"></a>
+  <a href="https://github.com/LeeseTheFox/Clipper/stargazers"><img src="https://img.shields.io/github/stars/LeeseTheFox/Clipper" alt="GitHub stars"></a>
+</p>
+
 Clipper is a Linux app for saving clips from your recent gameplay. Add the games
 you play, set a hotkey, and press it when something worth keeping happens.
 

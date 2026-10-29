@@ -6,6 +6,13 @@
 
 # Clipper
 
+<p align="center">
+  <a href="https://github.com/LeeseTheFox/Clipper/releases/latest"><img src="https://img.shields.io/github/v/release/LeeseTheFox/Clipper" alt="Последняя версия"></a>
+  <a href="https://github.com/LeeseTheFox/Clipper/commits"><img src="https://img.shields.io/github/last-commit/LeeseTheFox/Clipper?label=updated" alt="Последнее обновление"></a>
+  <a href="https://github.com/LeeseTheFox/Clipper/releases"><img src="https://img.shields.io/github/downloads/LeeseTheFox/Clipper/total" alt="Загрузки"></a>
+  <a href="https://github.com/LeeseTheFox/Clipper/stargazers"><img src="https://img.shields.io/github/stars/LeeseTheFox/Clipper" alt="Звёзды GitHub"></a>
+</p>
+
 Clipper — это приложение для Linux, позволяющее сохранять клипы из недавнего
 игрового процесса. Добавьте игры, назначьте горячую клавишу и нажмите её, когда
 произойдёт что-то стоящее.
