@@ -2460,7 +2460,7 @@ class ClipperApplication(Adw.Application):
             application_name="Clipper",
             application_icon=APP_ICON,
             developer_name=_("🦊 Leese"),
-            version="1.0.8",
+            version="1.0.9",
             website="https://github.com/LeeseTheFox/Clipper",
             issue_url="https://github.com/LeeseTheFox/Clipper/issues",
             copyright=_("© 2026 Leese"),

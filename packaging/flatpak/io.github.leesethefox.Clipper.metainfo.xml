@@ -25,6 +25,11 @@
     <binary>clipper</binary>
   </provides>
   <releases>
+    <release version="1.0.9" date="2026-10-30">
+      <description>
+        <p>Add Steam games in batches, playback performance diagnostics, and export sound feedback. Improve portal token preservation and graphics runtime recovery.</p>
+      </description>
+    </release>
     <release version="1.0.8" date="2026-10-17">
       <description>
         <p>Improve NVIDIA encoding, clip deletion, Steam capture, exports, and audio controls.</p>
