@@ -1,15 +1,20 @@
 # Clipper engine
 
-`engine/src/clipper_engine.c` is the native C process that runs Clipper's OBS/libobs recording work without an OBS Studio window. The GTK UI starts and stops it as needed, then talks to it over newline-delimited JSON on a Unix socket.
+`engine/src/clipper_engine.c` runs capture, encoding, and clip saving through
+OBS/libobs. The GTK UI starts and stops the engine and communicates with it
+using newline-delimited JSON over a Unix socket.
 
-## What it handles
+## Responsibilities
 
-- Starts libobs and the OBS plugins packaged with Clipper.
-- Creates `pipewire-screen-capture-source` for `display_capture` and `vkcapture-source` for `game_capture`.
-- Starts, stops, and saves recent gameplay. It emits status changes and `clip_saved` events, and can provide low-resolution preview frames.
-- Stores a PipeWire portal restore token when the portal returns one.
-- Reports available encoders, formats, devices, capture modes, and audio sources to the UI.
-- Routes one mixed track or up to six separate tracks, including microphone and runtime PipeWire application-audio sources.
+- Load libobs and the OBS plugins packaged with Clipper.
+- Use `pipewire-screen-capture-source` for `display_capture` and
+  `vkcapture-source` for `game_capture`.
+- Start and stop the replay buffer, save clips, and send status changes and
+  `clip_saved` events. Supply low-resolution preview frames on request.
+- Store a PipeWire portal restore token when the portal returns one.
+- Report available encoders, formats, devices, capture modes, and audio sources.
+- Route audio to one mixed track or up to six separate tracks, including
+  microphone and PipeWire application audio.
 
 The UI normally starts the engine with either `--capture-mode display_capture` or `--capture-mode game_capture`.
 
@@ -36,13 +41,22 @@ make -C engine/src
 ./clipper
 ```
 
-For native development, the Makefile and launcher use the locally installed OBS Studio Flatpak runtime. The standalone Clipper Flatpak builds and installs its own OBS/libobs stack; see [the Flatpak notes](../packaging/flatpak/README.md).
+Native builds use the locally installed OBS Studio Flatpak runtime. The
+standalone Clipper Flatpak includes its own OBS/libobs build; see the
+[Flatpak build instructions](../packaging/flatpak/README.md#build-it).
 
-For focused debugging, the engine also accepts `--socket`, `--output-dir`, `--max-time`, `--capture-mode`, and `--verbose`. Use the UI for the normal lifecycle.
+For debugging, the engine accepts `--socket`, `--output-dir`, `--max-time`,
+`--capture-mode`, and `--verbose`. Normally, the UI manages the engine process.
 
 ## IPC
 
-The common commands are `get_status`, `get_capabilities`, `get_audio_capabilities`, `list_audio_sources`, `start_replay_buffer`, `stop_replay_buffer`, `save_replay_buffer`, `update_audio_volumes`, `get_preview_frame`, and `shutdown`.
+Common commands:
+
+- State and capabilities: `get_status`, `get_capabilities`,
+  `get_audio_capabilities`, `list_audio_sources`.
+- Recording: `start_replay_buffer`, `stop_replay_buffer`, `save_replay_buffer`.
+- Audio and preview: `update_audio_volumes`, `get_preview_frame`.
+- Process exit: `shutdown`.
 
 The wire format is UTF-8 JSON objects separated by newlines. A socket read can
 contain part of a message or several messages. Commands contain `cmd`; responses
@@ -59,12 +73,10 @@ update restart while a save is pending. A rejected command releases the pending
 save immediately. Keep these rules aligned with `ui/engine_client.py` and the
 engine IPC tests when changing either end of the protocol.
 
-## Validate changes
+## Validation
 
-Rebuild after changing engine code:
+After changing engine code, rebuild with `make -C engine/src`, then run
+`./tools/run_pytest_quiet.sh` from the repository root.
 
-```bash
-make -C engine/src
-```
-
-Then run `./tools/run_pytest_quiet.sh`. For the packaged engine, run `./tools/flatpak_smoke_test.py`. It checks a real display-capture clip save and confirms that bundled plugins load.
+For the packaged engine, run `./tools/flatpak_smoke_test.py`. It checks that
+bundled plugins load and that the engine can save a display-capture clip.

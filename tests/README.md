@@ -1,4 +1,4 @@
-# Test purpose and maintenance
+# Tests
 
 Run the complete suite, type checks and lint from the repository root:
 
@@ -6,19 +6,19 @@ Run the complete suite, type checks and lint from the repository root:
 ./tools/run_pytest_quiet.sh
 ```
 
-## Retention rule
+## What to test
 
-Every test should identify a plausible regression and observe its consequence
-in Clipper. The test name should explain the scenario and expected behavior.
-Add a short explanation when the reason for an internal invariant is not obvious.
+Each test should catch a plausible production failure and check its effect on
+Clipper. Name the scenario and expected behavior. Explain internal invariants
+when their purpose is not obvious.
 
 - Keep protection against lost data, wrong capture or export output, broken
   platform integration, invalid input, resource leaks and lifecycle races.
 - Exercise production code. A calculation copied into the test does not verify
   the production calculation. Source substrings do not prove execution.
 - Prefer the existing behavioral test when it already detects the same failure.
-  Fold persistence checks into a representative round trip; keep distinct
-  normalization, migration and failure cases separate.
+  Combine persistence checks in a representative save-and-load test. Keep
+  distinct normalization, migration, and failure cases separate.
 - Keep parameter cases for distinct boundaries, protocols or platform variants.
   Do not multiply ordinary values that exercise the same path just to add cases.
 - Mock external dependencies when needed, but assert the resulting behavior.
@@ -38,26 +38,26 @@ protection. Test count is an inventory, not a quality target.
 
 ## Coverage map
 
-Each row describes the contract covered by a module. Individual test names
-identify the specific scenario. Similar cases in native and Python
-process matching intentionally cover separate production implementations.
+Each row lists the behavior a test module protects. Test names identify the
+specific scenarios. Native and Python process-matching tests cover separate
+implementations, even where their cases look similar.
 
-| Module (`test_` prefix, `.py` suffix) | Long-term regression protection |
+| Module (`test_` prefix, `.py` suffix) | Behavior protected |
 | --- | --- |
 | audio_source_discovery | Identify real playback applications and microphones without system-client noise. |
 | audio_source_watcher | Refresh discovery for relevant audio events only. |
-| audio_tracks_view | Preserve routing and offline selections, filter non-descriptive media names, synchronize whitelist routes when games change, bound synchronous executable inference, tolerate unavailable game libraries, update gain and mute live, restore track gain after unmuting, keep slider travel fixed across percentage digit changes, discover sources on page activation and live events without starting capture, release inactive discovery work. |
+| audio_tracks_view | Preserve routing and offline selections; filter non-descriptive media names; update game routes when games change. Limit synchronous executable inference and handle unavailable game libraries. Apply gain and mute live, restore gain after unmuting, and keep slider travel stable as percentage labels change. Discover sources on page activation and audio events without starting capture; stop discovery work when inactive. |
 | autostart | Honor portal approval and native desktop-file ownership; report registration failures. |
 | capability_response | Share startup and window discovery, bound connection/response retries, release engine ownership, and reject late replies after reconnect, timeout or shutdown. |
 | capture_modes | Migrate legacy capture labels and persist stable mode IDs. |
-| clips_view | Rename and delete safely, fall back from failed Flatpak trash requests to host trash only for the same regular file, preserve clips and edits after failures or missing/timed-out helpers with copyable diagnostics, preserve the list model on deletion and show empty/search states, retain drafts and game metadata, bound asynchronous gallery/cache work, activate previews for in-window playback. Actual host trash metadata and recoverability require an installed smoke check. |
+| clips_view | Rename and delete clips safely. After a Flatpak trash failure, allow host trash only for the same regular file. Preserve clips and edits when deletion fails or a helper is missing or times out, and provide diagnostics users can copy. Preserve the list model on deletion, empty/search states, drafts, and game metadata. Limit asynchronous gallery/cache work and activate in-window previews. Host trash metadata and recovery need an installed smoke check. |
 | clip_player_overlay | Render preview clipping and handoffs correctly, wait for a decoded frame before revealing or playing, cancel stale loads and animations, preserve playback across fullscreen layout changes, restore gallery focus and release media when the host is hidden. |
 | config | Persist typed settings, recover malformed files, migrate schemas and preserve engine-owned tokens when the engine rotates them after the UI loads; allow explicit token clearing and factory resets. |
 | copy_pacing | Execute capture pacing, lifecycle and wire-format checks in the C implementation. |
 | dialogs | Expose the appropriate capture instructions, copy the actual launch option, and preserve Steam batch selections across search while applying one capture method and excluding already configured games. |
 | display_auth | Recover valid X11 authorization after session credentials change. |
 | editor_drafts | Save, restore, rename and reject stale or malformed edits without losing usable history. |
-| editor_export | Preserve aspect ratio, timing, audio and codec contracts, including native encoder quality scales in exports and capability probes, VAAPI HEVC encoder headers and cropping in hvc1 containers and AV1/VP9 quality options scoped away from audio; validate output despite AAC priming packet order, report original encoding failures before shutdown noise and clean failed exports. GPU output correctness requires a real hardware export and decoded-frame inspection. |
+| editor_export | Preserve aspect ratio, timing, audio, and codec settings. Check native encoder quality scales in exports and probes, VAAPI HEVC headers and cropping in hvc1 containers, and video-only AV1/VP9 quality options. Validate output with AAC priming packets in different orders. Report the original encoding failure before shutdown errors and clean up failed exports. GPU output needs a hardware export and decoded-frame inspection. |
 | editor_export_dialog | Create the default Exported subfolder on export, keep selected options, require overwrite confirmation, handle progress/cancel and block unsafe close. Route export success and failure sounds on the main thread, keep cancellation silent, and reject completion callbacks after editor cleanup or a replacement export. |
 | editor_history | Maintain undo/redo branches, saved state and bounded/coalesced history. |
 | editor_media | Preserve valid sample aspect ratio and reject invalid probe metadata. |
@@ -71,7 +71,7 @@ process matching intentionally cover separate production implementations.
 | editor_window_wipe | Clear saved and in-memory edits only after confirmation; preserve them on cancellation. |
 | engine_client | Encode IPC requests and complete saves once despite response/event ordering. |
 | engine_ipc | Exercise the real engine socket, capabilities, recording lifecycle, pushed state snapshots, saved files and concurrent clients. |
-| engine_manager | Launch with the correct environment, deliver readiness/exits without polling, reject retired process callbacks and distinguish restart from normal exit. |
+| engine_manager | Launch with the correct environment, deliver readiness/exits without polling, reject callbacks from old processes and distinguish restart from normal exit. |
 | flatpak_metadata | Preserve desktop identity, icon policy, portable host helpers, pinned sources and narrow permissions. |
 | focus_helpers | Preserve stable dropdown IDs, handle invalid selection and prevent controls stealing input. |
 | game_audio_learning | Learn audio identity only from verified game processes and update the matching configuration. |
@@ -90,7 +90,7 @@ process matching intentionally cover separate production implementations.
 | main_window_preferences | Pass catalog language IDs through preferences and track both physical Shift keys. |
 | monitor_host | Execute C host process detection, fixed Steam operations, scope isolation, live rule reloads and complete state recovery after reconnect. |
 | monitor_ipc | Validate complete snapshots and incoming events, restrict socket access and interrupt idle connections on shutdown. |
-| monitor_manager | Use the correct native or Flatpak helper, validate host results and own one monitor process. |
+| monitor_manager | Select the native or Flatpak helper, validate host results, and manage one monitor process. |
 | native_capture | Reject unsupported direct-capture scenes and preserve idle-render consumers. |
 | pipewire_import_cache | Retain/release imported buffers and synchronization handles correctly, with and without explicit sync. |
 | playback_performance | Measure sink frame deltas across pause, seek resets and pipeline switches; release sampling timers and media references when the overlay is hidden or closed. |
@@ -98,14 +98,14 @@ process matching intentionally cover separate production implementations.
 | recording_preview | Keep recording identity current and long names ellipsized within real GTK preview allocations for landscape, portrait and ultrawide frames. |
 | release_notes | Generate accurate categorized history from actual Git repositories and semantic tags. |
 | release_version | Reject malformed tags and mismatched application release versions. |
-| settings_view | Apply settings correctly, respect platform approval, join background discovery, detach retired windows, reuse cached options and clamp encoder controls. |
+| settings_view | Apply settings correctly, respect platform approval, join background discovery, detach closed windows, reuse cached options and clamp encoder controls. |
 | screenshots | Insert localized banners and migrate theme-aware galleries to dark screenshots idempotently while preserving translated labels and prose; reject missing gallery references and missing or ambiguous titles before writing. Actual GTK rendering and byte-for-byte reproducibility are checked with `./tools/generate_screenshots.sh --check`. |
 | setup_window | Persist setup choices within engine-supported clip limits, respect existing settings, share encoder discovery, reject responses after close, and complete or skip setup consistently. |
 | shortcut_dialog | Validate accelerator syntax and open the correct shortcut collection from menus and physical keys under non-Latin layouts. |
 | sound_feedback | Keep capture and error feedback assets readable as PCM audio, play at fixed 100% gain and tolerate missing/unavailable media. |
 | startup_benchmark | Measure the right processes and decode desktop presentation/handoff state accurately. |
 | steam | Discover installations/accounts and change launch options without corrupting or claiming user-owned data; batch changes with one restart per client, retain completed additions after failures, and recover interrupted capture-method edits. |
-| suika_game_model | Keep drops in bounds, prevent perfectly balanced repeated-drop towers and enforce momentum-preserving fruit merges at resting and solver-created contacts, bounded size-scaled neighbor impulses, score, terminal-size rules, per-fruit overflow grace/reset timing and real-time fixed-step physics independent of frame timing. |
+| fruit_drop_game_model | Keep drops in bounds and prevent perfectly balanced towers from repeated drops. Preserve momentum when fruit merge at resting or solver-created contacts, and limit size-scaled impulses to nearby fruit. Check scoring, terminal-size rules, per-fruit overflow grace periods and resets, and fixed-step physics independent of rendering frame times. |
 | text_helpers | Preserve readable/full labels and escape user-controlled markup. |
 | theme_adaptation | Parse editor and playback diagnostics CSS with GTK and reject errors. |
 | tray | Maintain the public D-Bus/icon contract and flush replies before activation or shutdown. |

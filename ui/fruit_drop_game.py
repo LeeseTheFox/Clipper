@@ -12,8 +12,7 @@ gi.require_version("Adw", "1")
 gi.require_version("Gdk", "4.0")
 gi.require_version("Gtk", "4.0")
 
-from gi.repository import Adw, Gdk, GLib, Gtk
-from suika_game_model import (
+from fruit_drop_game_model import (
     BOARD_HEIGHT,
     BOARD_INSET,
     BOARD_WIDTH,
@@ -23,6 +22,7 @@ from suika_game_model import (
     Fruit,
     FruitDropGame,
 )
+from gi.repository import Adw, Gdk, GLib, Gtk
 
 _TICK_INTERVAL_MS = 16
 _FRUIT_COLORS = (
@@ -40,7 +40,7 @@ _FRUIT_COLORS = (
 )
 
 
-class SuikaGameWindow(Adw.Window):
+class FruitDropGameWindow(Adw.Window):
     """A compact, self-contained fruit-drop game window."""
 
     def __init__(
@@ -298,7 +298,7 @@ class SuikaGameWindow(Adw.Window):
         inner_height = BOARD_HEIGHT - 20.0
         inner_bottom = inner_top + inner_height
         context.save()
-        SuikaGameWindow._rounded_rectangle(
+        FruitDropGameWindow._rounded_rectangle(
             context, inner_left, inner_top, inner_width, inner_height, 16
         )
         context.clip()

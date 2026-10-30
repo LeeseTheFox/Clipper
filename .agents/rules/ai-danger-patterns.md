@@ -116,7 +116,7 @@ Ensure completion and failure callbacks settle an operation once, including
 cancellation and reconnect. Starting a worker thread does not replace teardown.
 
 Follow the [engine IPC contract](../../engine/README.md#ipc) when handling replies
-and save completion. Follow the [update restart contract](../../docs/auto-updates.md#installation-and-restart)
+and save completion. Follow the [update restart contract](../../docs/auto-updates.md#restart)
 when a callback can replace the running application or interrupt recording.
 
 ## Destructive cleanup and premature publication

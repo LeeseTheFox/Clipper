@@ -1,7 +1,7 @@
 import random
 
 import pytest
-from suika_game_model import (
+from fruit_drop_game_model import (
     BOARD_HEIGHT,
     BOARD_INSET,
     BOARD_WIDTH,
