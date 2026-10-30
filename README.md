@@ -10,20 +10,19 @@
 
 # Clipper
 
+Clipper is a GTK4/libadwaita app for Linux that saves clips from your recent
+gameplay. Add the games you play, set a hotkey, and press it when something
+worth keeping happens.
+
+If you have used NVIDIA ShadowPlay or OBS Studio's Replay Buffer, Clipper works
+the same way: it keeps recent gameplay ready to save as a clip.
+
 <p align="center">
   <a href="https://github.com/LeeseTheFox/Clipper/releases/latest"><img src="https://img.shields.io/github/v/release/LeeseTheFox/Clipper" alt="Latest release"></a>
   <a href="https://github.com/LeeseTheFox/Clipper/commits"><img src="https://img.shields.io/github/last-commit/LeeseTheFox/Clipper?label=updated" alt="Last updated"></a>
   <a href="https://github.com/LeeseTheFox/Clipper/releases"><img src="https://img.shields.io/github/downloads/LeeseTheFox/Clipper/total" alt="Downloads"></a>
   <a href="https://github.com/LeeseTheFox/Clipper/stargazers"><img src="https://img.shields.io/github/stars/LeeseTheFox/Clipper" alt="GitHub stars"></a>
 </p>
-
-Clipper is a Linux app for saving clips from your recent gameplay. Add the games
-you play, set a hotkey, and press it when something worth keeping happens.
-
-If you have used NVIDIA ShadowPlay or OBS Studio's Replay Buffer, Clipper works
-the same way: it keeps recent gameplay ready to save as a clip.
-
-It is a GTK4/libadwaita app built around OBS/libobs.
 
 ## Install
 
@@ -155,6 +154,17 @@ Contributions are welcome.
 
 The Flatpak includes OBS Studio/libobs, its capture plugins, and other
 third-party components. Their notices are in [LICENSE](LICENSE).
+
+## Generative AI disclosure
+
+I built Clipper using generative AI tools. All of Clipper's own code was
+AI-generated, and I also use AI for debugging, tests, documentation, and
+some of the translations.
+
+I describe what I want, work through problems with the tools, and iterate on
+the results. That is how this project has been developed from the start.
+I want to be open about that so anyone using or contributing to Clipper knows
+how it was made.
 
 ## License
 

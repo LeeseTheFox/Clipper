@@ -10,14 +10,8 @@
 
 # Clipper
 
-<p align="center">
-  <a href="https://github.com/LeeseTheFox/Clipper/releases/latest"><img src="https://img.shields.io/github/v/release/LeeseTheFox/Clipper" alt="Остання версія"></a>
-  <a href="https://github.com/LeeseTheFox/Clipper/commits"><img src="https://img.shields.io/github/last-commit/LeeseTheFox/Clipper?label=updated" alt="Останнє оновлення"></a>
-  <a href="https://github.com/LeeseTheFox/Clipper/releases"><img src="https://img.shields.io/github/downloads/LeeseTheFox/Clipper/total" alt="Завантаження"></a>
-  <a href="https://github.com/LeeseTheFox/Clipper/stargazers"><img src="https://img.shields.io/github/stars/LeeseTheFox/Clipper" alt="Зірки GitHub"></a>
-</p>
-
-Clipper — це додаток для Linux, який дає змогу зберігати кліпи вашого геймплею.
+Clipper — це додаток для Linux на GTK4/libadwaita, який дає змогу зберігати
+кліпи вашого геймплею.
 Додайте свої ігри, налаштуйте гарячу клавішу й натисніть її, коли
 станеться щось варте збереження.
 
@@ -25,7 +19,12 @@ Clipper — це додаток для Linux, який дає змогу збе�
 Clipper працює за тим самим принципом: він тримає напоготові останній відрізок
 ігрового процесу, щоб його можна було зберегти як кліп.
 
-Це додаток на GTK4/libadwaita, з OBS/libobs у якості фундаменту.
+<p align="center">
+  <a href="https://github.com/LeeseTheFox/Clipper/releases/latest"><img src="https://img.shields.io/github/v/release/LeeseTheFox/Clipper" alt="Остання версія"></a>
+  <a href="https://github.com/LeeseTheFox/Clipper/commits"><img src="https://img.shields.io/github/last-commit/LeeseTheFox/Clipper?label=updated" alt="Останнє оновлення"></a>
+  <a href="https://github.com/LeeseTheFox/Clipper/releases"><img src="https://img.shields.io/github/downloads/LeeseTheFox/Clipper/total" alt="Завантаження"></a>
+  <a href="https://github.com/LeeseTheFox/Clipper/stargazers"><img src="https://img.shields.io/github/stars/LeeseTheFox/Clipper" alt="Зірки GitHub"></a>
+</p>
 
 ## Встановлення
 
@@ -162,6 +161,17 @@ Clipper містить потрібні інструменти захоплен�
 
 Flatpak містить OBS Studio/libobs, його плагіни захоплення та інші сторонні
 компоненти. Ліцензійні повідомлення про них наведено у файлі [LICENSE](LICENSE).
+
+## Використання генеративного ШІ
+
+Я створив Clipper за допомогою інструментів генеративного ШІ. Увесь власний
+код Clipper згенеровано ШІ. Я також використовую ШІ для налагодження, тестів,
+документації та частини перекладів.
+
+Я описую, що хочу отримати, розбираю проблеми разом із цими інструментами
+й поступово доопрацьовую результат. Так проєкт розроблявся від самого початку.
+Я хочу відкрито про це говорити, щоб усі, хто користується Clipper або
+долучається до його розробки, знали, як його було створено.
 
 ## Ліцензія
 
